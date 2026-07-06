@@ -1,0 +1,1002 @@
+     1→     1→Total pages: 77
+     2→     2→--- Page 1 ---
+     3→     3→Al-Nassim Master Catalog
+     4→     4→Data Dictionary & Schema Documentation
+     5→     5→Comprehensive developer-facing documentation of the Master Catalog sheet,
+     6→     6→its 52 columns, taxonomy hierarchy, controlled vocabularies, and validation rules.
+     7→     7→Document Version 1.0
+     8→     8→Workbook Version V8 (FINAL)
+     9→     9→Total Products 2,546
+    10→    10→Total Sheets 63
+    11→    11→Date Generated 2026-07-06
+    12→    12→--- Page 2 ---
+    13→    13→Table of Contents
+    14→    14→1. Executive Summary-------------------------------------------------------------------------------------------------------3
+    15→    15→2. Workbook Architecture Overview------------------------------------------------------------------------------------4
+    16→    16→3. Master Catalog Sheet — Logical Column Groupings-------------------------------------------------------------5
+    17→    17→4. Taxonomy & Hierarchy---------------------------------------------------------------------------------------------------7
+    18→    18→5. Controlled Vocabularies & Lookup Lists-----------------------------------------------------------------------------9
+    19→    19→6. Column-by-Column Data Dictionary--------------------------------------------------------------------------------13
+    20→    20→6.1 Product Identity Group (Columns A–J)--------------------------------------------------------------------------13
+    21→    21→6.2 Classification Group (Columns K–P)------------------------------------------------------------------------------18
+    22→    22→6.3 Product Information Group (Columns Q–V)-------------------------------------------------------------------23
+    23→    23→6.4 Attributes Group (Columns W–AI)--------------------------------------------------------------------------------27
+    24→    24→6.5 Logistics Group (Columns AJ–AL)---------------------------------------------------------------------------------33
+    25→    25→6.6 Commercial Group (Column AM)---------------------------------------------------------------------------------35
+    26→    26→6.7 SEO Group (Columns AN–AR)--------------------------------------------------------------------------------------36
+    27→    27→6.8 Internal Group (Columns AS–AZ)---------------------------------------------------------------------------------39
+    28→    28→7. Dependent Dropdowns & Validation Rules-----------------------------------------------------------------------42
+    29→    29→8. Derived & Auto-Generated Columns-------------------------------------------------------------------------------44
+    30→    30→9. Recommendations-------------------------------------------------------------------------------------------------------45
+    31→    31→10. Appendix A: Complete Product Type List------------------------------------------------------------------------47
+    32→    32→11. Appendix B: Product Family → Product Type Mapping------------------------------------------------------50
+    33→    33→12. Appendix C: All Sheets in the Workbook------------------------------------------------------------------------54
+    34→    34→--- Page 3 ---
+    35→    35→1. Executive Summary
+    36→    36→This document provides a complete developer-facing specification of the Al-Nassim Master Catalog
+    37→    37→workbook — the central product information management (PIM) artifact for Al-Nassim, a Kuwait-based
+    38→    38→household goods distributor serving GCC retail channels including Amazon, Noon, Carrefour, Lulu, IKEA,
+    39→    39→Ace Hardware, and Home Centre.
+    40→    40→The workbook contains 2,546 products across 63 sheets, with the Master Catalog sheet as the primary
+    41→    41→data table. This documentation enables another developer to fully understand the workbook structure,
+    42→    42→recreate its behavior, and integrate with it without needing to inspect the original file.
+    43→    43→Key Facts at a Glance
+    44→    44→Attribute Value
+    45→    45→Total products 2,546
+    46→    46→Total columns in Master Catalog 52
+    47→    47→Total sheets in workbook 63
+    48→    48→Column groups 8 (Product Identity, Classification, Product
+    49→    49→Information, Attributes, Logistics, Commercial,
+    50→    50→SEO, Internal)
+    51→    51→Taxonomy levels 5 (Department → Category → Subcategory →
+    52→    52→Product Family → Product Type)
+    53→    53→Departments 2 (Houseware, Supermarket Equipment)
+    54→    54→Categories 5
+    55→    55→Subcategories 9
+    56→    56→Product Families 14
+    57→    57→Product Types 163 distinct values
+    58→    58→Brands 2 (Al-Nassim China, Local Companies)
+    59→    59→Languages Bilingual (Arabic + English)
+    60→    60→Translation audit rounds 8 (V3 through V8 + overrides)
+    61→    61→Controlled vocabularies 15+ (Department, Category, Subcategory, Brand,
+    62→    62→Material, Color, Shape, Finish, Unit, etc.)
+    63→    63→Document Conventions
+    64→    64→ Column references: Column letters (A, B, C... AZ) refer to the physical Excel column position.
+    65→    65→--- Page 4 ---
+    66→    66→ Mandatory/Optional: Mandatory = must be populated; Optional = may be null.
+    67→    67→ Field kind: Controlled list = value must come from a predefined dropdown. Free text = any value
+    68→    68→allowed.
+    69→    69→ Samples: Sample values are drawn from the actual V8 workbook data.
+    70→    70→--- Page 5 ---
+    71→    71→2. Workbook Architecture Overview
+    72→    72→The Al-Nassim Master Catalog workbook is a multi-sheet Excel file containing 63 sheets organized into
+    73→    73→three functional layers:
+    74→    74→Layer 1: Core Data (1 sheet)
+    75→    75→ Master Catalog — the primary product table with 2,546 rows × 52 columns. This is the only sheet
+    76→    76→that should be directly edited by catalog managers.
+    77→    77→Layer 2: Reference & Taxonomy (6 sheets)
+    78→    78→ Taxonomy Reference — defines the valid Department → Category → Subcategory hierarchy (21
+    79→    79→entries).
+    80→    80→ Inferred Classifications — 208 products whose classification was inferred (not direct-matched) during
+    81→    81→the V2 taxonomy project, with reviewer actions.
+    82→    82→ Classification Summary — roll-up of the V2 classification coverage (100% achieved).
+    83→    83→ Validation Report — taxonomy validation results.
+    84→    84→ Translation Report — translation pipeline summary.
+    85→    85→ Name Rewrite Report / Report V2 — summaries of the name-rewrite passes.
+    86→    86→Layer 3: Audit & Correction Logs (56 sheets)
+    87→    87→These sheets document the 8 rounds of translation quality assurance (V3 through V8, plus override
+    88→    88→batches). Each audit round has a paired Audit sheet (findings) and Corrections sheet (applied fixes). Key
+    89→    89→audit sheets include:
+    90→    90→ Translation Audit V3 — the master audit log with 2,546 rows, one per product, showing action
+    91→    91→(UNCHANGED / CORRECTED / FLAG_REVIEW / APPLIED) and reason.
+    92→    92→ Translation Audit Summary V3 — roll-up stats and top recurring issues.
+    93→    93→ Name Rewrite Log V2 — 935 rows documenting phrase-first translation rewrites.
+    94→    94→ Audit Change Log — 768 individual changes from the V2 audit.
+    95→    95→ Translation Quality Corrections — 472 corrections from the quality audit.
+    96→    96→ Cross-Validation Discrepancies V3 — 517 cross-validation findings.
+    97→    97→ Semantic Translation Corrections — 402 semantic fixes.
+    98→    98→ Translation QA Corrections — 1,413 corrections from the final QA pass.
+    99→    99→ Complete Re-Audit Corr. — 474 corrections from the complete re-audit.
+   100→   100→ Completeness Corrections — 373 corrections filling missing attributes.
+   101→   101→ V5 Application Summary — 226 FLAG_REVIEW rows resolved.
+   102→   102→ V6 Refinement Log — 686 rows where Product Type was upgraded from 'Other' to specific types.
+   103→   103→ V7 Override Log — 115 rows where forbidden phrases were replaced per the Override Lexicon.
+   104→   104→--- Page 6 ---
+   105→   105→ V8 Refinement Log — 54 rows with targeted final fixes (duplicates, missing nouns, ياش دارب → Tea
+   106→   106→Pot).
+   107→   107→Sheet Naming Conventions
+   108→   108→Pattern Purpose Example
+   109→   109→* Audit Findings from a specific QA Translation Quality Audit
+   110→   110→round
+   111→   111→* Corrections Applied fixes from that round Translation Quality Corrections
+   112→   112→* Report Summary of a pass Name Rewrite Report V2
+   113→   113→* Log Detailed change records Name Rewrite Log V2
+   114→   114→* Summary Roll-up statistics V6 Refinement Summary
+   115→   115→V{n} * Version-prefixed sheet from V7 Override Log
+   116→   116→round n
+   117→   117→Fix{n} * Targeted fix batch n Fix13 Corrections
+   118→   118→--- Page 7 ---
+   119→   119→3. Master Catalog Sheet — Logical Column Groupings
+   120→   120→The 52 columns of the Master Catalog are organized into 8 logical groups, marked by group-header cells
+   121→   121→in row 1 of the sheet. Row 2 contains the actual column headers, and data starts at row 3.
+   122→   122→Group Overview
+   123→   123→Group Columns Count Purpose
+   124→   124→Product Identity A–J (1–10) 10 Unique identifiers,
+   125→   125→brand, model —
+   126→   126→answers 'which
+   127→   127→product?'
+   128→   128→Classification K–P (11–16) 6 Taxonomy hierarchy —
+   129→   129→answers 'where in the
+   130→   130→catalog?'
+   131→   131→Product Information Q–V (17–22) 6 Bilingual names and
+   132→   132→descriptions — answers
+   133→   133→'what is it called?'
+   134→   134→Attributes W–AI (23–35) 13 Physical specs: color,
+   135→   135→material, capacity,
+   136→   136→dimensions — answers
+   137→   137→'what are its
+   138→   138→properties?'
+   139→   139→Logistics AJ–AL (36–38) 3 Origin, sales unit, min
+   140→   140→multiples — answers
+   141→   141→'how is it
+   142→   142→sold/shipped?'
+   143→   143→Commercial AM (39) 1 Pricing — answers 'how
+   144→   144→much?'
+   145→   145→SEO AN–AR (40–44) 5 Search-engine titles,
+   146→   146→descriptions, keywords
+   147→   147→— answers 'how is it
+   148→   148→found online?'
+   149→   149→Internal AS–AZ (45–52) 8 Validation status,
+   150→   150→confidence, notes,
+   151→   151→additional attributes —
+   152→   152→--- Page 8 ---
+   153→   153→answers 'what is the
+   154→   154→data quality?'
+   155→   155→Visual Layout (Row 1 Group Headers)
+   156→   156→Row 1 of the Master Catalog contains merged-cell group headers that visually span their column ranges:
+   157→   157→| A:J | K:P | Q:V | W:AI | AJ:AL | AM | AN:AR | AS:AZ |
+   158→   158→| Product Identity | Classification | Product Information | Attributes | Logistics| Com | SEO |
+   159→   159→Internal |
+   160→   160→| (10 cols) | (6 cols) | (6 cols) | (13 cols) | (3 cols) | (1) | (5 cols)| (8 cols) |
+   161→   161→Design Rationale
+   162→   162→ Ordering: Identity first, then classification, then descriptions, then specs, then commercial, then SEO,
+   163→   163→then internal QA. This mirrors the order in which a catalog manager reads a product record.
+   164→   164→ Bilingual pairing: Bilingual pairs (Name AR/EN, Color AR/EN, Material AR/EN, SEO Title AR/EN, etc.)
+   165→   165→are always adjacent to facilitate side-by-side review.
+   166→   166→ Spec grouping: All dimension columns (Length, Width, Height, Diameter) are grouped together,
+   167→   167→followed by their shared Dimension Unit.
+   168→   168→ QA isolation: Internal/QA columns (Validation Status, Confidence Score) are at the far right so they
+   169→   169→don't interfere with customer-facing data views.
+   170→   170→--- Page 9 ---
+   171→   171→4. Taxonomy & Hierarchy
+   172→   172→The Master Catalog uses a 5-level taxonomy hierarchy. The first three levels (Department → Category →
+   173→   173→Subcategory) are strictly defined in the Taxonomy Reference sheet. The last two levels (Product Family
+   174→   174→→ Product Type) are loosely defined by convention and actual usage.
+   175→   175→4.1 The Five-Level Hierarchy
+   176→   176→Level Column Distinct Values Source of Truth Enforcement
+   177→   177→1. Department K 2 Taxonomy Strict —
+   178→   178→Reference sheet dropdown
+   179→   179→2. Category L 5 Taxonomy Strict —
+   180→   180→Reference sheet dependent
+   181→   181→dropdown
+   182→   182→3. Subcategory M 9 Taxonomy Strict —
+   183→   183→Reference sheet dependent
+   184→   184→dropdown
+   185→   185→4. Product Family O 14 Convention (not Loose — should
+   186→   186→in Taxonomy be dropdown
+   187→   187→Reference)
+   188→   188→5. Product Type P 163 Al-Nassim Retail Loose — should
+   189→   189→Lexicon be dependent
+   190→   190→dropdown
+   191→   191→4.2 Complete Taxonomy Tree (from Taxonomy Reference Sheet)
+   192→   192→The following tree shows all valid Department → Category → Subcategory combinations as defined in
+   193→   193→the Taxonomy Reference sheet. Categories marked '(no subcategory)' are leaf-level categories with no
+   194→   194→subcategory children.
+   195→   195→Houseware
+   196→   196→└── Cleaning Tools
+   197→   197→└── Surface Cleaning
+   198→   198→└── Toilet & Drain
+   199→   199→└── Home & Outdoor
+   200→   200→└── Laundry Essentials
+   201→   201→└── Picnic Collection
+   202→   202→└── Storage & Packaging
+   203→   203→└── Kitchenware
+   204→   204→└── Cooking & Utensils
+   205→   205→└── Cutlery & Cleaver
+   206→   206→└── Drinkware
+   207→   207→Supermarket Equipment
+   208→   208→└── Accessories (no subcategory)
+   209→   209→└── Checkout Solutions (no subcategory)
+   210→   210→--- Page 10 ---
+   211→   211→└── Cooling Appliances
+   212→   212→└── Coolers & Chillers
+   213→   213→└── Freezers
+   214→   214→└── Shelves & Stands
+   215→   215→└── Shelves
+   216→   216→└── Stands
+   217→   217→└── Trolleys & Baskets
+   218→   218→└── Baskets
+   219→   219→└── Trolleys
+   220→   220→Warehouse Equipment
+   221→   221→└── Forklifts & Pallets
+   222→   222→└── Forklifts
+   223→   223→└── Pallets
+   224→   224→└── Heavy Duty Racking (no subcategory)
+   225→   225→└── Trolleys & Baskets
+   226→   226→└── Baskets
+   227→   227→└── Trolleys
+   228→   228→4.3 Actual Usage in the Catalog
+   229→   229→The following table shows how many products are actually classified under each Department → Category
+   230→   230→→ Subcategory path in the current catalog:
+   231→   231→Department Product Count
+   232→   232→Houseware 2543
+   233→   233→Supermarket Equipment 3
+   234→   234→Warehouse Equipment 3
+   235→   235→4.4 Product Family → Product Type Mapping
+   236→   236→Product Family (level 4) is not strictly tied to Subcategory in the current schema, but Product Type (level
+   237→   237→5) should be constrained by Product Family. The complete mapping is in Appendix B. Here is a summary
+   238→   238→of the top 10 Product Families and their most common Product Types:
+   239→   239→Product Family Products Top 3 Product Types
+   240→   240→Buckets 415 Bucket (133), Basket (87), Box
+   241→   241→(64)
+   242→   242→Cleaning 176 Broom (89), Brush (18), Floor
+   243→   243→Mop (15)
+   244→   244→Cookware 378 Strainer (111), Pan (70), Cooking
+   245→   245→Pot (41)
+   246→   246→Cutlery 242 Knife (106), Cutter (37), Scissors
+   247→   247→(28)
+   248→   248→Drinkware 52 Cup (16), Bottle (16), Flask (15)
+   249→   249→--- Page 11 ---
+   250→   250→Food Storage 125 Container (125)
+   251→   251→Kitchen Tools 578 Wooden Tool (56), Scale (47),
+   252→   252→Vegetable Slicer (34)
+   253→   253→Linens 19 Towel (19)
+   254→   254→Outdoor Cooking 80 Grill (51), Ice Tongs (11), Tool (7)
+   255→   255→Paper Goods 4 Tissue (4)
+   256→   256→Sets 218 Bag (107), Chair (57), Set (30)
+   257→   257→Storage 124 Wooden Tool (35), Potato
+   258→   258→Peeler (13), Basket (11)
+   259→   259→Tableware 94 Tray (47), Plate (36), Serving
+   260→   260→Bowl (7)
+   261→   261→Uncategorized 41 Cooking Pot (12), Pressure
+   262→   262→Cooker (8), Food Storage Bag (5)
+   263→   263→--- Page 12 ---
+   264→   264→5. Controlled Vocabularies & Lookup Lists
+   265→   265→The following controlled vocabularies are used in the Master Catalog. Columns marked as 'Controlled list'
+   266→   266→should only accept values from these lists. Some are currently enforced via data validation; others are
+   267→   267→convention-only and should be upgraded to dropdowns.
+   268→   268→5.1 Brand Lookup (with Arabic + Code)
+   269→   269→Brand (EN) Brand AR Brand Code Product Count
+   270→   270→Al-Nassim China نيصلا ميسنلا 017 2,540
+   271→   271→Local Companies ةيلحم تاكرش 006 1
+   272→   272→Business rule: Brand AR and Brand Code must auto-fill via VLOOKUP when Brand is selected. The lookup table
+   273→   273→should be stored as a named range 'BrandLookup' on a hidden 'Lookups' sheet.
+   274→   274→5.2 Department → Category → Subcategory (Dependent Dropdowns)
+   275→   275→The complete valid combinations are defined in the Taxonomy Reference sheet. See Section 4.2 for the
+   276→   276→full tree. The dependent dropdown relationships are:
+   277→   277→ Level 1 → 2: Category dropdown is filtered by the selected Department.
+   278→   278→ Level 2 → 3: Subcategory dropdown is filtered by the selected Category. Some categories (Checkout
+   279→   279→Solutions, Accessories, Heavy Duty Racking) have no subcategories — Subcategory should be null.
+   280→   280→5.3 Section Code
+   281→   281→Section Code Meaning Product Count
+   282→   282→102 Houseware section 2,537
+   283→   283→103 Supermarket Equipment section 9
+   284→   284→5.4 Color Lookup (with Arabic)
+   285→   285→Color (EN) Color AR Product Count
+   286→   286→Black دوسأ 44
+   287→   287→White ضيبأ 33
+   288→   288→Clear فافش 29
+   289→   289→Silver يضف 23
+   290→   290→Gold يبهذ 21
+   291→   291→Red رمحأ 16
+   292→   292→Yellow رفصأ 13
+   293→   293→--- Page 13 ---
+   294→   294→Green رضخأ 6
+   295→   295→Blue قرزأ 6
+   296→   296→Gray يدامر 4
+   297→   297→Orange يلاقترب 4
+   298→   298→Brown ينب 3
+   299→   299→Beige جيب 2
+   300→   300→Purple يجسفنب 1
+   301→   301→Pink يدرو 1
+   302→   302→Business rule: Use 'Clear' for transparent products (not 'Transparent'). Use American spelling ('Gray', not 'Grey').
+   303→   303→Color AR must auto-fill via VLOOKUP.
+   304→   304→5.5 Material Lookup (with Arabic)
+   305→   305→Currently 19 distinct values, but should be normalized to ~15 per the Al-Nassim Retail Lexicon:
+   306→   306→Material (EN) Material AR Count Notes
+   307→   307→Plastic كيتسلاب 880 Correct
+   308→   308→Stainless Steel ليتس سلناتس 409 Correct — for
+   309→   309→سلناتس/ليتسا
+   310→   310→Wood بشخ 182 Should be 'Wooden'
+   311→   311→(adjective form) per
+   312→   312→lexicon
+   313→   313→Granite — 50 No Arabic set — should
+   314→   314→be 'تينارج'
+   315→   315→Glass جاجز 38 Correct
+   316→   316→Metal — 31 Generic — should be
+   317→   317→more specific
+   318→   318→Aluminum موينملأ 25 Correct
+   319→   319→Paper قرو 22 Correct
+   320→   320→Iron ديدح 15 Should be 'Steel' per
+   321→   321→lexicon (ديدح → Steel)
+   322→   322→Cotton — 12 No Arabic set
+   323→   323→--- Page 14 ---
+   324→   324→Silicone نوكيليس 11 Correct
+   325→   325→Steel — 11 For ديدح/ذلاوف —
+   326→   326→distinct from Stainless
+   327→   327→Steel
+   328→   328→Wooden — 8 Should merge with
+   329→   329→'Wood' → standardize
+   330→   330→on 'Wooden'
+   331→   331→Microfiber — 6 No Arabic set
+   332→   332→Sheet Steel — 6 Should be 'Steel' or 'Saj
+   333→   333→Griddle' context
+   334→   334→Melamine — 3 No Arabic set — should
+   335→   335→be 'نيملايم'
+   336→   336→Chrome مورك 3 Correct — this is a
+   337→   337→finish, not a material
+   338→   338→Porcelain — 2 No Arabic set — should
+   339→   339→be 'نلاسروب'
+   340→   340→Ceramic كيماريس 2 Correct
+   341→   341→5.6 Unit, Capacity Unit, Weight Unit, Dimension Unit
+   342→   342→Field Valid Values Current Usage
+   343→   343→Unit (col AK) PCS, PKT, CTN, ROLL, BUNDLE PCS (2,499), PKT (39), CTN (6),
+   344→   344→ROLL (1), هطبر (1 — should be
+   345→   345→BUNDLE)
+   346→   346→Capacity Unit (col AB) L, ml, kg, g L (309), ml (94), kg (31), g (8),
+   347→   347→KG (5 — should be kg)
+   348→   348→Weight Unit (col AD) kg, g kg (41), g (6)
+   349→   349→Dimension Unit (col AI) cm, mm, inch cm (575) — only cm used
+   350→   350→5.7 Shape, Finish, Additional Information
+   351→   351→Field Valid Values Current Usage
+   352→   352→Shape (col AX) Square, Round, Rectangular, Square (42), Round (38),
+   353→   353→Oval, Circular Rectangular (30)
+   354→   354→--- Page 15 ---
+   355→   355→Finish (col AY) Coated, Chrome, Black Chrome, Coated (9), Black Chrome (2),
+   356→   356→Polished, Matte, Powder-coated Chrome (1)
+   357→   357→Additional Information (col AZ) with Lid, Glass Lid, with Wheels, 'with Lid' (50), 'Glass Lid' (29)
+   358→   358→Foldable, with Handle
+   359→   359→5.8 Validation Status & Confidence Score
+   360→   360→Field Valid Values Current Usage
+   361→   361→Validation Status (col AT) Validated, Pending Review, Validated (2,546 — all rows)
+   362→   362→Draft, Rejected
+   363→   363→Confidence Score (col AU) Integer 0–100 97 (1,337), 94 (978), 82 (117),
+   364→   364→79 (44), 92 (35), 100 (28), 89 (2),
+   365→   365→77 (2), 95 (2), 85 (1)
+   366→   366→Confidence score bands: 100 = perfect match; 97 = high-confidence lexicon match; 94 = standard lexicon match; 82–
+   367→   367→89 = inferred (needs review); 77–79 = low confidence.
+   368→   368→5.9 Country of Origin
+   369→   369→Currently only 'China' is in use (876 rows). The full ISO 3166 country list should be the lookup source for
+   370→   370→this dropdown. Future expected values: India, Turkey, UAE, Germany, Italy, Vietnam.
+   371→   371→--- Page 16 ---
+   372→   372→6. Column-by-Column Data Dictionary
+   373→   373→This section documents every column in the Master Catalog sheet. Columns are presented in their logical
+   374→   374→group order (not physical column order). Each column entry covers all 10 documentation attributes:
+   375→   375→purpose, data type, mandatory, validation, field kind, valid options, dependencies, defaults, duplicates,
+   376→   376→and business rules.
+   377→   377→6.1 Product Identity Group (Columns A–J)
+   378→   378→Source Row (Column A, #1)
+   379→   379→Distinct values: 2,546 | Non-null: 2,546 | Null: 0
+   380→   380→1. Purpose Internal row-number reference pointing back to the
+   381→   381→original source workbook from which this catalog was
+   382→   382→migrated. Used for traceability during audits and data
+   383→   383→reconciliation.
+   384→   384→2. Data Type Integer (positive)
+   385→   385→3. Mandatory Yes
+   386→   386→4. Validation Rules Must be a positive integer. Range: 1–2548. Must be
+   387→   387→unique across all rows.
+   388→   388→5. Field Kind Auto-generated integer
+   389→   389→6. Valid Options N/A — auto-generated
+   390→   390→7. Dependencies None
+   391→   391→8. Default Values Auto-assigned sequentially when a new row is created.
+   392→   392→9. Duplicates No — must be unique. Acts as the primary internal row
+   393→   393→key.
+   394→   394→10. Business Rules Never edited manually. Used by audit sheets
+   395→   395→(Translation Audit V3, V4, V5, V6, V7, V8) to reference
+   396→   396→back to the Master Catalog row. Sample values: 59, 66,
+   397→   397→73.
+   398→   398→Sample values: '59' | '66' | '295'
+   399→   399→Product ID (Column B, #2)
+   400→   400→Distinct values: 2,546 | Non-null: 2,546 | Null: 0
+   401→   401→1. Purpose The globally unique product identifier used by the
+   402→   402→ERP/PIM system. This is the canonical business key for
+   403→   403→--- Page 17 ---
+   404→   404→the product and never changes once assigned.
+   405→   405→2. Data Type String (numeric, typically 12 digits)
+   406→   406→3. Mandatory Yes
+   407→   407→4. Validation Rules Must be a non-empty string. In practice always
+   408→   408→numeric, 12 digits. Must be unique.
+   409→   409→5. Field Kind Free text (but should be numeric)
+   410→   410→6. Valid Options N/A — assigned by ERP
+   411→   411→7. Dependencies None
+   412→   412→8. Default Values Assigned by the ERP system at product creation time.
+   413→   413→9. Duplicates No — must be globally unique.
+   414→   414→10. Business Rules This is the primary key for integration with ERP, e-
+   415→   415→commerce, and warehouse systems. Never reused
+   416→   416→even after a product is retired. Sample values:
+   417→   417→102000000126, 102000000135.
+   418→   418→Sample values: '102000000126' | '102000000135' | '102000000433'
+   419→   419→SKU (Column C, #3)
+   420→   420→Distinct values: 2,546 | Non-null: 2,546 | Null: 0
+   421→   421→1. Purpose Stock Keeping Unit — the warehouse-facing identifier
+   422→   422→used for inventory management, picking, and stock
+   423→   423→movements. Often equals Product ID in this catalog
+   424→   424→but is conceptually distinct (a SKU can differ if the
+   425→   425→same product is stored in multiple warehouses).
+   426→   426→2. Data Type String (numeric, 12 digits)
+   427→   427→3. Mandatory Yes
+   428→   428→4. Validation Rules Must be non-empty. In this catalog it mirrors Product
+   429→   429→ID. Must be unique.
+   430→   430→5. Field Kind Free text
+   431→   431→6. Valid Options N/A
+   432→   432→7. Dependencies Usually equals Product ID
+   433→   433→8. Default Values Defaults to Product ID unless overridden for multi-
+   434→   434→warehouse scenarios.
+   435→   435→--- Page 18 ---
+   436→   436→9. Duplicates No — must be unique within a warehouse.
+   437→   437→10. Business Rules Used by WMS (Warehouse Management System) for
+   438→   438→bin/pick logic. Sample values: 102000000126,
+   439→   439→102000000135.
+   440→   440→Sample values: '102000000126' | '102000000135' | '102000000433'
+   441→   441→ND Number (Column D, #4)
+   442→   442→Distinct values: 2,344 | Non-null: 2,391 | Null: 155
+   443→   443→1. Purpose Al-Nassim's internal product number, used as the
+   444→   444→primary human-readable reference in retail catalogs,
+   445→   445→price lists, and the Arabic name string. This is the
+   446→   446→number customers see on invoices and shelf labels.
+   447→   447→2. Data Type String (alphanumeric, format: ND-XXXX or ND-XXXX-
+   448→   448→XXXX[-XXXX])
+   449→   449→3. Mandatory Optional (155 rows have null — typically for locally-
+   450→   450→sourced products without an ND code)
+   451→   451→4. Validation Rules Format: ND- followed by 4 digits, optionally followed
+   452→   452→by additional segments (model/variant codes). Regex:
+   453→   453→^ND-\d{4}(-[A-Z0-9-]+)?$
+   454→   454→5. Field Kind Free text with format constraint
+   455→   455→6. Valid Options N/A — assigned by Al-Nassim
+   456→   456→7. Dependencies None
+   457→   457→8. Default Values None — assigned at product onboarding.
+   458→   458→9. Duplicates Duplicates allowed in rare cases where the same ND
+   459→   459→number covers multiple color/size variants. 2,344
+   460→   460→distinct values across 2,546 rows.
+   461→   461→10. Business Rules Appears in the Name EN string (e.g., 'Al-Nassim
+   462→   462→ND-5921 Stainless Steel Cooking Pot'). Used for SEO
+   463→   463→and customer-facing lookups. Sample values: ND-5921,
+   464→   464→ND-5091, ND-36029-100.
+   465→   465→Sample values: 'ND-1220' | 'ND-1030-K812' | 'ND-1031-135E'
+   466→   466→--- Page 19 ---
+   467→   467→Barcode (Column E, #5)
+   468→   468→Distinct values: 2,546 | Non-null: 2,546 | Null: 0
+   469→   469→1. Purpose EAN-13 / UPC-A barcode printed on the product
+   470→   470→packaging. Used for POS scanning, inventory receipt,
+   471→   471→and e-commerce marketplace listings (Amazon, Noon,
+   472→   472→Carrefour).
+   473→   473→2. Data Type String (numeric, 13 digits for EAN-13)
+   474→   474→3. Mandatory Yes
+   475→   475→4. Validation Rules Must be 13 digits (EAN-13) or 12 digits (UPC-A). Must
+   476→   476→pass EAN/UPC checksum validation. Must be unique.
+   477→   477→5. Field Kind Free text (numeric only)
+   478→   478→6. Valid Options N/A — assigned by GS1
+   479→   479→7. Dependencies None
+   480→   480→8. Default Values None — obtained from GS1 prefix allocated to the
+   481→   481→brand.
+   482→   482→9. Duplicates No — must be globally unique (GS1 standard).
+   483→   483→10. Business Rules Required for listing on Amazon, Noon, Carrefour, Lulu.
+   484→   484→Cannot be changed once printed on packaging. Sample
+   485→   485→values: 4701512038142, 4701512038166.
+   486→   486→Sample values: '4701512038142' | '4701512038166' | '6921080164069'
+   487→   487→Legacy Code (Column F, #6)
+   488→   488→Distinct values: 411 | Non-null: 411 | Null: 2,135
+   489→   489→1. Purpose Product code from the previous/legacy ERP system,
+   490→   490→retained for historical lookup and reconciliation during
+   491→   491→migration. Will be deprecated once migration is
+   492→   492→complete.
+   493→   493→2. Data Type String (alphanumeric)
+   494→   494→3. Mandatory Optional (2,135 rows have null — these products have
+   495→   495→no legacy code)
+   496→   496→4. Validation Rules Free text. No format constraint.
+   497→   497→5. Field Kind Free text
+   498→   498→6. Valid Options N/A
+   499→   499→--- Page 20 ---
+   500→   500→7. Dependencies None
+   501→   501→8. Default Values None
+   502→   502→9. Duplicates Duplicates allowed (same legacy code can map to
+   503→   503→multiple new SKUs if the legacy system merged
+   504→   504→variants).
+   505→   505→10. Business Rules Read-only after migration. Used only for backward-
+   506→   506→compatibility lookups. Sample values: (various — 411
+   507→   507→distinct values).
+   508→   508→Sample values: '8851246900010' | '6924545212541' | '1020000011683'
+   509→   509→Brand (Column G, #7)
+   510→   510→Distinct values: 2 | Non-null: 2,541 | Null: 5
+   511→   511→1. Purpose The brand name in English, as displayed on the
+   512→   512→product packaging and e-commerce listings. Identifies
+   513→   513→the manufacturer or importer.
+   514→   514→2. Data Type String
+   515→   515→3. Mandatory Yes (5 rows have null — these should be populated)
+   516→   516→4. Validation Rules Must come from the controlled Brand list (currently 2
+   517→   517→values).
+   518→   518→5. Field Kind Controlled list (dropdown)
+   519→   519→6. Valid Options Al-Nassim China | Local Companies
+   520→   520→7. Dependencies Determines Brand AR and Brand Code (auto-filled
+   521→   521→when Brand is selected).
+   522→   522→8. Default Values Al-Nassim China (the default for 99.8% of products).
+   523→   523→9. Duplicates Duplicates expected — many products share the same
+   524→   524→brand.
+   525→   525→10. Business Rules When a new brand is onboarded, add it to the Brand
+   526→   526→lookup list first, then update Brand AR and Brand Code
+   527→   527→accordingly. Sample values: Al-Nassim China, Local
+   528→   528→Companies.
+   529→   529→Sample values: 'Al-Nassim China' | 'Al-Nassim China' | 'Al-Nassim China'
+   530→   530→--- Page 21 ---
+   531→   531→Brand AR (Column H, #8)
+   532→   532→Distinct values: 2 | Non-null: 2,541 | Null: 5
+   533→   533→1. Purpose The brand name in Arabic, for Arabic-language catalog
+   534→   534→pages, invoices, and shelf labels in Kuwait/GCC
+   535→   535→markets.
+   536→   536→2. Data Type String (Arabic)
+   537→   537→3. Mandatory Yes (same 5 null rows as Brand)
+   538→   538→4. Validation Rules Must correspond to the Brand selection (1:1 mapping).
+   539→   539→5. Field Kind Controlled list (auto-derived from Brand)
+   540→   540→6. Valid Options نيصلا ميسنلا (for Al-Nassim China) | ةيلحم تاكرش
+   541→   541→(for Local Companies)
+   542→   542→7. Dependencies Directly dependent on Brand — should auto-fill when
+   543→   543→Brand is selected.
+   544→   544→8. Default Values نيصلا ميسنلا
+   545→   545→9. Duplicates Duplicates expected.
+   546→   546→10. Business Rules Never edit manually — should be auto-populated via
+   547→   547→VLOOKUP from the Brand lookup table. Sample values:
+   548→   548→ةيلحم تاكرش ,نيصلا ميسنلا.
+   549→   549→Sample values: 'نيصلا ميسنلا' | 'نيصلا ميسنلا' | 'نيصلا ميسنلا'
+   550→   550→Brand Code (Column I, #9)
+   551→   551→Distinct values: 2 | Non-null: 2,541 | Null: 5
+   552→   552→1. Purpose Short numeric brand identifier used by the ERP for
+   553→   553→compact references (e.g., in barcode prefixes, invoice
+   554→   554→line items).
+   555→   555→2. Data Type String (3-digit numeric)
+   556→   556→3. Mandatory Yes (same 5 null rows)
+   557→   557→4. Validation Rules Must be a 3-digit string. Must correspond to the Brand
+   558→   558→selection.
+   559→   559→5. Field Kind Controlled list (auto-derived from Brand)
+   560→   560→6. Valid Options 017 (for Al-Nassim China) | 006 (for Local Companies)
+   561→   561→7. Dependencies Directly dependent on Brand — auto-fills when Brand
+   562→   562→--- Page 22 ---
+   563→   563→is selected.
+   564→   564→8. Default Values 017
+   565→   565→9. Duplicates Duplicates expected.
+   566→   566→10. Business Rules Never edit manually — auto-populated via VLOOKUP.
+   567→   567→Sample values: 017, 006.
+   568→   568→Sample values: '017' | '017' | '017'
+   569→   569→Model (Column J, #10)
+   570→   570→Distinct values: 2,443 | Non-null: 2,510 | Null: 36
+   571→   571→1. Purpose The manufacturer's model / variant code, as printed
+   572→   572→on the product or its packaging. Distinguishes variants
+   573→   573→within the same ND number (e.g., different colors,
+   574→   574→sizes).
+   575→   575→2. Data Type String (alphanumeric)
+   576→   576→3. Mandatory Optional (36 rows have null)
+   577→   577→4. Validation Rules Free text. Typically uppercase alphanumeric with
+   578→   578→hyphens (e.g., MJ-35, BC-06, HY-63-6).
+   579→   579→5. Field Kind Free text
+   580→   580→6. Valid Options N/A — assigned by manufacturer
+   581→   581→7. Dependencies Often appears in the Name EN string after the ND
+   582→   582→number.
+   583→   583→8. Default Values None
+   584→   584→9. Duplicates Duplicates allowed (same model can be used across
+   585→   585→ND numbers).
+   586→   586→10. Business Rules Used for variant matching when receiving goods.
+   587→   587→Should be preserved exactly as provided by the
+   588→   588→supplier. Sample values: MJ-35, BC-06, HY-63-6,
+   589→   589→FEM7525.
+   590→   590→Sample values: 'SH422' | 'SH453' | 'SH0462'
+   591→   591→--- Page 23 ---
+   592→   592→6.2 Classification Group (Columns K–P)
+   593→   593→Department (Column K, #11)
+   594→   594→Distinct values: 2 | Non-null: 2,546 | Null: 0
+   595→   595→1. Purpose Top level of the product taxonomy. Identifies the
+   596→   596→major business division the product belongs to.
+   597→   597→2. Data Type String
+   598→   598→3. Mandatory Yes
+   599→   599→4. Validation Rules Must come from the controlled Department list.
+   600→   600→Currently 2 values.
+   601→   601→5. Field Kind Controlled list (dropdown)
+   602→   602→6. Valid Options Houseware | Supermarket Equipment | Warehouse
+   603→   603→Equipment (defined in Taxonomy Reference sheet;
+   604→   604→only first two are currently in use)
+   605→   605→7. Dependencies Determines the available Categories (dependent
+   606→   606→dropdown).
+   607→   607→8. Default Values Houseware
+   608→   608→9. Duplicates Duplicates expected.
+   609→   609→10. Business Rules Never change a product's Department once set — it
+   610→   610→cascades to Category, Subcategory, and reporting.
+   611→   611→New departments require Taxonomy Reference sheet
+   612→   612→update first. Sample values: Houseware (2,543 rows),
+   613→   613→Supermarket Equipment (3 rows).
+   614→   614→Sample values: 'Houseware' | 'Houseware' | 'Houseware'
+   615→   615→Category (Column L, #12)
+   616→   616→Distinct values: 5 | Non-null: 2,546 | Null: 0
+   617→   617→1. Purpose Second level of the taxonomy. Groups related
+   618→   618→subcategories within a Department.
+   619→   619→2. Data Type String
+   620→   620→3. Mandatory Yes
+   621→   621→4. Validation Rules Must come from the controlled Category list AND must
+   622→   622→be valid under the selected Department (dependent
+   623→   623→--- Page 24 ---
+   624→   624→dropdown).
+   625→   625→5. Field Kind Controlled list (dependent dropdown — depends on
+   626→   626→Department)
+   627→   627→6. Valid Options Under Houseware: Kitchenware | Cleaning Tools |
+   628→   628→Home & Outdoor. Under Supermarket Equipment:
+   629→   629→Cooling Appliances | Trolleys & Baskets | Shelves &
+   630→   630→Stands | Checkout Solutions | Accessories. Under
+   631→   631→Warehouse Equipment: Trolleys & Baskets | Forklifts &
+   632→   632→Pallets | Heavy Duty Racking.
+   633→   633→7. Dependencies Depends on Department. The valid Category list
+   634→   634→changes based on Department selection.
+   635→   635→8. Default Values Kitchenware (most common)
+   636→   636→9. Duplicates Duplicates expected.
+   637→   637→10. Business Rules Changing Department without updating Category is
+   638→   638→forbidden. Sample values: Kitchenware (1,664),
+   639→   639→Cleaning Tools (499), Home & Outdoor (380).
+   640→   640→Sample values: 'Kitchenware' | 'Kitchenware' | 'Cleaning Tools'
+   641→   641→Subcategory (Column M, #13)
+   642→   642→Distinct values: 9 | Non-null: 2,544 | Null: 2
+   643→   643→1. Purpose Third level of the taxonomy. Provides granular
+   644→   644→classification for navigation, filtering, and reporting.
+   645→   645→2. Data Type String
+   646→   646→3. Mandatory Yes (2 rows have null — these are Checkout Solutions /
+   647→   647→Accessories which have no subcategory)
+   648→   648→4. Validation Rules Must come from the controlled Subcategory list AND
+   649→   649→must be valid under the selected Category (dependent
+   650→   650→dropdown).
+   651→   651→5. Field Kind Controlled list (dependent dropdown — depends on
+   652→   652→Category)
+   653→   653→6. Valid Options Under Houseware/Kitchenware: Cooking & Utensils |
+   654→   654→Cutlery & Cleaver | Drinkware. Under
+   655→   655→Houseware/Cleaning Tools: Surface Cleaning | Toilet &
+   656→   656→Drain. Under Houseware/Home & Outdoor: Laundry
+   657→   657→--- Page 25 ---
+   658→   658→Essentials | Picnic Collection | Storage & Packaging.
+   659→   659→Under Supermarket Equipment/Cooling Appliances:
+   660→   660→Coolers & Chillers | Freezers. Under Supermarket
+   661→   661→Equipment/Trolleys & Baskets: Baskets | Trolleys.
+   662→   662→Under Supermarket Equipment/Shelves & Stands:
+   663→   663→Shelves | Stands. Under Supermarket
+   664→   664→Equipment/Checkout Solutions: (none). Under
+   665→   665→Supermarket Equipment/Accessories: (none). Under
+   666→   666→Warehouse Equipment/Trolleys & Baskets: Baskets |
+   667→   667→Trolleys. Under Warehouse Equipment/Forklifts &
+   668→   668→Pallets: Forklifts | Pallets. Under Warehouse
+   669→   669→Equipment/Heavy Duty Racking: (none).
+   670→   670→7. Dependencies Depends on Category (which depends on Department).
+   671→   671→8. Default Values Cooking & Utensils
+   672→   672→9. Duplicates Duplicates expected.
+   673→   673→10. Business Rules Some categories (Checkout Solutions, Accessories,
+   674→   674→Heavy Duty Racking) have no subcategories —
+   675→   675→Subcategory should be null for these. Sample values:
+   676→   676→Cooking & Utensils (1,263), Surface Cleaning (478),
+   677→   677→Cutlery & Cleaver (366).
+   678→   678→Sample values: 'Cooking & Utensils' | 'Cooking & Utensils' | 'Surface Cleaning'
+   679→   679→Section Code (Column N, #14)
+   680→   680→Distinct values: 2 | Non-null: 2,546 | Null: 0
+   681→   681→1. Purpose Legacy numeric code (3-digit) identifying the retail
+   682→   682→section/aisle where the product is merchandised in
+   683→   683→physical stores.
+   684→   684→2. Data Type String (3-digit numeric)
+   685→   685→3. Mandatory Yes
+   686→   686→4. Validation Rules Must be a 3-digit string. Currently only 2 values in use.
+   687→   687→5. Field Kind Controlled list (dropdown)
+   688→   688→6. Valid Options 102 (Houseware section) | 103 (Supermarket
+   689→   689→Equipment section)
+   690→   690→7. Dependencies Should correspond to Department (102 = Houseware,
+   691→   691→--- Page 26 ---
+   692→   692→103 = Supermarket Equipment).
+   693→   693→8. Default Values 102
+   694→   694→9. Duplicates Duplicates expected.
+   695→   695→10. Business Rules Used by store-layout software and planogram tools.
+   696→   696→Sample values: 102 (2,537 rows), 103 (9 rows).
+   697→   697→Sample values: '102' | '102' | '102'
+   698→   698→Product Family (Column O, #15)
+   699→   699→Distinct values: 14 | Non-null: 2,546 | Null: 0
+   700→   700→1. Purpose Logical grouping of related Product Types. Used for
+   701→   701→reporting, catalog navigation, and cross-sell rules.
+   702→   702→More granular than Subcategory but broader than
+   703→   703→Product Type.
+   704→   704→2. Data Type String
+   705→   705→3. Mandatory Yes
+   706→   706→4. Validation Rules Should come from the controlled Product Family list
+   707→   707→(14 values currently in use).
+   708→   708→5. Field Kind Controlled list (dropdown) — currently free-text in
+   709→   709→practice
+   710→   710→6. Valid Options Kitchen Tools | Cookware | Cutlery | Cleaning | Food
+   711→   711→Storage | Storage | Tableware | Outdoor Cooking |
+   712→   712→Drinkware | Sets | Buckets | Linens | Paper Goods |
+   713→   713→Uncategorized
+   714→   714→7. Dependencies Loosely correlated with Subcategory but not strictly
+   715→   715→enforced (a Subcategory can contain multiple Product
+   716→   716→Families).
+   717→   717→8. Default Values None — must be selected.
+   718→   718→9. Duplicates Duplicates expected.
+   719→   719→10. Business Rules Recommendation: enforce as a dependent dropdown
+   720→   720→based on Subcategory. Currently 14 distinct values.
+   721→   721→Sample: Kitchen Tools (578), Buckets (415), Cookware
+   722→   722→(378).
+   723→   723→Sample values: 'Cookware' | 'Cookware' | 'Kitchen Tools'
+   724→   724→--- Page 27 ---
+   725→   725→Product Type (Column P, #16)
+   726→   726→Distinct values: 163 | Non-null: 2,546 | Null: 0
+   727→   727→1. Purpose The specific commercial product name — the most
+   728→   728→granular classification level. This is the noun that
+   729→   729→appears in the Name EN string (e.g., 'Cooking Pot',
+   730→   730→'Kitchen Knife', 'BBQ Skewer').
+   731→   731→2. Data Type String
+   732→   732→3. Mandatory Yes
+   733→   733→4. Validation Rules Should come from the controlled Product Type list.
+   734→   734→Currently 163 distinct values (high cardinality).
+   735→   735→5. Field Kind Controlled list (dropdown) — should be dependent on
+   736→   736→Product Family
+   737→   737→6. Valid Options 163 distinct values. Top 20 by frequency: Strainer
+   738→   738→(158), Container (134), Bucket (133), Wooden Tool
+   739→   739→(111), Knife (109), Cutter (107), Bag (107), Basket (98),
+   740→   740→Broom (90), Box (76), Pan (70), Tray (67), Chair (57),
+   741→   741→Set (56), Cooking Pot (53), Grill (51), Scale (47), Flask
+   742→   742→(45), Plate (36), Vegetable Slicer (35).
+   743→   743→7. Dependencies Should depend on Product Family (each Family has a
+   744→   744→set of valid Product Types). See Product Family →
+   745→   745→Product Types mapping in the appendix.
+   746→   746→8. Default Values None — must be selected.
+   747→   747→9. Duplicates Duplicates expected (many products share the same
+   748→   748→Product Type).
+   749→   749→10. Business Rules Critical for catalog search and filtering. Must follow the
+   750→   750→Al-Nassim Retail Lexicon (no generic terms like 'Other',
+   751→   751→'Machine', 'Tool'). Sample: 'Cooking Pot', 'Frying Pan',
+   752→   752→'Toilet Brush'.
+   753→   753→Sample values: 'Pan' | 'Pan' | 'Sprayer'
+   754→   754→--- Page 28 ---
+   755→   755→6.3 Product Information Group (Columns Q–V)
+   756→   756→Name AR (Column Q, #17)
+   757→   757→Distinct values: 2,535 | Non-null: 2,546 | Null: 0
+   758→   758→1. Purpose The full product name in Arabic, as provided by the
+   759→   759→supplier. This is the source-of-truth name from which
+   760→   760→Name EN is translated.
+   761→   761→2. Data Type String (Arabic)
+   762→   762→3. Mandatory Yes
+   763→   763→4. Validation Rules Must be non-empty Arabic text. Should contain the
+   764→   764→brand, model/ND number, attributes (material, size,
+   765→   765→color, quantity), and the product noun.
+   766→   766→5. Field Kind Free text (Arabic)
+   767→   767→6. Valid Options N/A
+   768→   768→7. Dependencies Source for Name EN translation.
+   769→   769→8. Default Values None
+   770→   770→9. Duplicates Duplicates rare (2,535 distinct values out of 2,546 rows
+   771→   771→— 11 duplicate names exist for variant products).
+   772→   772→10. Business Rules Never modified by the translation pipeline — it is the
+   773→   773→input. Sample: 'مس 14 بيلح ةلورسك Olina'.
+   774→   774→Sample values: 'مس 14 بيلح ةلورسك Olina' | 'مس 16 بيلح ةلورسك Olina' | 'لافطا ءام ةراطم Al-nassim
+   775→   775→SH422'
+   776→   776→Name EN (Column R, #18)
+   777→   777→Distinct values: 2,519 | Non-null: 2,546 | Null: 0
+   778→   778→1. Purpose The full product name in English, translated from
+   779→   779→Name AR using the Al-Nassim Retail Lexicon. This is the
+   780→   780→customer-facing title shown on e-commerce sites,
+   781→   781→invoices, and price lists.
+   782→   782→2. Data Type String (English)
+   783→   783→3. Mandatory Yes
+   784→   784→4. Validation Rules Must follow the commercial naming format: Brand →
+   785→   785→ND Number → Quantity → Material → Handle →
+   786→   786→Shape → Product → Accessory → Capacity →
+   787→   787→--- Page 29 ---
+   788→   788→Dimensions. Must use lexicon-approved terms (no
+   789→   789→'Bin', 'Casserole', 'Sheet', 'Flask' for ياش دارب, etc.).
+   790→   790→5. Field Kind Free text (English) — derived from Name AR via
+   791→   791→translation
+   792→   792→6. Valid Options N/A — but must comply with the Al-Nassim Retail
+   793→   793→Lexicon
+   794→   794→7. Dependencies Derived from Name AR. Must preserve all attributes
+   795→   795→(material, dimensions, capacity, quantity, color, ND
+   796→   796→number).
+   797→   797→8. Default Values None
+   798→   798→9. Duplicates Duplicates rare (2,519 distinct values).
+   799→   799→10. Business Rules Subject to V3–V8 translation audits. Must not contain
+   800→   800→forbidden phrases (Food Container, Sweeper, Shovel,
+   801→   801→etc.). Must preserve product identity (same physical
+   802→   802→product as Name AR). Sample: 'Al-Nassim ND-5921
+   803→   803→Stainless Steel Cooking Pot with Glass Lid, 26 cm'.
+   804→   804→Sample values: 'Al-Nassim 14 cm Milk Saucepan' | 'Al-Nassim 16 cm Milk Saucepan' | 'Al-Nassim SH422 Children's
+   805→   805→Water Bottle'
+   806→   806→Short Desc AR (Column S, #19)
+   807→   807→Distinct values: 2,535 | Non-null: 2,546 | Null: 0
+   808→   808→1. Purpose Short product description in Arabic (1–2 sentences).
+   809→   809→Used in product listing cards, search results, and
+   810→   810→mobile views where space is limited.
+   811→   811→2. Data Type String (Arabic)
+   812→   812→3. Mandatory Yes (defaults to Name AR if not explicitly written)
+   813→   813→4. Validation Rules Free text, max ~150 characters recommended.
+   814→   814→5. Field Kind Free text (Arabic)
+   815→   815→6. Valid Options N/A
+   816→   816→7. Dependencies Often mirrors Name AR.
+   817→   817→8. Default Values Defaults to Name AR value.
+   818→   818→9. Duplicates Duplicates common (2,535 distinct — mirrors Name
+   819→   819→--- Page 30 ---
+   820→   820→AR).
+   821→   821→10. Business Rules Displayed in product cards on Arabic storefronts.
+   822→   822→Sample: 'مس 14 بيلح ةلورسك Olina'.
+   823→   823→Sample values: 'مس 14 بيلح ةلورسك Olina' | 'مس 16 بيلح ةلورسك Olina' | 'لافطا ءام ةراطم Al-nassim
+   824→   824→SH422'
+   825→   825→Short Desc EN (Column T, #20)
+   826→   826→Distinct values: 2,519 | Non-null: 2,546 | Null: 0
+   827→   827→1. Purpose Short product description in English (1–2 sentences).
+   828→   828→Used in product listing cards, search results, and
+   829→   829→mobile views.
+   830→   830→2. Data Type String (English)
+   831→   831→3. Mandatory Yes (defaults to Name EN)
+   832→   832→4. Validation Rules Free text, max ~150 characters recommended.
+   833→   833→5. Field Kind Free text (English)
+   834→   834→6. Valid Options N/A
+   835→   835→7. Dependencies Often mirrors Name EN.
+   836→   836→8. Default Values Defaults to Name EN value.
+   837→   837→9. Duplicates Duplicates common (2,519 distinct).
+   838→   838→10. Business Rules Displayed in product cards on English storefronts.
+   839→   839→Sample: 'Al-Nassim 14 cm Milk Saucepan'.
+   840→   840→Sample values: 'Al-Nassim 14 cm Milk Saucepan' | 'Al-Nassim 16 cm Milk Saucepan' | 'Al-Nassim SH422 Children's
+   841→   841→Water Bottle'
+   842→   842→Long Desc AR (Column U, #21)
+   843→   843→Distinct values: 12 | Non-null: 673 | Null: 1,873
+   844→   844→1. Purpose Long-form product description in Arabic for the
+   845→   845→product detail page. Used for SEO and customer
+   846→   846→education.
+   847→   847→2. Data Type String (Arabic)
+   848→   848→3. Mandatory Optional (1,873 rows have null — long descriptions are
+   849→   849→--- Page 31 ---
+   850→   850→only written for premium/featured products)
+   851→   851→4. Validation Rules Free text, max ~500 characters recommended.
+   852→   852→5. Field Kind Free text (Arabic)
+   853→   853→6. Valid Options N/A
+   854→   854→7. Dependencies None
+   855→   855→8. Default Values None
+   856→   856→9. Duplicates Duplicates common (only 12 distinct values — mostly
+   857→   857→boilerplate 'نيصلا ميسنلا، Other').
+   858→   858→10. Business Rules Only populated for featured products. Sample:
+   859→   859→'نيصلا ميسنلا، Other'.
+   860→   860→Sample values: 'ينورتكلا نازيم
+   861→   861→ةكرام : CONSTANT
+   862→   862→444 : ليدومF-ND-1035
+   863→   863→نيصلا : ةعانص
+   864→   864→مس 120 : عافترلإا
+   865→   865→نزولا : MAX 30KG' | 'ربيافوركيم فشانم -: عونلا
+   866→   866→Type: Microfiber towels
+   867→   867→ةعطق 25 -:ددعلا
+   868→   868→Quantity:- 25 pieces
+   869→   869→30 -: ساقملاx30 مس
+   870→   870→Size:- 30x30 cm
+   871→   871→فنصلا مقر :- Al-nassim ND-5001
+   872→   872→Item number: Al-nassim ND-5001
+   873→   873→تيكاب 32 -: نوتركلا دش
+   874→   874→Carton packing: 32 packets' | 'ربيافوركيم فشانم -: عونلا
+   875→   875→Type: Microfiber towels
+   876→   876→ةعطق 50 -:ددعلا
+   877→   877→Quantity:- 50 pieces
+   878→   878→30 -: ساقملاx30 مس
+   879→   879→Size:- 30x30 cm
+   880→   880→فنصلا مقر :- Al-nassim ND-5002
+   881→   881→Item number: Al-nassim ND-5002
+   882→   882→تيكاب 18 -: نوتركلا دش
+   883→   883→Carton packing: 18 packets'
+   884→   884→--- Page 32 ---
+   885→   885→Long Desc EN (Column V, #22)
+   886→   886→Distinct values: 2,259 | Non-null: 2,546 | Null: 0
+   887→   887→1. Purpose Long-form product description in English for the
+   888→   888→product detail page. Used for SEO and customer
+   889→   889→education.
+   890→   890→2. Data Type String (English)
+   891→   891→3. Mandatory Yes (no nulls — defaults to a generated sentence
+   892→   892→based on Brand + Name EN)
+   893→   893→4. Validation Rules Free text.
+   894→   894→5. Field Kind Free text (English)
+   895→   895→6. Valid Options N/A
+   896→   896→7. Dependencies Auto-generated from Brand + Name EN if not explicitly
+   897→   897→written.
+   898→   898→8. Default Values Defaults to '{Brand}. {Name EN}.' format.
+   899→   899→9. Duplicates Duplicates common (2,259 distinct values).
+   900→   900→10. Business Rules Should be expanded for SEO on key products. Sample:
+   901→   901→'Al-Nassim China. Al-Nassim 14 cm Milk Saucepan.'
+   902→   902→Sample values: 'Al-Nassim China. Al-Nassim 14 cm Milk Saucepan.' | 'Al-Nassim China. Al-Nassim 16 cm Milk
+   903→   903→Saucepan.' | 'Al-Nassim China. Al-Nassim SH422 Children's Water Bottle Product Family: Garden Tools.'
+   904→   904→6.4 Attributes Group (Columns W–AI)
+   905→   905→Color (Column W, #23)
+   906→   906→Distinct values: 15 | Non-null: 206 | Null: 2,340
+   907→   907→1. Purpose The product's color in English, for filtering and variant
+   908→   908→selection on e-commerce sites.
+   909→   909→2. Data Type String
+   910→   910→3. Mandatory Optional (2,340 rows have null — color only specified
+   911→   911→when the product comes in distinct colors)
+   912→   912→4. Validation Rules Should come from the controlled Color list (15 values).
+   913→   913→5. Field Kind Controlled list (dropdown)
+   914→   914→6. Valid Options Black | White | Clear | Silver | Gold | Red | Yellow |
+   915→   915→Green | Blue | Gray | Orange | Brown | Beige | Purple
+   916→   916→--- Page 33 ---
+   917→   917→| Pink
+   918→   918→7. Dependencies Must correspond to Color AR (1:1 mapping).
+   919→   919→8. Default Values None
+   920→   920→9. Duplicates Duplicates expected.
+   921→   921→10. Business Rules Use 'Clear' for transparent products (not
+   922→   922→'Transparent'). Use 'Gray' (American spelling). Sample:
+   923→   923→Black (44), White (33), Clear (29).
+   924→   924→Sample values: 'Red' | 'Red' | 'Red'
+   925→   925→Color AR (Column X, #24)
+   926→   926→Distinct values: 15 | Non-null: 206 | Null: 2,340
+   927→   927→1. Purpose The product's color in Arabic, for Arabic-language
+   928→   928→storefronts.
+   929→   929→2. Data Type String (Arabic)
+   930→   930→3. Mandatory Optional (same 2,340 nulls as Color)
+   931→   931→4. Validation Rules Must correspond to Color selection (1:1 mapping).
+   932→   932→5. Field Kind Controlled list (auto-derived from Color)
+   933→   933→6. Valid Options دوسأ (Black) | ضيبأ (White) | فافش (Clear) | يضف
+   934→   934→(Silver) | يبهذ (Gold) | رمحأ (Red) | رفصأ (Yellow) |
+   935→   935→رضخأ (Green) | قرزأ (Blue) | يدامر (Gray) |
+   936→   936→يلاقترب (Orange) | ينب (Brown) | جيب (Beige) |
+   937→   937→يجسفنب (Purple) | يدرو (Pink)
+   938→   938→7. Dependencies Directly dependent on Color — should auto-fill via
+   939→   939→VLOOKUP.
+   940→   940→8. Default Values None
+   941→   941→9. Duplicates Duplicates expected.
+   942→   942→10. Business Rules Never edit manually — auto-populated from Color
+   943→   943→lookup. Sample: فافش ,ضيبأ ,دوسأ.
+   944→   944→Sample values: 'رمحأ' | 'رمحأ' | 'رمحأ'
+   945→   945→Material (Column Y, #25)
+   946→   946→Distinct values: 19 | Non-null: 1,716 | Null: 830
+   947→   947→--- Page 34 ---
+   948→   948→1. Purpose The primary material of the product in English, for
+   949→   949→filtering, care instructions, and SEO.
+   950→   950→2. Data Type String
+   951→   951→3. Mandatory Optional (830 rows have null — material only specified
+   952→   952→when material is a key buying factor)
+   953→   953→4. Validation Rules Should come from the controlled Material list (19
+   954→   954→values currently in use, but should be normalized to
+   955→   955→~15).
+   956→   956→5. Field Kind Controlled list (dropdown)
+   957→   957→6. Valid Options Plastic | Stainless Steel | Wood | Granite | Glass |
+   958→   958→Metal | Aluminum | Paper | Iron | Cotton | Silicone |
+   959→   959→Steel | Wooden | Microfiber | Sheet Steel | Melamine
+   960→   960→| Chrome | Porcelain | Ceramic. NOTE: 'Wood' and
+   961→   961→'Wooden' should be normalized to 'Wooden' (adjective
+   962→   962→form per lexicon). 'Steel' and 'Sheet Steel' should be
+   963→   963→normalized to 'Stainless Steel' or 'Steel' respectively.
+   964→   964→7. Dependencies Must correspond to Material AR.
+   965→   965→8. Default Values None
+   966→   966→9. Duplicates Duplicates expected.
+   967→   967→10. Business Rules Per the Al-Nassim Retail Lexicon: ليتسا → 'Stainless
+   968→   968→Steel' (never 'Steel'), بشخ → 'Wooden' (never
+   969→   969→'Wood' as noun), ديدح → 'Steel' (never 'Iron'), ذلاوف
+   970→   970→→ 'Steel'. Sample: Plastic (880), Stainless Steel (409),
+   971→   971→Wood (182).
+   972→   972→Sample values: 'Plastic' | 'Plastic' | 'Plastic'
+   973→   973→Material AR (Column Z, #26)
+   974→   974→Distinct values: 10 | Non-null: 1,637 | Null: 909
+   975→   975→1. Purpose The product's material in Arabic, for Arabic-language
+   976→   976→storefronts.
+   977→   977→2. Data Type String (Arabic)
+   978→   978→3. Mandatory Optional (909 nulls)
+   979→   979→4. Validation Rules Must correspond to Material selection.
+   980→   980→--- Page 35 ---
+   981→   981→5. Field Kind Controlled list (auto-derived from Material)
+   982→   982→6. Valid Options كيتسلاب (Plastic) | ليتس سلناتس (Stainless Steel) |
+   983→   983→بشخ (Wood/Wooden) | جاجز (Glass) | ديدح
+   984→   984→(Iron/Steel) | موينملأ (Aluminum) | قرو (Paper) |
+   985→   985→مورك (Chrome) | كيماريس (Ceramic) | نوكيليس
+   986→   986→(Silicone)
+   987→   987→7. Dependencies Directly dependent on Material — auto-fill via
+   988→   988→VLOOKUP.
+   989→   989→8. Default Values None
+   990→   990→9. Duplicates Duplicates expected.
+   991→   991→10. Business Rules Never edit manually. Sample: سلناتس ,كيتسلاب
+   992→   992→بشخ ,ليتس.
+   993→   993→Sample values: 'كيتسلاب' | 'كيتسلاب' | 'كيتسلاب'
+   994→   994→Capacity (Column AA, #27)
+   995→   995→Distinct values: 144 | Non-null: 447 | Null: 2,099
+   996→   996→1. Purpose The numeric capacity/volume/weight of the product
+   997→   997→(e.g., 1.5 liters, 500 ml, 5 kg). Used for filtering and
+   998→   998→SEO.
+   999→   999→2. Data Type Number (decimal)
+  1000→  1000→3. Mandatory Optional (2,099 rows have null — capacity only
+
+[showing lines 1-1000 of 2002; use offset=1001 with limit to continue reading]

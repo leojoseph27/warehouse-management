@@ -1,0 +1,19 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/auth/check/route": "/api/auth/check",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/images/[id]/route": "/api/images/[id]",
+  "/api/images/upload/route": "/api/images/upload",
+  "/api/products/[id]/route": "/api/products/[id]",
+  "/api/products/check-duplicate/route": "/api/products/check-duplicate",
+  "/api/products/cleanup/route": "/api/products/cleanup",
+  "/api/products/export/route": "/api/products/export",
+  "/api/products/import/route": "/api/products/import",
+  "/api/products/route": "/api/products",
+  "/api/products/stats/route": "/api/products/stats",
+  "/api/route": "/api",
+  "/api/seed/route": "/api/seed",
+  "/api/setup/route": "/api/setup",
+  "/page": "/"
+}

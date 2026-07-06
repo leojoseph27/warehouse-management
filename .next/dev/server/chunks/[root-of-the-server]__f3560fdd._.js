@@ -114,12 +114,33 @@ async function GET() {
             }
         });
         const productsMissingDimensions = totalProducts - productsWithAllDims;
+        // Missing Classification (department is null)
+        const productsMissingClassification = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+            where: {
+                department: null
+            }
+        });
+        // Missing Name EN
+        const productsMissingNameEn = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+            where: {
+                nameEn: null
+            }
+        });
+        // Missing Price (defaultPrice is null)
+        const productsMissingPrice = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+            where: {
+                defaultPrice: null
+            }
+        });
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             totalProducts,
             productsAddedToday,
             productsMissingImages,
             productsMissingBarcode,
-            productsMissingDimensions
+            productsMissingDimensions,
+            productsMissingClassification,
+            productsMissingNameEn,
+            productsMissingPrice
         });
     } catch (error) {
         console.error('Error fetching stats:', error);

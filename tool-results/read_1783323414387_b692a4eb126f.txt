@@ -1,0 +1,698 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+     4→     4→import { Button } from '@/components/ui/button';
+     5→     5→import { Input } from '@/components/ui/input';
+     6→     6→import { Label } from '@/components/ui/label';
+     7→     7→import { Textarea } from '@/components/ui/textarea';
+     8→     8→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     9→     9→import { Alert, AlertDescription } from '@/components/ui/alert';
+    10→    10→import { MultiValueInput, MultiValueInputHandle } from './multi-value-input';
+    11→    11→import { SearchableMultiSelect } from './searchable-multi-select';
+    12→    12→import { SearchableSingleSelect } from './searchable-single-select';
+    13→    13→import { ImageGallery } from './image-gallery';
+    14→    14→import { BarcodeScanner } from './barcode-scanner';
+    15→    15→import { useInventoryStore, Product, DuplicateCheck } from '@/store/inventory-store';
+    16→    16→import { ArrowLeft, Save, AlertTriangle, Loader2 } from 'lucide-react';
+    17→    17→import { toast } from 'sonner';
+    18→    18→
+    19→    19→interface ProductFormProps {
+    20→    20→  mode: 'add' | 'edit';
+    21→    21→}
+    22→    22→
+    23→    23→export function ProductForm({ mode }: ProductFormProps) {
+    24→    24→  const {
+    25→    25→    currentProduct,
+    26→    26→    setView,
+    27→    27→    goBack,
+    28→    28→    isSaving,
+    29→    29→    setSaving,
+    30→    30→    duplicates,
+    31→    31→    setDuplicates,
+    32→    32→    setCurrentProduct,
+    33→    33→  } = useInventoryStore();
+    34→    34→
+    35→    35→  const [formData, setFormData] = useState({
+    36→    36→    sr: '',
+    37→    37→    englishDescription: '',
+    38→    38→    arabicDescription: '',
+    39→    39→    ndNumber: '',
+    40→    40→    barcode: '',
+    41→    41→    colours: [] as string[],
+    42→    42→    length: '',
+    43→    43→    width: '',
+    44→    44→    height: '',
+    45→    45→    made: '',
+    46→    46→    materials: [] as string[],
+    47→    47→    additionalInfo: [] as string[],
+    48→    48→    price: '',
+    49→    49→    pcs: '',
+    50→    50→  });
+    51→    51→
+    52→    52→  // ── Dinar / Fils split for Price (KD) ────────────────────────────────
+    53→    53→  const [priceDinar, setPriceDinar] = useState('');
+    54→    54→  const [priceFils, setPriceFils] = useState('');
+    55→    55→
+    56→    56→  // ── Duplicate check ──────
+    57→    57→  const checkDuplicates = useCallback(async (ndNumber: string, barcode: string) => {
+    58→    58→    if (!ndNumber && !barcode) {
+    59→    59→      setDuplicates(null);
+    60→    60→      return;
+    61→    61→    }
+    62→    62→    try {
+    63→    63→      const params = new URLSearchParams();
+    64→    64→      if (ndNumber) params.set('ndNumber', ndNumber);
+    65→    65→      if (barcode) params.set('barcode', barcode);
+    66→    66→      if (mode === 'edit' && currentProduct) params.set('excludeId', currentProduct.id);
+    67→    67→
+    68→    68→      const res = await fetch(`/api/products/check-duplicate?${params}`);
+    69→    69→      if (res.ok) {
+    70→    70→        const data = await res.json();
+    71→    71→        setDuplicates(data.duplicates);
+    72→    72→      }
+    73→    73→    } catch (error) {
+    74→    74→      console.error('Error checking duplicates:', error);
+    75→    75→    }
+    76→    76→  }, [mode, currentProduct, setDuplicates]);
+    77→    77→
+    78→    78→  // ── Generic field change handler ──
+    79→    79→  const handleFieldChange = useCallback((field: string, value: any) => {
+    80→    80→    setFormData(prev => ({ ...prev, [field]: value }));
+    81→    81→
+    82→    82→    if (field === 'ndNumber' || field === 'barcode') {
+    83→    83→      checkDuplicates(
+    84→    84→        field === 'ndNumber' ? value : formData.ndNumber,
+    85→    85→        field === 'barcode' ? value : formData.barcode
+    86→    86→      );
+    87→    87→    }
+    88→    88→  }, [checkDuplicates, formData.ndNumber, formData.barcode]);
+    89→    89→
+    90→    90→  // Helper: parse a numeric price string into Dinar + Fils components
+    91→    91→  const parsePriceToDinarFils = (priceStr: string): { dinar: string; fils: string } => {
+    92→    92→    if (!priceStr) return { dinar: '', fils: '' };
+    93→    93→    const num = parseFloat(priceStr);
+    94→    94→    if (isNaN(num)) return { dinar: '', fils: '' };
+    95→    95→    const dinar = Math.floor(num);
+    96→    96→    const fils = Math.round((num - dinar) * 1000);
+    97→    97→    return { dinar: String(dinar), fils: String(fils).padStart(3, '0') };
+    98→    98→  };
+    99→    99→
+   100→   100→  // Compute the combined price string from Dinar + Fils
+   101→   101→  const combinedPrice = useMemo(() => {
+   102→   102→    const dinar = priceDinar.trim() || '0';
+   103→   103→    const filsRaw = priceFils.trim();
+   104→   104→    const fils = filsRaw ? filsRaw.padStart(3, '0') : '000';
+   105→   105→    const dinarNum = parseInt(dinar) || 0;
+   106→   106→    const filsNum = parseInt(fils) || 0;
+   107→   107→    if (dinarNum === 0 && filsNum === 0) return '';
+   108→   108→    return `${dinarNum}.${fils}`;
+   109→   109→  }, [priceDinar, priceFils]);
+   110→   110→
+   111→   111→  const handlePriceDinarChange = useCallback((value: string) => {
+   112→   112→    const clean = value.replace(/[^0-9]/g, '');
+   113→   113→    setPriceDinar(clean);
+   114→   114→    const dinar = clean || '0';
+   115→   115→    const filsRaw = priceFils.trim();
+   116→   116→    const fils = filsRaw ? filsRaw.padStart(3, '0') : '000';
+   117→   117→    const dinarNum = parseInt(dinar) || 0;
+   118→   118→    const filsNum = parseInt(fils) || 0;
+   119→   119→    if (dinarNum === 0 && filsNum === 0) {
+   120→   120→      handleFieldChange('price', '');
+   121→   121→    } else {
+   122→   122→      handleFieldChange('price', `${dinarNum}.${fils}`);
+   123→   123→    }
+   124→   124→  }, [priceFils, handleFieldChange]);
+   125→   125→
+   126→   126→  const handlePriceFilsChange = useCallback((value: string) => {
+   127→   127→    let clean = value.replace(/[^0-9]/g, '');
+   128→   128→    if (clean.length > 3) clean = clean.slice(0, 3);
+   129→   129→    if (clean && parseInt(clean) > 999) clean = '999';
+   130→   130→    setPriceFils(clean);
+   131→   131→    const dinar = priceDinar.trim() || '0';
+   132→   132→    const fils = clean ? clean.padStart(3, '0') : '000';
+   133→   133→    const dinarNum = parseInt(dinar) || 0;
+   134→   134→    const filsNum = parseInt(fils) || 0;
+   135→   135→    if (dinarNum === 0 && filsNum === 0) {
+   136→   136→      handleFieldChange('price', '');
+   137→   137→    } else {
+   138→   138→      handleFieldChange('price', `${dinarNum}.${fils}`);
+   139→   139→    }
+   140→   140→  }, [priceDinar, handleFieldChange]);
+   141→   141→
+   142→   142→  const [colourSuggestions, setColourSuggestions] = useState<string[]>([]);
+   143→   143→  const [materialSuggestions, setMaterialSuggestions] = useState<string[]>([]);
+   144→   144→  const [madeSuggestions, setMadeSuggestions] = useState<string[]>([]);
+   145→   145→  const [customColours, setCustomColours] = useState<string[]>([]);
+   146→   146→  const [customMaterials, setCustomMaterials] = useState<string[]>([]);
+   147→   147→  const [customCountries, setCustomCountries] = useState<string[]>([]);
+   148→   148→
+   149→   149→  const DEFAULT_COLOURS = [
+   150→   150→    'Beige', 'Black', 'Blue', 'Brown', 'Gold', 'Green', 'Grey',
+   151→   151→    'Multicolor', 'Orange', 'Pink', 'Purple', 'Red', 'Silver',
+   152→   152→    'Transparent', 'White', 'Yellow',
+   153→   153→  ];
+   154→   154→
+   155→   155→  const DEFAULT_MATERIALS = [
+   156→   156→    'Aluminium', 'Bamboo', 'Ceramic', 'Copper', 'Cotton', 'Glass',
+   157→   157→    'Granite', 'Iron', 'Marble', 'Melamine', 'Nylon', 'Paper',
+   158→   158→    'Plastic', 'Porcelain', 'Rubber', 'Silicone', 'Stainless Steel',
+   159→   159→    'Steel', 'Stone', 'Wood',
+   160→   160→  ];
+   161→   161→
+   162→   162→  const DEFAULT_COUNTRIES = [
+   163→   163→    'Turkey', 'Germany', 'China', 'Italy', 'Poland', 'Hungary',
+   164→   164→    'Netherlands', 'India', 'Ukraine', 'Slovakia', 'Spain',
+   165→   165→    'Kuwait', 'UAE', 'Saudi Arabia',
+   166→   166→  ];
+   167→   167→
+   168→   168→  const mergedColourSuggestions = useMemo(() => {
+   169→   169→    const set = new Set([...DEFAULT_COLOURS, ...colourSuggestions, ...customColours, ...formData.colours]);
+   170→   170→    return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+   171→   171→  }, [colourSuggestions, customColours, formData.colours]);
+   172→   172→
+   173→   173→  const mergedMaterialSuggestions = useMemo(() => {
+   174→   174→    const set = new Set([...DEFAULT_MATERIALS, ...materialSuggestions, ...customMaterials, ...formData.materials]);
+   175→   175→    return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+   176→   176→  }, [materialSuggestions, customMaterials, formData.materials]);
+   177→   177→
+   178→   178→  const mergedCountrySuggestions = useMemo(() => {
+   179→   179→    const set = new Set([...DEFAULT_COUNTRIES, ...customCountries, ...madeSuggestions, formData.made].filter(Boolean));
+   180→   180→    return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+   181→   181→  }, [customCountries, madeSuggestions, formData.made]);
+   182→   182→
+   183→   183→  // ── Ref for MultiValueInput to flush pending values before save ──
+   184→   184→  const additionalInfoInputRef = useRef<MultiValueInputHandle>(null);
+   185→   185→
+   186→   186→  // Helper: safely parse a value that might be a JSON string, an array, or null
+   187→   187→  const safeParseArray = (value: string | null | any[]): string[] => {
+   188→   188→    if (!value) return [];
+   189→   189→    if (Array.isArray(value)) return value;
+   190→   190→    try {
+   191→   191→      const arr = JSON.parse(value);
+   192→   192→      return Array.isArray(arr) ? arr : [];
+   193→   193→    } catch {
+   194→   194→      return [];
+   195→   195→    }
+   196→   196→  };
+   197→   197→
+   198→   198→  // Load custom colours/materials/countries from localStorage on mount
+   199→   199→  useEffect(() => {
+   200→   200→    try {
+   201→   201→      const storedColours = localStorage.getItem('customColours');
+   202→   202→      if (storedColours) {
+   203→   203→        try { setCustomColours(JSON.parse(storedColours)); } catch { /* ignore bad data */ }
+   204→   204→      }
+   205→   205→      const storedMaterials = localStorage.getItem('customMaterials');
+   206→   206→      if (storedMaterials) {
+   207→   207→        try { setCustomMaterials(JSON.parse(storedMaterials)); } catch { /* ignore bad data */ }
+   208→   208→      }
+   209→   209→      const storedCountries = localStorage.getItem('customCountries');
+   210→   210→      if (storedCountries) {
+   211→   211→        try { setCustomCountries(JSON.parse(storedCountries)); } catch { /* ignore bad data */ }
+   212→   212→      }
+   213→   213→    } catch { /* localStorage may not be available */ }
+   214→   214→  }, []);
+   215→   215→
+   216→   216→  // Fetch colour and material suggestions from the database
+   217→   217→  useEffect(() => {
+   218→   218→    const fetchSuggestions = async () => {
+   219→   219→      try {
+   220→   220→        const res = await fetch('/api/products?mode=suggestions');
+   221→   221→        if (res.ok) {
+   222→   222→          const data = await res.json();
+   223→   223→          setColourSuggestions(data.colours || []);
+   224→   224→          setMaterialSuggestions(data.materials || []);
+   225→   225→          setMadeSuggestions(data.made || []);
+   226→   226→        }
+   227→   227→      } catch (error) {
+   228→   228→        console.error('Error fetching suggestions:', error);
+   229→   229→      }
+   230→   230→    };
+   231→   231→    fetchSuggestions();
+   232→   232→  }, []);
+   233→   233→
+   234→   234→  // ── Persist new custom colour to localStorage ──
+   235→   235→  const handleNewColourPersist = useCallback((value: string) => {
+   236→   236→    setCustomColours(prev => {
+   237→   237→      if (prev.some(v => v.toLowerCase() === value.toLowerCase())) return prev;
+   238→   238→      const updated = [...prev, value];
+   239→   239→      try { localStorage.setItem('customColours', JSON.stringify(updated)); } catch { /* */ }
+   240→   240→      return updated;
+   241→   241→    });
+   242→   242→  }, []);
+   243→   243→
+   244→   244→  // ── Persist new custom material to localStorage ──
+   245→   245→  const handleNewMaterialPersist = useCallback((value: string) => {
+   246→   246→    setCustomMaterials(prev => {
+   247→   247→      if (prev.some(v => v.toLowerCase() === value.toLowerCase())) return prev;
+   248→   248→      const updated = [...prev, value];
+   249→   249→      try { localStorage.setItem('customMaterials', JSON.stringify(updated)); } catch { /* */ }
+   250→   250→      return updated;
+   251→   251→    });
+   252→   252→  }, []);
+   253→   253→
+   254→   254→  // ── Persist new custom country to localStorage ──
+   255→   255→  const handleNewCountryPersist = useCallback((value: string) => {
+   256→   256→    setCustomCountries(prev => {
+   257→   257→      if (prev.some(v => v.toLowerCase() === value.toLowerCase())) return prev;
+   258→   258→      const updated = [...prev, value];
+   259→   259→      try { localStorage.setItem('customCountries', JSON.stringify(updated)); } catch { /* */ }
+   260→   260→      return updated;
+   261→   261→    });
+   262→   262→  }, []);
+   263→   263→
+   264→   264→  // ── Load form data from currentProduct when entering edit mode ──
+   265→   265→  // This runs ONCE when the component mounts or when the product changes.
+   266→   266→  // No auto-save, no auto-refresh — form state is stable while editing.
+   267→   267→  useEffect(() => {
+   268→   268→    if (mode === 'edit' && currentProduct) {
+   269→   269→      const colours = safeParseArray(currentProduct.colours);
+   270→   270→      const materials = safeParseArray(currentProduct.materials);
+   271→   271→      const additionalInfo = safeParseArray(currentProduct.additionalInfo);
+   272→   272→      const priceStr = currentProduct.price?.toString() || '';
+   273→   273→
+   274→   274→      setFormData({
+   275→   275→        sr: currentProduct.sr?.toString() || '',
+   276→   276→        englishDescription: currentProduct.englishDescription || '',
+   277→   277→        arabicDescription: currentProduct.arabicDescription || '',
+   278→   278→        ndNumber: currentProduct.ndNumber || '',
+   279→   279→        barcode: currentProduct.barcode || '',
+   280→   280→        colours,
+   281→   281→        length: currentProduct.length?.toString() || '',
+   282→   282→        width: currentProduct.width?.toString() || '',
+   283→   283→        height: currentProduct.height?.toString() || '',
+   284→   284→        made: currentProduct.made || '',
+   285→   285→        materials,
+   286→   286→        additionalInfo,
+   287→   287→        price: priceStr,
+   288→   288→        pcs: currentProduct.pcs?.toString() || '',
+   289→   289→      });
+   290→   290→
+   291→   291→      // Parse price into Dinar + Fils directly here (not in a separate effect)
+   292→   292→      // to avoid the race condition where the separate effect reads stale formData.price.
+   293→   293→      const { dinar, fils } = parsePriceToDinarFils(priceStr);
+   294→   294→      setPriceDinar(dinar);
+   295→   295→      setPriceFils(fils);
+   296→   296→    }
+   297→   297→  }, [mode, currentProduct]);
+   298→   298→
+   299→   299→  // ── Manual save only — NO auto-save ──
+   300→   300→  const handleSave = async () => {
+   301→   301→    setSaving(true);
+   302→   302→
+   303→   303→    // Flush any pending MultiValueInput values before building payload
+   304→   304→    additionalInfoInputRef.current?.flush();
+   305→   305→
+   306→   306→    try {
+   307→   307→      const payload = {
+   308→   308→        sr: formData.sr ? parseFloat(formData.sr) : null,
+   309→   309→        englishDescription: formData.englishDescription || null,
+   310→   310→        arabicDescription: formData.arabicDescription || null,
+   311→   311→        ndNumber: formData.ndNumber || null,
+   312→   312→        barcode: formData.barcode || null,
+   313→   313→        colours: formData.colours,
+   314→   314→        length: formData.length ? parseFloat(formData.length) : null,
+   315→   315→        width: formData.width ? parseFloat(formData.width) : null,
+   316→   316→        height: formData.height ? parseFloat(formData.height) : null,
+   317→   317→        made: formData.made || null,
+   318→   318→        materials: formData.materials,
+   319→   319→        additionalInfo: formData.additionalInfo,
+   320→   320→        price: formData.price ? parseFloat(formData.price) : null,
+   321→   321→        pcs: formData.pcs ? parseInt(formData.pcs) : null,
+   322→   322→      };
+   323→   323→
+   324→   324→      let res;
+   325→   325→      if (mode === 'add') {
+   326→   326→        res = await fetch('/api/products', {
+   327→   327→          method: 'POST',
+   328→   328→          headers: { 'Content-Type': 'application/json' },
+   329→   329→          body: JSON.stringify(payload),
+   330→   330→        });
+   331→   331→      } else if (currentProduct) {
+   332→   332→        res = await fetch(`/api/products/${currentProduct.id}`, {
+   333→   333→          method: 'PUT',
+   334→   334→          headers: { 'Content-Type': 'application/json' },
+   335→   335→          body: JSON.stringify(payload),
+   336→   336→        });
+   337→   337→      }
+   338→   338→
+   339→   339→      if (res?.ok) {
+   340→   340→        toast.success(mode === 'add' ? 'Product created successfully!' : 'Product updated successfully!');
+   341→   341→        setView('products');
+   342→   342→      } else {
+   343→   343→        toast.error('Failed to save product');
+   344→   344→      }
+   345→   345→    } catch (error) {
+   346→   346→      console.error('Error saving product:', error);
+   347→   347→      toast.error('Failed to save product');
+   348→   348→    } finally {
+   349→   349→      setSaving(false);
+   350→   350→    }
+   351→   351→  };
+   352→   352→
+   353→   353→  const handleImageUpload = async (file: File, isPrimary?: boolean) => {
+   354→   354→    if (!currentProduct) return;
+   355→   355→
+   356→   356→    const formDataToSend = new FormData();
+   357→   357→    formDataToSend.append('file', file);
+   358→   358→    formDataToSend.append('productId', currentProduct.id);
+   359→   359→    if (isPrimary) formDataToSend.append('isPrimary', 'true');
+   360→   360→
+   361→   361→    const res = await fetch('/api/images/upload', {
+   362→   362→      method: 'POST',
+   363→   363→      body: formDataToSend,
+   364→   364→    });
+   365→   365→
+   366→   366→    if (res.ok) {
+   367→   367→      const newImage = await res.json();
+   368→   368→      setCurrentProduct({
+   369→   369→        ...currentProduct,
+   370→   370→        images: [...currentProduct.images, newImage].sort((a, b) => a.displayOrder - b.displayOrder),
+   371→   371→      });
+   372→   372→      toast.success('Image uploaded successfully');
+   373→   373→    } else {
+   374→   374→      let errorMsg = 'Upload failed';
+   375→   375→      try {
+   376→   376→        const errData = await res.json();
+   377→   377→        errorMsg = errData.error || errorMsg;
+   378→   378→      } catch {}
+   379→   379→      toast.error(errorMsg);
+   380→   380→      throw new Error(errorMsg);
+   381→   381→    }
+   382→   382→  };
+   383→   383→
+   384→   384→  const handleImageDelete = async (imageId: string) => {
+   385→   385→    const res = await fetch(`/api/images/${imageId}`, { method: 'DELETE' });
+   386→   386→    if (res.ok && currentProduct) {
+   387→   387→      setCurrentProduct({
+   388→   388→        ...currentProduct,
+   389→   389→        images: currentProduct.images.filter(img => img.id !== imageId),
+   390→   390→      });
+   391→   391→    }
+   392→   392→  };
+   393→   393→
+   394→   394→  const handleSetPrimary = async (imageId: string) => {
+   395→   395→    const res = await fetch(`/api/images/${imageId}`, {
+   396→   396→      method: 'PATCH',
+   397→   397→      headers: { 'Content-Type': 'application/json' },
+   398→   398→      body: JSON.stringify({ isPrimary: true }),
+   399→   399→    });
+   400→   400→    if (res.ok && currentProduct) {
+   401→   401→      setCurrentProduct({
+   402→   402→        ...currentProduct,
+   403→   403→        images: currentProduct.images.map(img => ({
+   404→   404→          ...img,
+   405→   405→          isPrimary: img.id === imageId,
+   406→   406→        })),
+   407→   407→      });
+   408→   408→    }
+   409→   409→  };
+   410→   410→
+   411→   411→  const hasDuplicates = duplicates && (duplicates.ndNumber || duplicates.barcode);
+   412→   412→
+   413→   413→  return (
+   414→   414→    <div className="space-y-4 pb-6">
+   415→   415→      {/* Header */}
+   416→   416→      <div className="flex items-center gap-3">
+   417→   417→        <Button variant="ghost" size="sm" onClick={goBack} className="h-9 w-9 p-0">
+   418→   418→          <ArrowLeft className="h-5 w-5" />
+   419→   419→        </Button>
+   420→   420→        <div className="flex-1">
+   421→   421→          <h1 className="text-xl font-bold">
+   422→   422→            {mode === 'add' ? 'Add New Product' : 'Edit Product'}
+   423→   423→          </h1>
+   424→   424→        </div>
+   425→   425→        <Button
+   426→   426→          onClick={handleSave}
+   427→   427→          disabled={hasDuplicates || isSaving}
+   428→   428→          className="h-10"
+   429→   429→        >
+   430→   430→          {isSaving ? (
+   431→   431→            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+   432→   432→          ) : (
+   433→   433→            <Save className="h-4 w-4 mr-2" />
+   434→   434→          )}
+   435→   435→          {mode === 'add' ? 'Create' : 'Save'}
+   436→   436→        </Button>
+   437→   437→      </div>
+   438→   438→
+   439→   439→      {/* Duplicate Warnings */}
+   440→   440→      {hasDuplicates && (
+   441→   441→        <Alert variant="destructive">
+   442→   442→          <AlertTriangle className="h-4 w-4" />
+   443→   443→          <AlertDescription>
+   444→   444→            {duplicates.ndNumber && (
+   445→   445→              <div>ND Number &ldquo;{duplicates.ndNumber.ndNumber}&rdquo; already exists (SR: {duplicates.ndNumber.sr})</div>
+   446→   446→            )}
+   447→   447→            {duplicates.barcode && (
+   448→   448→              <div>Barcode &ldquo;{duplicates.barcode.barcode}&rdquo; already exists (SR: {duplicates.barcode.sr})</div>
+   449→   449→            )}
+   450→   450→          </AlertDescription>
+   451→   451→        </Alert>
+   452→   452→      )}
+   453→   453→
+   454→   454→      {/* Product Images (edit mode only) */}
+   455→   455→      {mode === 'edit' && currentProduct && (
+   456→   456→        <Card>
+   457→   457→          <CardContent className="pt-4">
+   458→   458→            <ImageGallery
+   459→   459→              images={currentProduct.images}
+   460→   460→              productId={currentProduct.id}
+   461→   461→              onUpload={handleImageUpload}
+   462→   462→              onDelete={handleImageDelete}
+   463→   463→              onSetPrimary={handleSetPrimary}
+   464→   464→            />
+   465→   465→          </CardContent>
+   466→   466→        </Card>
+   467→   467→      )}
+   468→   468→
+   469→   469→      {/* Basic Information */}
+   470→   470→      <Card>
+   471→   471→        <CardHeader className="pb-3">
+   472→   472→          <CardTitle className="text-base">Basic Information</CardTitle>
+   473→   473→        </CardHeader>
+   474→   474→        <CardContent className="space-y-4">
+   475→   475→          <div className="grid grid-cols-2 gap-4">
+   476→   476→            <div className="space-y-2">
+   477→   477→              <Label htmlFor="sr">Sr No.</Label>
+   478→   478→              <Input
+   479→   479→                id="sr"
+   480→   480→                type="number"
+   481→   481→                step="0.1"
+   482→   482→                value={formData.sr}
+   483→   483→                onChange={(e) => handleFieldChange('sr', e.target.value)}
+   484→   484→                placeholder="1"
+   485→   485→                className="h-11"
+   486→   486→              />
+   487→   487→            </div>
+   488→   488→            <div className="space-y-2">
+   489→   489→              <Label>Price (KD)</Label>
+   490→   490→              <div className="grid grid-cols-2 gap-0">
+   491→   491→                <div className="space-y-0.5">
+   492→   492→                  <span className="text-[10px] text-muted-foreground pl-1">Dinar</span>
+   493→   493→                  <Input
+   494→   494→                    type="text"
+   495→   495→                    inputMode="numeric"
+   496→   496→                    value={priceDinar}
+   497→   497→                    onChange={(e) => handlePriceDinarChange(e.target.value)}
+   498→   498→                    placeholder="0"
+   499→   499→                    className="h-11 rounded-r-none text-right font-mono text-base"
+   500→   500→                    aria-label="Dinar"
+   501→   501→                  />
+   502→   502→                </div>
+   503→   503→                <div className="space-y-0.5">
+   504→   504→                  <span className="text-[10px] text-muted-foreground pl-1">Fils</span>
+   505→   505→                  <div className="flex items-center">
+   506→   506→                    <span className="flex h-11 items-center justify-center border-y border-input bg-muted px-1.5 text-lg font-bold text-muted-foreground select-none">
+   507→   507→                      .
+   508→   508→                    </span>
+   509→   509→                    <Input
+   510→   510→                      type="text"
+   511→   511→                      inputMode="numeric"
+   512→   512→                      value={priceFils}
+   513→   513→                      onChange={(e) => handlePriceFilsChange(e.target.value)}
+   514→   514→                      placeholder="000"
+   515→   515→                      maxLength={3}
+   516→   516→                      className="h-11 rounded-l-none font-mono text-base"
+   517→   517→                      aria-label="Fils"
+   518→   518→                    />
+   519→   519→                  </div>
+   520→   520→                </div>
+   521→   521→              </div>
+   522→   522→              {combinedPrice && (
+   523→   523→                <p className="text-xs text-muted-foreground font-mono">
+   524→   524→                  {combinedPrice} KD
+   525→   525→                </p>
+   526→   526→              )}
+   527→   527→            </div>
+   528→   528→          </div>
+   529→   529→
+   530→   530→          <div className="space-y-2">
+   531→   531→            <Label htmlFor="englishDesc">English Description</Label>
+   532→   532→            <Input
+   533→   533→              id="englishDesc"
+   534→   534→              value={formData.englishDescription}
+   535→   535→              onChange={(e) => handleFieldChange('englishDescription', e.target.value)}
+   536→   536→              placeholder="Product description in English"
+   537→   537→              className="h-11"
+   538→   538→            />
+   539→   539→          </div>
+   540→   540→
+   541→   541→          <div className="space-y-2">
+   542→   542→            <Label htmlFor="arabicDesc">Arabic Description</Label>
+   543→   543→            <Input
+   544→   544→              id="arabicDesc"
+   545→   545→              value={formData.arabicDescription}
+   546→   546→              onChange={(e) => handleFieldChange('arabicDescription', e.target.value)}
+   547→   547→              placeholder="وصف المنتج بالعربية"
+   548→   548→              className="h-11"
+   549→   549→              dir="rtl"
+   550→   550→            />
+   551→   551→          </div>
+   552→   552→
+   553→   553→          <div className="grid grid-cols-2 gap-4">
+   554→   554→            <div className="space-y-2">
+   555→   555→              <Label htmlFor="ndNumber">ND Number</Label>
+   556→   556→              <Input
+   557→   557→                id="ndNumber"
+   558→   558→                value={formData.ndNumber}
+   559→   559→                onChange={(e) => handleFieldChange('ndNumber', e.target.value)}
+   560→   560→                placeholder="ND-1000"
+   561→   561→                className="h-11"
+   562→   562→              />
+   563→   563→            </div>
+   564→   564→            <div className="space-y-2">
+   565→   565→              <Label>Barcode</Label>
+   566→   566→              <div className="flex gap-2">
+   567→   567→                <Input
+   568→   568→                  value={formData.barcode}
+   569→   569→                  onChange={(e) => handleFieldChange('barcode', e.target.value)}
+   570→   570→                  placeholder="102000001249"
+   571→   571→                  className="h-11 flex-1"
+   572→   572→                />
+   573→   573→                <BarcodeScanner
+   574→   574→                  onScan={(barcode) => handleFieldChange('barcode', barcode)}
+   575→   575→                />
+   576→   576→              </div>
+   577→   577→            </div>
+   578→   578→          </div>
+   579→   579→
+   580→   580→          <SearchableSingleSelect
+   581→   581→            label="Made In"
+   582→   582→            value={formData.made}
+   583→   583→            onChange={(value) => handleFieldChange('made', value)}
+   584→   584→            suggestions={mergedCountrySuggestions}
+   585→   585→            placeholder="Search country..."
+   586→   586→            emptyMessage="No country found."
+   587→   587→            allowAddNew
+   588→   588→            onNewValuePersist={handleNewCountryPersist}
+   589→   589→          />
+   590→   590→        </CardContent>
+   591→   591→      </Card>
+   592→   592→
+   593→   593→      {/* Dimensions */}
+   594→   594→      <Card>
+   595→   595→        <CardHeader className="pb-3">
+   596→   596→          <CardTitle className="text-base">Dimensions</CardTitle>
+   597→   597→        </CardHeader>
+   598→   598→        <CardContent>
+   599→   599→          <div className="grid grid-cols-3 gap-4">
+   600→   600→            <div className="space-y-2">
+   601→   601→              <Label htmlFor="length">Length (L)</Label>
+   602→   602→              <Input
+   603→   603→                id="length"
+   604→   604→                type="number"
+   605→   605→                step="0.1"
+   606→   606→                value={formData.length}
+   607→   607→                onChange={(e) => handleFieldChange('length', e.target.value)}
+   608→   608→                placeholder="0"
+   609→   609→                className="h-11"
+   610→   610→              />
+   611→   611→            </div>
+   612→   612→            <div className="space-y-2">
+   613→   613→              <Label htmlFor="width">Width (W)</Label>
+   614→   614→              <Input
+   615→   615→                id="width"
+   616→   616→                type="number"
+   617→   617→                step="0.1"
+   618→   618→                value={formData.width}
+   619→   619→                onChange={(e) => handleFieldChange('width', e.target.value)}
+   620→   620→                placeholder="0"
+   621→   621→                className="h-11"
+   622→   622→              />
+   623→   623→            </div>
+   624→   624→            <div className="space-y-2">
+   625→   625→              <Label htmlFor="height">Height (H)</Label>
+   626→   626→              <Input
+   627→   627→                id="height"
+   628→   628→                type="number"
+   629→   629→                step="0.1"
+   630→   630→                value={formData.height}
+   631→   631→                onChange={(e) => handleFieldChange('height', e.target.value)}
+   632→   632→                placeholder="0"
+   633→   633→                className="h-11"
+   634→   634→              />
+   635→   635→            </div>
+   636→   636→          </div>
+   637→   637→        </CardContent>
+   638→   638→      </Card>
+   639→   639→
+   640→   640→      {/* Multi-value fields */}
+   641→   641→      <Card>
+   642→   642→        <CardHeader className="pb-3">
+   643→   643→          <CardTitle className="text-base">Properties</CardTitle>
+   644→   644→        </CardHeader>
+   645→   645→        <CardContent className="space-y-5">
+   646→   646→          <SearchableMultiSelect
+   647→   647→            label="Colour"
+   648→   648→            values={formData.colours}
+   649→   649→            onChange={(values) => handleFieldChange('colours', values)}
+   650→   650→            suggestions={mergedColourSuggestions}
+   651→   651→            placeholder="Search colours..."
+   652→   652→            emptyMessage="No colour found."
+   653→   653→            allowAddNew
+   654→   654→            onNewValuePersist={handleNewColourPersist}
+   655→   655→          />
+   656→   656→          <SearchableMultiSelect
+   657→   657→            label="Material"
+   658→   658→            values={formData.materials}
+   659→   659→            onChange={(values) => handleFieldChange('materials', values)}
+   660→   660→            suggestions={mergedMaterialSuggestions}
+   661→   661→            placeholder="Search materials..."
+   662→   662→            emptyMessage="No material found."
+   663→   663→            allowAddNew
+   664→   664→            onNewValuePersist={handleNewMaterialPersist}
+   665→   665→          />
+   666→   666→          <MultiValueInput
+   667→   667→            ref={additionalInfoInputRef}
+   668→   668→            label="Additional Info"
+   669→   669→            values={formData.additionalInfo}
+   670→   670→            onChange={(values) => handleFieldChange('additionalInfo', values)}
+   671→   671→            placeholder="e.g. Food Grade, Dishwasher Safe"
+   672→   672→          />
+   673→   673→        </CardContent>
+   674→   674→      </Card>
+   675→   675→
+   676→   676→      {/* Stock */}
+   677→   677→      <Card>
+   678→   678→        <CardHeader className="pb-3">
+   679→   679→          <CardTitle className="text-base">Stock</CardTitle>
+   680→   680→        </CardHeader>
+   681→   681→        <CardContent>
+   682→   682→          <div className="space-y-2">
+   683→   683→            <Label htmlFor="pcs">Pieces (Pcs)</Label>
+   684→   684→            <Input
+   685→   685→              id="pcs"
+   686→   686→              type="number"
+   687→   687→              value={formData.pcs}
+   688→   688→              onChange={(e) => handleFieldChange('pcs', e.target.value)}
+   689→   689→              placeholder="0"
+   690→   690→              className="h-11"
+   691→   691→            />
+   692→   692→          </div>
+   693→   693→        </CardContent>
+   694→   694→      </Card>
+   695→   695→    </div>
+   696→   696→  );
+   697→   697→}
+   698→   698→

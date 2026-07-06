@@ -20,21 +20,84 @@ model AdminUser {
 
 model Product {
   id                  String          @id @default(cuid())
-  sr                  Float?
-  englishDescription  String?
-  arabicDescription   String?
-  ndNumber            String?
-  barcode             String?
-  colours             String?         // JSON array stored as string
-  length              Float?
-  width               Float?
-  height              Float?
-  made                String?
-  materials           String?         // JSON array stored as string
-  additionalInfo      String?         // JSON array stored as string
-  price               Float?
-  pcs                 Int?
-  photo               String?
+
+  // ── Product Identity Group (A–J) ──
+  sourceRow           Int?            // A: Auto-generated sequential row number
+  productId           String?         // B: Globally unique ERP identifier (12 digits)
+  sku                 String?         // C: Stock Keeping Unit (12 digits, usually = Product ID)
+  ndNumber            String?         // D: Al-Nassim internal number (ND-XXXX format)
+  barcode             String?         // E: EAN-13 / UPC-A barcode
+  legacyCode          String?         // F: Legacy ERP code (deprecated)
+  brand               String?         // G: Brand name EN (controlled list)
+  brandAr             String?         // H: Brand name AR (auto-derived from Brand)
+  brandCode           String?         // I: 3-digit brand code (auto-derived from Brand)
+  model               String?         // J: Manufacturer model/variant code
+
+  // ── Classification Group (K–P) ──
+  department          String?         // K: Taxonomy level 1 (controlled list)
+  category            String?         // L: Taxonomy level 2 (dependent on Department)
+  subcategory         String?         // M: Taxonomy level 3 (dependent on Category)
+  sectionCode         String?         // N: 3-digit retail section code (auto-derived from Dept)
+  productFamily       String?         // O: Taxonomy level 4 (dependent on Subcategory)
+  productType         String?         // P: Taxonomy level 5 (dependent on Product Family)
+
+  // ── Product Information Group (Q–V) ──
+  nameAr              String?         // Q: Full product name in Arabic
+  nameEn              String?         // R: Full product name in English
+  shortDescAr         String?         // S: Short description AR (defaults to Name AR)
+  shortDescEn         String?         // T: Short description EN (defaults to Name EN)
+  longDescAr          String?         // U: Long description AR (optional)
+  longDescEn          String?         // V: Long description EN (auto-generated from Brand + Name EN)
+
+  // ── Attributes Group (W–AI) ──
+  color               String?         // W: Color EN (controlled list, 15 values)
+  colorAr             String?         // X: Color AR (auto-derived from Color)
+  material            String?         // Y: Material EN (controlled list, ~15 values)
+  materialAr          String?         // Z: Material AR (auto-derived from Material)
+  capacity            Float?          // AA: Numeric capacity/volume/weight
+  capacityUnit        String?         // AB: L, ml, kg, g
+  weight              Float?          // AC: Product weight (decimal)
+  weightUnit          String?         // AD: kg, g
+  length              Float?          // AE: Length in Dimension Unit
+  width               Float?          // AF: Width in Dimension Unit
+  height              Float?          // AG: Height in Dimension Unit
+  diameter            Float?          // AH: Diameter for round products
+  dimensionUnit       String?         // AI: cm, mm, inch (defaults to cm)
+
+  // ── Logistics Group (AJ–AL) ──
+  countryOfOrigin     String?         // AJ: Country (ISO 3166, controlled list)
+  unit                String?         // AK: Unit of sale (PCS, PKT, CTN, ROLL, BUNDLE)
+  minSalesMultiples   String?         // AL: Yes/No for minimum sales quantity
+
+  // ── Commercial Group (AM) ──
+  defaultPrice        Float?          // AM: Retail price in KWD (3 decimal places)
+
+  // ── SEO Group (AN–AR) ──
+  seoTitleEn          String?         // AN: SEO title English (< 60 chars)
+  seoTitleAr          String?         // AO: SEO title Arabic (defaults to Name AR)
+  seoDescriptionEn    String?         // AP: SEO meta description English
+  seoDescriptionAr    String?         // AQ: SEO meta description Arabic
+  searchKeywords      String?         // AR: Pipe-separated keywords
+
+  // ── Internal Group (AS–AZ) ──
+  internalNotes       String?         // AS: Internal staff notes
+  validationStatus    String?         // AT: Validated, Pending Review, Draft, Rejected
+  confidenceScore     Int?            // AU: 0–100 translation quality score
+  pieces              Int?            // AV: Number of pieces in set
+  setCount            Int?            // AW: Number of items in coordinated set
+  shape               String?         // AX: Square, Round, Rectangular, Oval, Circular
+  finish              String?         // AY: Coated, Chrome, Black Chrome, Polished, Matte, Powder-coated
+  additionalInfo      String?         // AZ: Extra attributes (with Lid, Glass Lid, etc.)
+
+  // ── Legacy fields (kept for backward compatibility) ──
+  photo               String?         // Legacy — no longer used in API
+  colours             String?         // Legacy — migrated to single-select 'color'
+  materials           String?         // Legacy — migrated to single-select 'material'
+  made                String?         // Legacy — migrated to 'countryOfOrigin'
+  price               Float?          // Legacy — migrated to 'defaultPrice'
+  pcs                 Int?            // Legacy — migrated to 'pieces'
+
+  // ── System fields ──
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   images              ProductImage[]

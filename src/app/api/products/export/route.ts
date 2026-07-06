@@ -1,115 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { COLUMN_DEFS, COLUMN_GROUPS } from '@/lib/lookups';
 import * as XLSX from 'xlsx';
 
 /**
- * Excel Export Route — Two-Row Header with Merged "SIZE mm" Group
- * Rewritten to use Prisma with Neon PostgreSQL.
+ * Excel Export Route — Al-Nassim Master Catalog 52-Column Schema
+ *
+ * Export format:
+ *   Row 1: Group headers (merged cells spanning their column ranges)
+ *     - Product Identity (cols 0–9, 10 cols)
+ *     - Classification (cols 10–15, 6 cols)
+ *     - Product Information (cols 16–21, 6 cols)
+ *     - Attributes (cols 22–34, 13 cols)
+ *     - Logistics (cols 35–37, 3 cols)
+ *     - Commercial (col 38, 1 col)
+ *     - SEO (cols 39–43, 5 cols)
+ *     - Internal (cols 44–51, 8 cols)
+ *   Row 2: Actual column headers from COLUMN_DEFS
+ *   Row 3+: Data rows
  */
 
-interface ColDef {
-  header1: string;
-  header2: string;
-  dbField: string;
-  isJsonArray?: boolean;
-  isVirtual?: boolean;
-}
-
-const COLUMN_DEFS: ColDef[] = [
-  { header1: 'sr', header2: '', dbField: 'sr' },
-  { header1: 'English Description', header2: '', dbField: 'englishDescription' },
-  { header1: 'Arabic Description', header2: '', dbField: 'arabicDescription' },
-  { header1: 'ND Number', header2: '', dbField: 'ndNumber' },
-  { header1: 'barcode', header2: '', dbField: 'barcode' },
-  { header1: 'Colour', header2: '', dbField: 'colours', isJsonArray: true },
-  { header1: 'SIZE mm', header2: 'L', dbField: 'length' },
-  { header1: '',        header2: 'W', dbField: 'width' },
-  { header1: '',        header2: 'H', dbField: 'height' },
-  { header1: 'Made', header2: '', dbField: 'made' },
-  { header1: 'Material', header2: '', dbField: 'materials', isJsonArray: true },
-  { header1: 'Additional INFO', header2: '', dbField: 'additionalInfo', isJsonArray: true },
-  { header1: 'PRICE', header2: '', dbField: 'price' },
-  { header1: 'Pcs', header2: '', dbField: 'pcs' },
-  { header1: 'Images', header2: '', dbField: 'product_images_urls', isVirtual: true },
+// Column widths for each of the 52 columns (approximate)
+const COL_WIDTHS = [
+  // Product Identity (10)
+  10, 14, 14, 14, 16, 12, 18, 16, 10, 14,
+  // Classification (6)
+  22, 20, 20, 12, 18, 18,
+  // Product Information (6)
+  30, 30, 28, 28, 30, 30,
+  // Attributes (13)
+  12, 14, 16, 16, 10, 12, 10, 10, 8, 8, 8, 10, 12,
+  // Logistics (3)
+  18, 8, 16,
+  // Commercial (1)
+  14,
+  // SEO (5)
+  30, 30, 35, 35, 30,
+  // Internal (8)
+  24, 16, 14, 8, 10, 14, 14, 22,
 ];
-
-function jsonArrayToString(value: any): string {
-  if (!value) return '';
-  if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'string') {
-    try {
-      const arr = JSON.parse(value);
-      if (Array.isArray(arr)) return arr.join(', ');
-      return String(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-}
-
-function getVirtualFieldValue(product: any, dbField: string): string {
-  if (dbField === 'product_images_urls') {
-    if (product.images && Array.isArray(product.images)) {
-      const urls = product.images.filter((img: any) => img.imageUrl).map((img: any) => img.imageUrl);
-      return urls.length > 0 ? urls.join(', ') : '';
-    }
-    return '';
-  }
-  return '';
-}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const srFromParam = searchParams.get('srFrom');
-    const srToParam = searchParams.get('srTo');
+    const sourceRowFrom = searchParams.get('sourceRowFrom');
+    const sourceRowTo = searchParams.get('sourceRowTo');
 
     const where: any = {};
-    if (srFromParam !== null && srToParam !== null) {
-      const srFrom = Number(srFromParam);
-      const srTo = Number(srToParam);
-      if (isNaN(srFrom) || isNaN(srTo)) {
+    if (sourceRowFrom !== null && sourceRowTo !== null) {
+      const from = Number(sourceRowFrom);
+      const to = Number(sourceRowTo);
+      if (isNaN(from) || isNaN(to)) {
         return NextResponse.json({ error: 'Invalid range format.' }, { status: 400 });
       }
-      if (srFrom > srTo) {
+      if (from > to) {
         return NextResponse.json({ error: 'Invalid range: start > end.' }, { status: 400 });
       }
-      where.sr = { gte: srFrom, lte: srTo };
+      where.sourceRow = { gte: from, lte: to };
     }
 
     const data = await db.product.findMany({
       where,
       include: { images: { orderBy: { displayOrder: 'asc' } } },
-      orderBy: { sr: 'asc' },
+      orderBy: { sourceRow: 'asc' },
     });
 
     const workbook = XLSX.utils.book_new();
     const worksheet: XLSX.WorkSheet = {};
-    const totalCols = COLUMN_DEFS.length;
+    const totalCols = COLUMN_DEFS.length; // 52
     const totalRows = data.length;
-    const maxRow = totalRows + 2;
+    const maxRow = totalRows + 2; // +2 for two header rows
 
-    for (let c = 0; c < totalCols; c++) {
-      const col = COLUMN_DEFS[c];
-      if (col.header1) worksheet[XLSX.utils.encode_cell({ r: 0, c })] = { t: 's', v: col.header1 };
-      if (col.header2) worksheet[XLSX.utils.encode_cell({ r: 1, c })] = { t: 's', v: col.header2 };
+    // ── Row 1: Group headers (merged cells) ──
+    const merges: XLSX.Range[] = [];
+    let colOffset = 0;
+    for (const group of COLUMN_GROUPS) {
+      const span = group.fields.length;
+      // Write group name in first column of the span
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: colOffset });
+      worksheet[cellRef] = { t: 's', v: group.name };
+
+      if (span > 1) {
+        merges.push({
+          s: { r: 0, c: colOffset },
+          e: { r: 0, c: colOffset + span - 1 },
+        });
+      }
+      colOffset += span;
     }
 
+    // ── Row 2: Actual column headers from COLUMN_DEFS ──
+    for (let c = 0; c < totalCols; c++) {
+      const colDef = COLUMN_DEFS[c];
+      const cellRef = XLSX.utils.encode_cell({ r: 1, c });
+      worksheet[cellRef] = { t: 's', v: colDef.header };
+    }
+
+    // ── Row 3+: Data rows ──
     for (let r = 0; r < totalRows; r++) {
-      const product = data[r];
+      const product = data[r] as any;
       for (let c = 0; c < totalCols; c++) {
-        const col = COLUMN_DEFS[c];
+        const colDef = COLUMN_DEFS[c];
         const cellRef = XLSX.utils.encode_cell({ r: r + 2, c });
 
-        let value: any;
-        if (col.isVirtual) {
-          value = getVirtualFieldValue(product, col.dbField);
-        } else {
-          value = (product as any)[col.dbField] ?? '';
-        }
-
-        if (col.isJsonArray) value = jsonArrayToString(value);
+        const value = product[colDef.field] ?? '';
 
         if (value === '' || value === null || value === undefined) {
           worksheet[cellRef] = { t: 's', v: '' };
@@ -121,26 +115,25 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    worksheet['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(maxRow - 1, 1), c: totalCols - 1 } });
+    // Set sheet range
+    worksheet['!ref'] = XLSX.utils.encode_range({
+      s: { r: 0, c: 0 },
+      e: { r: Math.max(maxRow - 1, 1), c: totalCols - 1 },
+    });
 
-    const sizeStartCol = COLUMN_DEFS.findIndex(c => c.header1 === 'SIZE mm');
-    if (sizeStartCol !== -1) {
-      worksheet['!merges'] = [{ s: { r: 0, c: sizeStartCol }, e: { r: 0, c: sizeStartCol + 2 } }];
-    }
+    // Apply merges for group headers
+    worksheet['!merges'] = merges;
 
-    worksheet['!cols'] = [
-      { wch: 6 }, { wch: 30 }, { wch: 30 }, { wch: 12 }, { wch: 18 },
-      { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 },
-      { wch: 20 }, { wch: 25 }, { wch: 10 }, { wch: 6 }, { wch: 50 },
-    ];
+    // Set column widths
+    worksheet['!cols'] = COL_WIDTHS.map(w => ({ wch: w }));
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Master Catalog');
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     return new NextResponse(excelBuffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="products_export.xlsx"',
+        'Content-Disposition': 'attachment; filename="alnassim_catalog_export.xlsx"',
       },
     });
   } catch (error) {

@@ -2,7 +2,15 @@ import { create } from 'zustand';
 
 export type ViewMode = 'dashboard' | 'products' | 'add-product' | 'edit-product' | 'product-detail' | 'import' | 'filters';
 
-export type SortBy = 'sr' | 'nd_number' | 'english_description' | 'recently_updated' | 'recently_added';
+export type SortBy =
+  | 'sourceRow'
+  | 'ndNumber'
+  | 'nameEn'
+  | 'productType'
+  | 'productFamily'
+  | 'defaultPrice'
+  | 'recentlyUpdated'
+  | 'recentlyAdded';
 export type SortOrder = 'asc' | 'desc';
 
 export interface ProductImage {
@@ -16,20 +24,76 @@ export interface ProductImage {
 
 export interface Product {
   id: string;
-  sr: number | null;
-  englishDescription: string | null;
-  arabicDescription: string | null;
+
+  // Product Identity Group
+  sourceRow: number | null;
+  productId: string | null;
+  sku: string | null;
   ndNumber: string | null;
   barcode: string | null;
-  colours: string | null;
+  legacyCode: string | null;
+  brand: string | null;
+  brandAr: string | null;
+  brandCode: string | null;
+  model: string | null;
+
+  // Classification Group
+  department: string | null;
+  category: string | null;
+  subcategory: string | null;
+  sectionCode: string | null;
+  productFamily: string | null;
+  productType: string | null;
+
+  // Product Information Group
+  nameAr: string | null;
+  nameEn: string | null;
+  shortDescAr: string | null;
+  shortDescEn: string | null;
+  longDescAr: string | null;
+  longDescEn: string | null;
+
+  // Attributes Group
+  color: string | null;
+  colorAr: string | null;
+  material: string | null;
+  materialAr: string | null;
+  capacity: number | null;
+  capacityUnit: string | null;
+  weight: number | null;
+  weightUnit: string | null;
   length: number | null;
   width: number | null;
   height: number | null;
-  made: string | null;
-  materials: string | null;
+  diameter: number | null;
+  dimensionUnit: string | null;
+
+  // Logistics Group
+  countryOfOrigin: string | null;
+  unit: string | null;
+  minSalesMultiples: string | null;
+
+  // Commercial Group
+  defaultPrice: number | null;
+
+  // SEO Group
+  seoTitleEn: string | null;
+  seoTitleAr: string | null;
+  seoDescriptionEn: string | null;
+  seoDescriptionAr: string | null;
+  searchKeywords: string | null;
+
+  // Internal Group
+  internalNotes: string | null;
+  validationStatus: string | null;
+  confidenceScore: number | null;
+  pieces: number | null;
+  setCount: number | null;
+  shape: string | null;
+  finish: string | null;
   additionalInfo: string | null;
-  price: number | null;
-  pcs: number | null;
+
+  // System
   createdAt: string;
   updatedAt: string;
   images: ProductImage[];
@@ -46,11 +110,16 @@ export interface DashboardStats {
   productsMissingImages: number;
   productsMissingBarcode: number;
   productsMissingDimensions: number;
+  productsMissingClassification: number;
+  productsMissingNameEn: number;
+  productsMissingPrice: number;
 }
 
 export interface DuplicateCheck {
-  ndNumber?: { id: string; sr: number | null; englishDescription: string | null; ndNumber: string };
-  barcode?: { id: string; sr: number | null; englishDescription: string | null; barcode: string };
+  ndNumber?: { id: string; sourceRow: number | null; nameEn: string | null; ndNumber: string };
+  barcode?: { id: string; sourceRow: number | null; nameEn: string | null; barcode: string };
+  productId?: { id: string; nameEn: string | null; productId: string };
+  sku?: { id: string; nameEn: string | null; sku: string };
 }
 
 interface InventoryState {
@@ -78,6 +147,18 @@ interface InventoryState {
   filterMade: string;
   filterPriceMin: string;
   filterPriceMax: string;
+  // New filter fields
+  filterDepartment: string;
+  filterCategory: string;
+  filterSubcategory: string;
+  filterProductFamily: string;
+  filterProductType: string;
+  filterBrand: string;
+  filterColor: string;
+  filterCountryOfOrigin: string;
+  filterShape: string;
+  filterValidationStatus: string;
+  filterUnit: string;
 
   // Sort
   sortBy: SortBy;
@@ -149,9 +230,21 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   filterMade: '',
   filterPriceMin: '',
   filterPriceMax: '',
+  // New filter fields
+  filterDepartment: '',
+  filterCategory: '',
+  filterSubcategory: '',
+  filterProductFamily: '',
+  filterProductType: '',
+  filterBrand: '',
+  filterColor: '',
+  filterCountryOfOrigin: '',
+  filterShape: '',
+  filterValidationStatus: '',
+  filterUnit: '',
 
   // Sort
-  sortBy: 'sr',
+  sortBy: 'sourceRow',
   sortOrder: 'asc',
 
   // ND Number Groups
@@ -186,6 +279,17 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     filterMade: '',
     filterPriceMin: '',
     filterPriceMax: '',
+    filterDepartment: '',
+    filterCategory: '',
+    filterSubcategory: '',
+    filterProductFamily: '',
+    filterProductType: '',
+    filterBrand: '',
+    filterColor: '',
+    filterCountryOfOrigin: '',
+    filterShape: '',
+    filterValidationStatus: '',
+    filterUnit: '',
   }),
   setLoading: (loading) => set({ isLoading: loading }),
   setSaving: (saving) => set({ isSaving: saving }),

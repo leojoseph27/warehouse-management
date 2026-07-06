@@ -1,0 +1,954 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useEffect, useCallback, useState, useRef } from 'react';
+     4→     4→import { Button } from '@/components/ui/button';
+     5→     5→import { Input } from '@/components/ui/input';
+     6→     6→import { Card, CardContent } from '@/components/ui/card';
+     7→     7→import { Badge } from '@/components/ui/badge';
+     8→     8→import { Skeleton } from '@/components/ui/skeleton';
+     9→     9→import {
+    10→    10→  Select,
+    11→    11→  SelectContent,
+    12→    12→  SelectItem,
+    13→    13→  SelectTrigger,
+    14→    14→  SelectValue,
+    15→    15→} from '@/components/ui/select';
+    16→    16→import { useInventoryStore, Product, SortBy, SortOrder } from '@/store/inventory-store';
+    17→    17→import { toast } from 'sonner';
+    18→    18→import {
+    19→    19→  Search,
+    20→    20→  Plus,
+    21→    21→  SlidersHorizontal,
+    22→    22→  ArrowLeft,
+    23→    23→  Image as ImageIcon,
+    24→    24→  Download,
+    25→    25→  Upload,
+    26→    26→  X,
+    27→    27→  ArrowUpDown,
+    28→    28→  ArrowUp,
+    29→    29→  ArrowDown,
+    30→    30→  ChevronDown,
+    31→    31→  ChevronRight,
+    32→    32→  Layers,
+    33→    33→  Coins,
+    34→    34→  FileDown,
+    35→    35→  ScanBarcode,
+    36→    36→  Camera,
+    37→    37→} from 'lucide-react';
+    38→    38→import { BarcodeScanner } from '@/components/inventory/barcode-scanner-modal';
+    39→    39→import { BarcodePhotoCapture } from '@/components/inventory/barcode-photo-capture';
+    40→    40→
+    41→    41→/** Format price as KD */
+    42→    42→function formatPrice(price: number | null): string {
+    43→    43→  if (price == null) return '-';
+    44→    44→  return `${price.toFixed(3)} KD`;
+    45→    45→}
+    46→    46→
+    47→    47→/** Highlight matching text within a string */
+    48→    48→function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
+    49→    49→  if (!highlight.trim()) return <>{text}</>;
+    50→    50→
+    51→    51→  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    52→    52→  const parts = text.split(regex);
+    53→    53→
+    54→    54→  return (
+    55→    55→    <>
+    56→    56→      {parts.map((part, i) =>
+    57→    57→        regex.test(part) ? (
+    58→    58→          <mark key={i} className="bg-amber-200 text-amber-900 rounded px-0.5">{part}</mark>
+    59→    59→        ) : (
+    60→    60→          <span key={i}>{part}</span>
+    61→    61→        )
+    62→    62→      )}
+    63→    63→    </>
+    64→    64→  );
+    65→    65→}
+    66→    66→
+    67→    67→export function ProductTable() {
+    68→    68→  const {
+    69→    69→    products,
+    70→    70→    totalProducts,
+    71→    71→    currentPage,
+    72→    72→    searchQuery,
+    73→    73→    filterMaterial,
+    74→    74→    filterColour,
+    75→    75→    filterMade,
+    76→    76→    filterPriceMin,
+    77→    77→    filterPriceMax,
+    78→    78→    sortBy,
+    79→    79→    sortOrder,
+    80→    80→    groupByNd,
+    81→    81→    ndGroups,
+    82→    82→    expandedGroups,
+    83→    83→    selectedNdNumber,
+    84→    84→    isLoading,
+    85→    85→    setView,
+    86→    86→    setProducts,
+    87→    87→    setCurrentProduct,
+    88→    88→    setSearchQuery,
+    89→    89→    setLoading,
+    90→    90→    setCurrentPage,
+    91→    91→    setSortBy,
+    92→    92→    setSortOrder,
+    93→    93→    setGroupByNd,
+    94→    94→    setNdGroups,
+    95→    95→    toggleGroup,
+    96→    96→    setSelectedNdNumber,
+    97→    97→    scrollPosition,
+    98→    98→    setScrollPosition,
+    99→    99→  } = useInventoryStore();
+   100→   100→
+   101→   101→  const [showFilters, setShowFilters] = useState(false);
+   102→   102→  const [showExportMenu, setShowExportMenu] = useState(false);
+   103→   103→  const [srRange, setSrRange] = useState('');
+   104→   104→  const [srRangeError, setSrRangeError] = useState('');
+   105→   105→  const [isExporting, setIsExporting] = useState(false);
+   106→   106→  const [localSearch, setLocalSearch] = useState(searchQuery);
+   107→   107→  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+   108→   108→  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+   109→   109→  const totalPages = Math.ceil(totalProducts / 50);
+   110→   110→  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+   111→   111→
+   112→   112→  // ── Load products (normal / search mode) ──
+   113→   113→  useEffect(() => {
+   114→   114→    if (groupByNd && selectedNdNumber) {
+   115→   115→      loadProductsByNdNumber(selectedNdNumber);
+   116→   116→    } else if (!groupByNd) {
+   117→   117→      loadProducts();
+   118→   118→    }
+   119→   119→  }, [currentPage, searchQuery, filterMaterial, filterColour, filterMade, filterPriceMin, filterPriceMax, sortBy, sortOrder, selectedNdNumber, groupByNd]);
+   120→   120→
+   121→   121→  // ── Load ND groups when grouping is enabled ──
+   122→   122→  useEffect(() => {
+   123→   123→    if (groupByNd) {
+   124→   124→      loadNdGroups();
+   125→   125→    }
+   126→   126→  }, [groupByNd, searchQuery]);
+   127→   127→
+   128→   128→  const loadProducts = useCallback(async () => {
+   129→   129→    setLoading(true);
+   130→   130→    try {
+   131→   131→      const params = new URLSearchParams({
+   132→   132→        page: currentPage.toString(),
+   133→   133→        limit: '50',
+   134→   134→        sortBy,
+   135→   135→        sortOrder,
+   136→   136→      });
+   137→   137→      if (searchQuery) params.set('search', searchQuery);
+   138→   138→      if (filterMaterial) params.set('material', filterMaterial);
+   139→   139→      if (filterColour) params.set('colour', filterColour);
+   140→   140→      if (filterMade) params.set('made', filterMade);
+   141→   141→      if (filterPriceMin) params.set('priceMin', filterPriceMin);
+   142→   142→      if (filterPriceMax) params.set('priceMax', filterPriceMax);
+   143→   143→
+   144→   144→      const res = await fetch(`/api/products?${params}`);
+   145→   145→      if (res.ok) {
+   146→   146→        const data = await res.json();
+   147→   147→        setProducts(data.products, data.total);
+   148→   148→      }
+   149→   149→    } catch (error) {
+   150→   150→      console.error('Error loading products:', error);
+   151→   151→    } finally {
+   152→   152→      setLoading(false);
+   153→   153→    }
+   154→   154→  }, [currentPage, searchQuery, filterMaterial, filterColour, filterMade, filterPriceMin, filterPriceMax, sortBy, sortOrder]);
+   155→   155→
+   156→   156→  const loadProductsByNdNumber = useCallback(async (ndNumber: string) => {
+   157→   157→    setLoading(true);
+   158→   158→    try {
+   159→   159→      const params = new URLSearchParams({
+   160→   160→        ndNumber,
+   161→   161→        limit: '500',
+   162→   162→        sortBy,
+   163→   163→        sortOrder,
+   164→   164→      });
+   165→   165→      const res = await fetch(`/api/products?${params}`);
+   166→   166→      if (res.ok) {
+   167→   167→        const data = await res.json();
+   168→   168→        setProducts(data.products, data.total);
+   169→   169→      }
+   170→   170→    } catch (error) {
+   171→   171→      console.error('Error loading products by ND Number:', error);
+   172→   172→    } finally {
+   173→   173→      setLoading(false);
+   174→   174→    }
+   175→   175→  }, [sortBy, sortOrder]);
+   176→   176→
+   177→   177→  const loadNdGroups = useCallback(async () => {
+   178→   178→    try {
+   179→   179→      const params = new URLSearchParams({ mode: 'nd-groups' });
+   180→   180→      if (searchQuery) params.set('search', searchQuery);
+   181→   181→      const res = await fetch(`/api/products?${params}`);
+   182→   182→      if (res.ok) {
+   183→   183→        const data = await res.json();
+   184→   184→        setNdGroups(data.groups || []);
+   185→   185→      }
+   186→   186→    } catch (error) {
+   187→   187→      console.error('Error loading ND groups:', error);
+   188→   188→    }
+   189→   189→  }, [searchQuery]);
+   190→   190→
+   191→   191→  // ── Debounced instant search ──
+   192→   192→  const handleSearchChange = (value: string) => {
+   193→   193→    setLocalSearch(value);
+   194→   194→    if (debounceRef.current) clearTimeout(debounceRef.current);
+   195→   195→    debounceRef.current = setTimeout(() => {
+   196→   196→      setSearchQuery(value);
+   197→   197→      setCurrentPage(1);
+   198→   198→    }, 300);
+   199→   199→  };
+   200→   200→
+   201→   201→  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+   202→   202→    if (e.key === 'Enter') {
+   203→   203→      if (debounceRef.current) clearTimeout(debounceRef.current);
+   204→   204→      setSearchQuery(localSearch);
+   205→   205→      setCurrentPage(1);
+   206→   206→    }
+   207→   207→  };
+   208→   208→
+   209→   209→  const clearSearch = () => {
+   210→   210→    setLocalSearch('');
+   211→   211→    setSearchQuery('');
+   212→   212→    setSelectedNdNumber('');
+   213→   213→    setCurrentPage(1);
+   214→   214→  };
+   215→   215→
+   216→   216→  const parseJsonArray = (value: string | null | any[]): string[] => {
+   217→   217→    if (!value) return [];
+   218→   218→    if (Array.isArray(value)) return value;
+   219→   219→    try {
+   220→   220→      const arr = JSON.parse(value);
+   221→   221→      return Array.isArray(arr) ? arr : [];
+   222→   222→    } catch {
+   223→   223→      return [];
+   224→   224→    }
+   225→   225→  };
+   226→   226→
+   227→   227→  const openProduct = (product: Product) => {
+   228→   228→    // Save current scroll position so we can restore it after returning from edit
+   229→   229→    setScrollPosition(window.scrollY);
+   230→   230→    setCurrentProduct(product);
+   231→   231→    setView('product-detail');
+   232→   232→  };
+   233→   233→
+   234→   234→  // ── Restore scroll position when returning from edit/save ──
+   235→   235→  // Must wait until products are loaded and rendered, otherwise there's
+   236→   236→  // nothing to scroll to.  Clear the saved position after restoring so
+   237→   237→  // subsequent re-renders don't re-scroll.
+   238→   238→  useEffect(() => {
+   239→   239→    if (scrollPosition > 0 && products.length > 0 && !isLoading) {
+   240→   240→      requestAnimationFrame(() => {
+   241→   241→        window.scrollTo(0, scrollPosition);
+   242→   242→        setScrollPosition(0); // clear so it only restores once
+   243→   243→      });
+   244→   244→    }
+   245→   245→  }, [products, isLoading, scrollPosition]);
+   246→   246→
+   247→   247→  const toggleSortOrder = () => {
+   248→   248→    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+   249→   249→  };
+   250→   250→
+   251→   251→  const handleGroupToggle = () => {
+   252→   252→    if (groupByNd) {
+   253→   253→      // Turning off grouping
+   254→   254→      setGroupByNd(false);
+   255→   255→      setSelectedNdNumber('');
+   256→   256→      setProducts([], 0);
+   257→   257→    } else {
+   258→   258→      // Turning on grouping
+   259→   259→      setGroupByNd(true);
+   260→   260→      setSelectedNdNumber('');
+   261→   261→    }
+   262→   262→  };
+   263→   263→
+   264→   264→  const handleGroupClick = (ndNumber: string) => {
+   265→   265→    if (selectedNdNumber === ndNumber) {
+   266→   266→      // Deselect — collapse
+   267→   267→      setSelectedNdNumber('');
+   268→   268→      setProducts([], 0);
+   269→   269→    } else {
+   270→   270→      // Select — expand and load products
+   271→   271→      setSelectedNdNumber(ndNumber);
+   272→   272→      toggleGroup(ndNumber);
+   273→   273→    }
+   274→   274→  };
+   275→   275→
+   276→   276→  // ── Sort options ──
+   277→   277→  const sortOptions: { value: SortBy; label: string }[] = [
+   278→   278→    { value: 'sr', label: 'Sr Number' },
+   279→   279→    { value: 'nd_number', label: 'ND Number' },
+   280→   280→    { value: 'english_description', label: 'English Description' },
+   281→   281→    { value: 'recently_updated', label: 'Recently Updated' },
+   282→   282→    { value: 'recently_added', label: 'Recently Added' },
+   283→   283→  ];
+   284→   284→
+   285→   285→  // ── Export handlers ──
+   286→   286→  const downloadBlob = async (url: string, filename: string) => {
+   287→   287→    const res = await fetch(url);
+   288→   288→    if (!res.ok) {
+   289→   289→      const body = await res.json().catch(() => ({}));
+   290→   290→      throw new Error(body.error || 'Export failed');
+   291→   291→    }
+   292→   292→    const blob = await res.blob();
+   293→   293→    const blobUrl = URL.createObjectURL(blob);
+   294→   294→    const a = document.createElement('a');
+   295→   295→    a.href = blobUrl;
+   296→   296→    a.download = filename;
+   297→   297→    a.click();
+   298→   298→    URL.revokeObjectURL(blobUrl);
+   299→   299→  };
+   300→   300→
+   301→   301→  const handleExportAll = async () => {
+   302→   302→    setIsExporting(true);
+   303→   303→    setShowExportMenu(false);
+   304→   304→    try {
+   305→   305→      await downloadBlob('/api/products/export', 'products_export.xlsx');
+   306→   306→    } catch (err: any) {
+   307→   307→      toast.error(err.message || 'Export failed');
+   308→   308→    } finally {
+   309→   309→      setIsExporting(false);
+   310→   310→    }
+   311→   311→  };
+   312→   312→
+   313→   313→  const handleExportByRange = async () => {
+   314→   314→    setSrRangeError('');
+   315→   315→
+   316→   316→    const trimmed = srRange.trim();
+   317→   317→    // Validate format: must be "number-number"
+   318→   318→    const match = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+   319→   319→    if (!match) {
+   320→   320→      setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150');
+   321→   321→      return;
+   322→   322→    }
+   323→   323→
+   324→   324→    const from = parseInt(match[1], 10);
+   325→   325→    const to = parseInt(match[2], 10);
+   326→   326→
+   327→   327→    if (from > to) {
+   328→   328→      setSrRangeError('Start number cannot be greater than end number.');
+   329→   329→      return;
+   330→   330→    }
+   331→   331→
+   332→   332→    setIsExporting(true);
+   333→   333→    try {
+   334→   334→      await downloadBlob(
+   335→   335→        `/api/products/export?srFrom=${from}&srTo=${to}`,
+   336→   336→        `products_sr_${from}_${to}.xlsx`,
+   337→   337→      );
+   338→   338→      setShowExportMenu(false);
+   339→   339→      setSrRange('');
+   340→   340→    } catch (err: any) {
+   341→   341→      toast.error(err.message || 'Export failed');
+   342→   342→    } finally {
+   343→   343→      setIsExporting(false);
+   344→   344→    }
+   345→   345→  };
+   346→   346→
+   347→   347→  return (
+   348→   348→    <div className="space-y-4">
+   349→   349→      {/* Header */}
+   350→   350→      <div className="flex items-center gap-3">
+   351→   351→        <Button variant="ghost" size="sm" onClick={() => setView('dashboard')} className="h-9 w-9 p-0">
+   352→   352→          <ArrowLeft className="h-5 w-5" />
+   353→   353→        </Button>
+   354→   354→        <div className="flex-1">
+   355→   355→          <h1 className="text-xl font-bold">Products</h1>
+   356→   356→          <p className="text-sm text-muted-foreground">
+   357→   357→            {groupByNd && selectedNdNumber
+   358→   358→              ? `${totalProducts} products in ND ${selectedNdNumber}`
+   359→   359→              : groupByNd
+   360→   360→                ? `${ndGroups.length} ND groups`
+   361→   361→                : `${totalProducts} total`}
+   362→   362→          </p>
+   363→   363→        </div>
+   364→   364→        <div className="relative">
+   365→   365→          <Button
+   366→   366→            variant="outline"
+   367→   367→            size="sm"
+   368→   368→            className="h-9"
+   369→   369→            onClick={() => setShowExportMenu(!showExportMenu)}
+   370→   370→            disabled={isExporting}
+   371→   371→          >
+   372→   372→            {isExporting ? (
+   373→   373→              <span className="h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+   374→   374→            ) : (
+   375→   375→              <Download className="h-4 w-4" />
+   376→   376→            )}
+   377→   377→          </Button>
+   378→   378→
+   379→   379→          {showExportMenu && (
+   380→   380→            <>
+   381→   381→              {/* Backdrop to close menu on outside click */}
+   382→   382→              <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
+   383→   383→              <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
+   384→   384→                <p className="text-sm font-medium">Export Excel</p>
+   385→   385→
+   386→   386→                {/* Export All */}
+   387→   387→                <Button
+   388→   388→                  variant="outline"
+   389→   389→                  size="sm"
+   390→   390→                  className="w-full justify-start h-9"
+   391→   391→                  onClick={handleExportAll}
+   392→   392→                  disabled={isExporting}
+   393→   393→                >
+   394→   394→                  <FileDown className="h-4 w-4 mr-2" />
+   395→   395→                  Export All Products
+   396→   396→                </Button>
+   397→   397→
+   398→   398→                {/* Divider */}
+   399→   399→                <div className="border-t" />
+   400→   400→
+   401→   401→                {/* Export by Range */}
+   402→   402→                <div className="space-y-2">
+   403→   403→                  <p className="text-xs text-muted-foreground">Export by Serial Number Range</p>
+   404→   404→                  <Input
+   405→   405→                    placeholder="e.g. 1-7, 25-40, 100-150"
+   406→   406→                    value={srRange}
+   407→   407→                    onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
+   408→   408→                    onKeyDown={(e) => { if (e.key === 'Enter') handleExportByRange(); }}
+   409→   409→                    className="h-9 text-sm"
+   410→   410→                    disabled={isExporting}
+   411→   411→                  />
+   412→   412→                  {srRangeError && (
+   413→   413→                    <p className="text-xs text-destructive">{srRangeError}</p>
+   414→   414→                  )}
+   415→   415→                  <Button
+   416→   416→                    size="sm"
+   417→   417→                    className="w-full h-9"
+   418→   418→                    onClick={handleExportByRange}
+   419→   419→                    disabled={isExporting || !srRange.trim()}
+   420→   420→                  >
+   421→   421→                    <Download className="h-4 w-4 mr-2" />
+   422→   422→                    Export Range
+   423→   423→                  </Button>
+   424→   424→                </div>
+   425→   425→              </div>
+   426→   426→            </>
+   427→   427→          )}
+   428→   428→        </div>
+   429→   429→        <Button size="sm" onClick={() => setView('add-product')} className="h-9">
+   430→   430→          <Plus className="h-4 w-4" />
+   431→   431→        </Button>
+   432→   432→      </div>
+   433→   433→
+   434→   434→      {/* Search Bar */}
+   435→   435→      <div className="flex gap-2">
+   436→   436→        <div className="relative flex-1">
+   437→   437→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   438→   438→          <Input
+   439→   439→            value={localSearch}
+   440→   440→            onChange={(e) => handleSearchChange(e.target.value)}
+   441→   441→            onKeyDown={handleSearchKeyDown}
+   442→   442→            placeholder="Search by ND Number, Barcode, Description..."
+   443→   443→            className="h-11 pl-9 pr-9"
+   444→   444→          />
+   445→   445→          {localSearch && (
+   446→   446→            <button
+   447→   447→              onClick={clearSearch}
+   448→   448→              className="absolute right-3 top-1/2 -translate-y-1/2"
+   449→   449→            >
+   450→   450→              <X className="h-4 w-4 text-muted-foreground" />
+   451→   451→            </button>
+   452→   452→          )}
+   453→   453→        </div>
+   454→   454→        {/* Scan Barcode Button */}
+   455→   455→        <Button
+   456→   456→          variant="outline"
+   457→   457→          size="sm"
+   458→   458→          onClick={() => setShowBarcodeScanner(true)}
+   459→   459→          className="h-11 px-3 shrink-0 gap-1.5"
+   460→   460→          title="Scan Barcode"
+   461→   461→        >
+   462→   462→          <ScanBarcode className="h-5 w-5" />
+   463→   463→          <span className="text-xs">Scan</span>
+   464→   464→        </Button>
+   465→   465→        {/* Capture Barcode Photo Button */}
+   466→   466→        <Button
+   467→   467→          variant="outline"
+   468→   468→          size="sm"
+   469→   469→          onClick={() => setShowPhotoCapture(true)}
+   470→   470→          className="h-11 px-3 shrink-0 gap-1.5"
+   471→   471→          title="Capture Barcode Photo"
+   472→   472→        >
+   473→   473→          <Camera className="h-5 w-5" />
+   474→   474→          <span className="text-xs">Photo</span>
+   475→   475→        </Button>
+   476→   476→      </div>
+   477→   477→
+   478→   478→      {/* Barcode Scanner Modal */}
+   479→   479→      {showBarcodeScanner && (
+   480→   480→        <BarcodeScanner
+   481→   481→          onScan={(barcode) => {
+   482→   482→            setShowBarcodeScanner(false);
+   483→   483→            setLocalSearch(barcode);
+   484→   484→            setSearchQuery(barcode);
+   485→   485→            setCurrentPage(1);
+   486→   486→          }}
+   487→   487→          onClose={() => setShowBarcodeScanner(false)}
+   488→   488→        />
+   489→   489→      )}
+   490→   490→
+   491→   491→      {/* Barcode Photo Capture Modal */}
+   492→   492→      {showPhotoCapture && (
+   493→   493→        <BarcodePhotoCapture
+   494→   494→          onScan={(barcode) => {
+   495→   495→            setShowPhotoCapture(false);
+   496→   496→            setLocalSearch(barcode);
+   497→   497→            setSearchQuery(barcode);
+   498→   498→            setCurrentPage(1);
+   499→   499→          }}
+   500→   500→          onClose={() => setShowPhotoCapture(false)}
+   501→   501→        />
+   502→   502→      )}
+   503→   503→
+   504→   504→      {/* Search result info */}
+   505→   505→      {searchQuery && !groupByNd && totalProducts > 0 && (
+   506→   506→        <div className="flex items-center gap-2 text-sm flex-wrap">
+   507→   507→          <Badge variant="secondary" className="font-normal">
+   508→   508→            <Search className="h-3 w-3 mr-1" />
+   509→   509→            {totalProducts} matching product{totalProducts !== 1 ? 's' : ''}
+   510→   510→          </Badge>
+   511→   511→          {(() => {
+   512→   512→            const ndMatches = products.filter(p =>
+   513→   513→              p.ndNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+   514→   514→            );
+   515→   515→            if (ndMatches.length > 0) {
+   516→   516→              const uniqueNdNumbers = [...new Set(ndMatches.map(p => p.ndNumber))];
+   517→   517→              return (
+   518→   518→                <Badge variant="outline" className="font-normal bg-amber-50 border-amber-300 text-amber-800">
+   519→   519→                  <Layers className="h-3 w-3 mr-1" />
+   520→   520→                  {ndMatches.length} product{ndMatches.length !== 1 ? 's' : ''} in {uniqueNdNumbers.length} ND group{uniqueNdNumbers.length !== 1 ? 's' : ''} (shown first)
+   521→   521→                </Badge>
+   522→   522→              );
+   523→   523→            }
+   524→   524→            return null;
+   525→   525→          })()}
+   526→   526→        </div>
+   527→   527→      )}
+   528→   528→
+   529→   529→      {/* Controls row: Sort + Group toggle + Filters toggle */}
+   530→   530→      <div className="flex items-center gap-2 flex-wrap">
+   531→   531→        {/* Sort */}
+   532→   532→        <div className="flex items-center gap-1.5">
+   533→   533→          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+   534→   534→            <SelectTrigger className="h-9 w-[160px] text-xs">
+   535→   535→              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
+   536→   536→              <SelectValue placeholder="Sort by" />
+   537→   537→            </SelectTrigger>
+   538→   538→            <SelectContent>
+   539→   539→              {sortOptions.map(opt => (
+   540→   540→                <SelectItem key={opt.value} value={opt.value} className="text-xs">
+   541→   541→                  {opt.label}
+   542→   542→                </SelectItem>
+   543→   543→              ))}
+   544→   544→            </SelectContent>
+   545→   545→          </Select>
+   546→   546→          <Button
+   547→   547→            variant="outline"
+   548→   548→            size="sm"
+   549→   549→            onClick={toggleSortOrder}
+   550→   550→            className="h-9 w-9 p-0"
+   551→   551→          >
+   552→   552→            {sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+   553→   553→          </Button>
+   554→   554→        </div>
+   555→   555→
+   556→   556→        {/* Group by ND Number */}
+   557→   557→        <Button
+   558→   558→          variant={groupByNd ? 'default' : 'outline'}
+   559→   559→          size="sm"
+   560→   560→          onClick={handleGroupToggle}
+   561→   561→          className="h-9 text-xs"
+   562→   562→        >
+   563→   563→          <Layers className="h-3.5 w-3.5 mr-1.5" />
+   564→   564→          {groupByNd ? 'Grouped by ND' : 'Group by ND'}
+   565→   565→        </Button>
+   566→   566→
+   567→   567→        {/* Filters toggle */}
+   568→   568→        <Button
+   569→   569→          variant={showFilters ? 'default' : 'outline'}
+   570→   570→          size="sm"
+   571→   571→          onClick={() => setShowFilters(!showFilters)}
+   572→   572→          className="h-9 text-xs"
+   573→   573→        >
+   574→   574→          <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
+   575→   575→          Filters
+   576→   576→        </Button>
+   577→   577→      </div>
+   578→   578→
+   579→   579→      {/* Filters */}
+   580→   580→      {showFilters && (
+   581→   581→        <Card>
+   582→   582→          <CardContent className="pt-4 space-y-3">
+   583→   583→            <div className="flex items-center justify-between">
+   584→   584→              <p className="text-sm font-medium">Filters</p>
+   585→   585→              <Button
+   586→   586→                variant="ghost"
+   587→   587→                size="sm"
+   588→   588→                onClick={() => {
+   589→   589→                  useInventoryStore.getState().clearFilters();
+   590→   590→                  setLocalSearch('');
+   591→   591→                  setSearchQuery('');
+   592→   592→                  setSelectedNdNumber('');
+   593→   593→                  setCurrentPage(1);
+   594→   594→                }}
+   595→   595→                className="h-7 text-xs"
+   596→   596→              >
+   597→   597→                Clear All
+   598→   598→              </Button>
+   599→   599→            </div>
+   600→   600→            <div className="grid grid-cols-2 gap-3">
+   601→   601→              <Input
+   602→   602→                placeholder="Material"
+   603→   603→                value={filterMaterial}
+   604→   604→                onChange={(e) => useInventoryStore.getState().setFilter('filterMaterial', e.target.value)}
+   605→   605→                className="h-10"
+   606→   606→              />
+   607→   607→              <Input
+   608→   608→                placeholder="Colour"
+   609→   609→                value={filterColour}
+   610→   610→                onChange={(e) => useInventoryStore.getState().setFilter('filterColour', e.target.value)}
+   611→   611→                className="h-10"
+   612→   612→              />
+   613→   613→              <Input
+   614→   614→                placeholder="Made In"
+   615→   615→                value={filterMade}
+   616→   616→                onChange={(e) => useInventoryStore.getState().setFilter('filterMade', e.target.value)}
+   617→   617→                className="h-10"
+   618→   618→              />
+   619→   619→              <div className="flex gap-2">
+   620→   620→                <Input
+   621→   621→                  placeholder="Min Price (KD)"
+   622→   622→                  type="number"
+   623→   623→                  value={filterPriceMin}
+   624→   624→                  onChange={(e) => useInventoryStore.getState().setFilter('filterPriceMin', e.target.value)}
+   625→   625→                  className="h-10"
+   626→   626→                />
+   627→   627→                <Input
+   628→   628→                  placeholder="Max Price (KD)"
+   629→   629→                  type="number"
+   630→   630→                  value={filterPriceMax}
+   631→   631→                  onChange={(e) => useInventoryStore.getState().setFilter('filterPriceMax', e.target.value)}
+   632→   632→                  className="h-10"
+   633→   633→                />
+   634→   634→              </div>
+   635→   635→            </div>
+   636→   636→            <Button onClick={() => { setCurrentPage(1); }} className="w-full h-10">
+   637→   637→              Apply Filters
+   638→   638→            </Button>
+   639→   639→          </CardContent>
+   640→   640→        </Card>
+   641→   641→      )}
+   642→   642→
+   643→   643→      {/* ── Group by ND Number View ── */}
+   644→   644→      {groupByNd && !selectedNdNumber ? (
+   645→   645→        isLoading ? (
+   646→   646→          <div className="space-y-3">
+   647→   647→            {[1, 2, 3, 4, 5].map((i) => (
+   648→   648→              <Skeleton key={i} className="h-14 w-full rounded-lg" />
+   649→   649→            ))}
+   650→   650→          </div>
+   651→   651→        ) : ndGroups.length === 0 ? (
+   652→   652→          <div className="text-center py-12">
+   653→   653→            <Layers className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+   654→   654→            <p className="text-muted-foreground">No ND Number groups found</p>
+   655→   655→            {searchQuery && (
+   656→   656→              <Button variant="outline" className="mt-4" onClick={clearSearch}>
+   657→   657→                Clear Search
+   658→   658→              </Button>
+   659→   659→            )}
+   660→   660→          </div>
+   661→   661→        ) : (
+   662→   662→          <div className="space-y-1.5">
+   663→   663→            {ndGroups.map((group) => (
+   664→   664→              <Card
+   665→   665→                key={group.ndNumber}
+   666→   666→                className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
+   667→   667→                onClick={() => handleGroupClick(group.ndNumber)}
+   668→   668→              >
+   669→   669→                <CardContent className="p-3">
+   670→   670→                  <div className="flex items-center gap-3">
+   671→   671→                    {expandedGroups.has(group.ndNumber) ? (
+   672→   672→                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+   673→   673→                    ) : (
+   674→   674→                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+   675→   675→                    )}
+   676→   676→                    <div className="flex-1 min-w-0">
+   677→   677→                      <p className="font-semibold text-sm">
+   678→   678→                        {searchQuery ? (
+   679→   679→                          <HighlightedText text={group.ndNumber} highlight={searchQuery} />
+   680→   680→                        ) : (
+   681→   681→                          group.ndNumber
+   682→   682→                        )}
+   683→   683→                      </p>
+   684→   684→                    </div>
+   685→   685→                    <Badge variant="secondary" className="shrink-0">
+   686→   686→                      {group.count} product{group.count !== 1 ? 's' : ''}
+   687→   687→                    </Badge>
+   688→   688→                  </div>
+   689→   689→                </CardContent>
+   690→   690→              </Card>
+   691→   691→            ))}
+   692→   692→          </div>
+   693→   693→        )
+   694→   694→      ) : null}
+   695→   695→
+   696→   696→      {/* ── Products in selected ND group ── */}
+   697→   697→      {groupByNd && selectedNdNumber && (
+   698→   698→        <div className="space-y-2">
+   699→   699→          <div className="flex items-center gap-2">
+   700→   700→            <Button
+   701→   701→              variant="ghost"
+   702→   702→              size="sm"
+   703→   703→              onClick={() => { setSelectedNdNumber(''); setProducts([], 0); }}
+   704→   704→              className="h-8 px-2"
+   705→   705→            >
+   706→   706→              <ArrowLeft className="h-4 w-4 mr-1" />
+   707→   707→              Back to Groups
+   708→   708→            </Button>
+   709→   709→            <Badge variant="secondary" className="font-medium">
+   710→   710→              ND {selectedNdNumber} — {totalProducts} product{totalProducts !== 1 ? 's' : ''}
+   711→   711→            </Badge>
+   712→   712→          </div>
+   713→   713→          {isLoading ? (
+   714→   714→            <div className="space-y-3">
+   715→   715→              {[1, 2, 3].map((i) => (
+   716→   716→                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+   717→   717→              ))}
+   718→   718→            </div>
+   719→   719→          ) : (
+   720→   720→            products.map((product) => (
+   721→   721→              <ProductCard
+   722→   722→                key={product.id}
+   723→   723→                product={product}
+   724→   724→                searchQuery={searchQuery}
+   725→   725→                onClick={() => openProduct(product)}
+   726→   726→              />
+   727→   727→            ))
+   728→   728→          )}
+   729→   729→        </div>
+   730→   730→      )}
+   731→   731→
+   732→   732→      {/* ── Normal Product List (no grouping) ── */}
+   733→   733→      {!groupByNd && (
+   734→   734→        isLoading ? (
+   735→   735→          <div className="space-y-3">
+   736→   736→            {[1, 2, 3, 4, 5].map((i) => (
+   737→   737→              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+   738→   738→            ))}
+   739→   739→          </div>
+   740→   740→        ) : products.length === 0 && totalProducts === 0 ? (
+   741→   741→          <div className="text-center py-16">
+   742→   742→            <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+   743→   743→            <p className="text-lg font-medium text-muted-foreground">No products found</p>
+   744→   744→            <p className="text-sm text-muted-foreground mt-1">Import an Excel file to begin.</p>
+   745→   745→            <div className="flex gap-3 justify-center mt-6">
+   746→   746→              <Button onClick={() => setView('import')}>
+   747→   747→                <Upload className="h-4 w-4 mr-2" />
+   748→   748→                Import Excel
+   749→   749→              </Button>
+   750→   750→              <Button variant="outline" onClick={() => setView('add-product')}>
+   751→   751→                <Plus className="h-4 w-4 mr-2" />
+   752→   752→                Add Product
+   753→   753→              </Button>
+   754→   754→            </div>
+   755→   755→          </div>
+   756→   756→        ) : products.length === 0 ? (
+   757→   757→          <div className="text-center py-12">
+   758→   758→            <ScanBarcode className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+   759→   759→            <p className="text-muted-foreground">
+   760→   760→              {searchQuery && /^\d+$/.test(searchQuery)
+   761→   761→                ? `No product found for barcode ${searchQuery}`
+   762→   762→                : 'No products match your search'}
+   763→   763→            </p>
+   764→   764→            <Button variant="outline" className="mt-4" onClick={clearSearch}>
+   765→   765→              Clear Search
+   766→   766→            </Button>
+   767→   767→          </div>
+   768→   768→        ) : (
+   769→   769→          <div className="space-y-2">
+   770→   770→            {products.map((product) => (
+   771→   771→              <ProductCard
+   772→   772→                key={product.id}
+   773→   773→                product={product}
+   774→   774→                searchQuery={searchQuery}
+   775→   775→                onClick={() => openProduct(product)}
+   776→   776→              />
+   777→   777→            ))}
+   778→   778→          </div>
+   779→   779→        )
+   780→   780→      )}
+   781→   781→
+   782→   782→      {/* Pagination */}
+   783→   783→      {!groupByNd && totalPages > 1 && (
+   784→   784→        <div className="flex items-center justify-between pt-2">
+   785→   785→          <p className="text-xs text-muted-foreground">
+   786→   786→            Page {currentPage} of {totalPages}
+   787→   787→          </p>
+   788→   788→          <div className="flex gap-2">
+   789→   789→            <Button
+   790→   790→              variant="outline"
+   791→   791→              size="sm"
+   792→   792→              disabled={currentPage <= 1}
+   793→   793→              onClick={() => setCurrentPage(currentPage - 1)}
+   794→   794→              className="h-8"
+   795→   795→            >
+   796→   796→              Previous
+   797→   797→            </Button>
+   798→   798→            <Button
+   799→   799→              variant="outline"
+   800→   800→              size="sm"
+   801→   801→              disabled={currentPage >= totalPages}
+   802→   802→              onClick={() => setCurrentPage(currentPage + 1)}
+   803→   803→              className="h-8"
+   804→   804→            >
+   805→   805→              Next
+   806→   806→            </Button>
+   807→   807→          </div>
+   808→   808→        </div>
+   809→   809→      )}
+   810→   810→    </div>
+   811→   811→  );
+   812→   812→}
+   813→   813→
+   814→   814→// ── Reusable Product Card ──
+   815→   815→function ProductCard({
+   816→   816→  product,
+   817→   817→  searchQuery,
+   818→   818→  onClick,
+   819→   819→}: {
+   820→   820→  product: Product;
+   821→   821→  searchQuery: string;
+   822→   822→  onClick: () => void;
+   823→   823→}) {
+   824→   824→  const colours = parseJsonArray(product.colours);
+   825→   825→  const materials = parseJsonArray(product.materials);
+   826→   826→  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
+   827→   827→
+   828→   828→  return (
+   829→   829→    <Card
+   830→   830→      className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
+   831→   831→      onClick={onClick}
+   832→   832→    >
+   833→   833→      <CardContent className="p-3">
+   834→   834→        <div className="flex gap-3">
+   835→   835→          {/* Thumbnail */}
+   836→   836→          <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+   837→   837→            {primaryImage ? (
+   838→   838→              <img
+   839→   839→                src={primaryImage.imageUrl}
+   840→   840→                alt="Product"
+   841→   841→                className="w-full h-full object-cover"
+   842→   842→              />
+   843→   843→            ) : (
+   844→   844→              <div className="w-full h-full flex items-center justify-center">
+   845→   845→                <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+   846→   846→              </div>
+   847→   847→            )}
+   848→   848→          </div>
+   849→   849→
+   850→   850→          {/* Info */}
+   851→   851→          <div className="flex-1 min-w-0">
+   852→   852→            <div className="flex items-start justify-between gap-2">
+   853→   853→              <div className="min-w-0 flex-1">
+   854→   854→                <p className="font-medium text-sm truncate">
+   855→   855→                  {product.englishDescription || product.ndNumber || (product.sr != null ? `Item #${product.sr}` : 'Unnamed Product')}
+   856→   856→                </p>
+   857→   857→                {product.arabicDescription && (
+   858→   858→                  <p className="text-xs text-muted-foreground truncate" dir="rtl">
+   859→   859→                    {product.arabicDescription}
+   860→   860→                  </p>
+   861→   861→                )}
+   862→   862→              </div>
+   863→   863→              <div className="text-right shrink-0">
+   864→   864→                <p className="font-semibold text-sm">
+   865→   865→                  {formatPrice(product.price)}
+   866→   866→                </p>
+   867→   867→              </div>
+   868→   868→            </div>
+   869→   869→
+   870→   870→            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+   871→   871→              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+   872→   872→                Sr: {product.sr ?? '-'}
+   873→   873→              </Badge>
+   874→   874→              {product.ndNumber && (
+   875→   875→                <Badge
+   876→   876→                  variant="outline"
+   877→   877→                  className={`text-[10px] h-5 px-1.5 ${
+   878→   878→                    searchQuery && product.ndNumber.toLowerCase().includes(searchQuery.toLowerCase())
+   879→   879→                      ? 'bg-amber-50 border-amber-300 text-amber-800'
+   880→   880→                      : ''
+   881→   881→                  }`}
+   882→   882→                >
+   883→   883→                  {searchQuery ? (
+   884→   884→                    <HighlightedText text={product.ndNumber} highlight={searchQuery} />
+   885→   885→                  ) : (
+   886→   886→                    product.ndNumber
+   887→   887→                  )}
+   888→   888→                </Badge>
+   889→   889→              )}
+   890→   890→              {product.barcode && (
+   891→   891→                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+   892→   892→                  {product.barcode}
+   893→   893→                </Badge>
+   894→   894→              )}
+   895→   895→              {product.made && (
+   896→   896→                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+   897→   897→                  {product.made}
+   898→   898→                </Badge>
+   899→   899→              )}
+   900→   900→              {(product.length != null || product.width != null || product.height != null) && (
+   901→   901→                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+   902→   902→                  {product.length ?? '?'}×{product.width ?? '?'}×{product.height ?? '?'}
+   903→   903→                </Badge>
+   904→   904→              )}
+   905→   905→              {materials.slice(0, 1).map((m, i) => (
+   906→   906→                <Badge key={i} variant="secondary" className="text-[10px] h-5 px-1.5">
+   907→   907→                  {m}
+   908→   908→                </Badge>
+   909→   909→              ))}
+   910→   910→              {materials.length > 1 && (
+   911→   911→                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+   912→   912→                  +{materials.length - 1}
+   913→   913→                </Badge>
+   914→   914→              )}
+   915→   915→              {colours.slice(0, 2).map((c, i) => (
+   916→   916→                <Badge key={i} variant="secondary" className="text-[10px] h-5 px-1.5">
+   917→   917→                  {c}
+   918→   918→                </Badge>
+   919→   919→              ))}
+   920→   920→              {colours.length > 2 && (
+   921→   921→                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+   922→   922→                  +{colours.length - 2}
+   923→   923→                </Badge>
+   924→   924→              )}
+   925→   925→              {product.pcs != null && (
+   926→   926→                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+   927→   927→                  {product.pcs} pcs
+   928→   928→                </Badge>
+   929→   929→              )}
+   930→   930→              {product.images.length > 0 && (
+   931→   931→                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+   932→   932→                  {product.images.length} img
+   933→   933→                </Badge>
+   934→   934→              )}
+   935→   935→            </div>
+   936→   936→          </div>
+   937→   937→        </div>
+   938→   938→      </CardContent>
+   939→   939→    </Card>
+   940→   940→  );
+   941→   941→}
+   942→   942→
+   943→   943→function parseJsonArray(value: string | null): string[] {
+   944→   944→  if (!value) return [];
+   945→   945→  // Already an array (shouldn't happen with mapper, but be safe)
+   946→   946→  if (Array.isArray(value)) return value;
+   947→   947→  try {
+   948→   948→    const arr = JSON.parse(value);
+   949→   949→    return Array.isArray(arr) ? arr : [];
+   950→   950→  } catch {
+   951→   951→    return [];
+   952→   952→  }
+   953→   953→}
+   954→   954→

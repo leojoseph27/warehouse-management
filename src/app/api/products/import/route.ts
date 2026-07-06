@@ -1,35 +1,106 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { COLUMN_DEFS } from '@/lib/lookups';
+import { applyAutoDerivations } from '@/lib/serialize-product';
 import * as XLSX from 'xlsx';
 
 /**
- * Excel Import Route — Two-Row Header Support
- * Uses Prisma ORM with Neon PostgreSQL.
+ * Excel Import Route — Al-Nassim Master Catalog 52-Column Schema
+ *
+ * Supports two-row header format:
+ *   Row 1 = Group headers (merged cells): Product Identity, Classification, etc.
+ *   Row 2 = Actual column headers matching COLUMN_DEFS
+ *
+ * Auto-maps columns using pattern matching against all 52 headers.
+ * Applies auto-derivation rules during import.
+ * Batch inserts with 100 rows per transaction.
  */
 
-const COLUMN_MAPPINGS: {
-  patterns: string[];
+// ─────────────────────────────────────────────────────────────
+// Column mapping patterns for auto-detection
+// ─────────────────────────────────────────────────────────────
+
+interface ColumnMapping {
   field: string;
-  type: 'number' | 'string' | 'array' | 'price';
-}[] = [
-  { patterns: ['sr', 'Sr', 'SR', 's.r', 'S.R', 'serial', 'Serial', 'no', 'No', '#'], field: 'sr', type: 'number' },
-  { patterns: ['english description', 'englishdescription', 'english_description', 'english desc', 'description', 'desc', 'english_desc', 'product description', 'name'], field: 'englishDescription', type: 'string' },
-  { patterns: ['arabic description', 'arabicdescription', 'arabic_description', 'arabic desc', 'arabic_desc', 'arabic', 'arab description'], field: 'arabicDescription', type: 'string' },
-  { patterns: ['nd number', 'ndnumber', 'nd_number', 'nd no', 'ndno', 'nd_no', 'nd', 'ND Number', 'ND'], field: 'ndNumber', type: 'string' },
-  { patterns: ['barcode', 'Barcode', 'BARCODE', 'bar code', 'bar_code', 'ean', 'upc', 'code', 'Code'], field: 'barcode', type: 'string' },
-  { patterns: ['colour', 'color', 'Colour', 'Color', 'COLOUR', 'COLOR', 'colours', 'colors'], field: 'colours', type: 'array' },
-  { patterns: ['l', 'L', 'length', 'Length', 'LENGTH', 'len', 'Lng', 'long', 'dimension l'], field: 'length', type: 'number' },
-  { patterns: ['w', 'W', 'width', 'Width', 'WIDTH', 'wid', 'dimension w'], field: 'width', type: 'number' },
-  { patterns: ['h', 'H', 'height', 'Height', 'HEIGHT', 'ht', 'dimension h'], field: 'height', type: 'number' },
-  { patterns: ['made', 'Made', 'MADE', 'made in', 'Made In', 'made_in', 'origin', 'country', 'country of origin'], field: 'made', type: 'string' },
-  { patterns: ['material', 'Material', 'MATERIAL', 'materials', 'Materials', 'MATERIALS', 'mat'], field: 'materials', type: 'array' },
-  { patterns: ['additional info', 'additionalinfo', 'additional_info', 'additional information', 'add info', 'add_info', 'additional', 'extra info', 'extra_info', 'info', 'notes', 'extra'], field: 'additionalInfo', type: 'array' },
-  { patterns: ['price', 'Price', 'PRICE', 'unit price', 'unitprice', 'unit_price', 'cost', 'amount', 'rate'], field: 'price', type: 'price' },
-  { patterns: ['pcs', 'Pcs', 'PCS', 'pieces', 'Pieces', 'PIECES', 'piece', 'qty', 'quantity', 'Quantity', 'QTY', 'units', 'stock'], field: 'pcs', type: 'number' },
-  { patterns: ['photo', 'Photo', 'PHOTO', 'image', 'Image', 'picture', 'Picture', 'img'], field: 'photo', type: 'string' },
+  type: 'string' | 'number' | 'integer' | 'decimal';
+  patterns: string[];
+}
+
+const COLUMN_MAPPINGS: ColumnMapping[] = [
+  // Product Identity
+  { field: 'sourceRow', type: 'integer', patterns: ['source row', 'sourcerow', 'source_row', 'sr', 's.r', 'serial', '#', 'row'] },
+  { field: 'productId', type: 'string', patterns: ['product id', 'productid', 'product_id', 'prod id', 'prodid', 'erp id', 'erpid'] },
+  { field: 'sku', type: 'string', patterns: ['sku', 'SKU', 'stock keeping unit', 'item code', 'itemcode'] },
+  { field: 'ndNumber', type: 'string', patterns: ['nd number', 'ndnumber', 'nd_number', 'nd no', 'ndno', 'nd_no', 'nd', 'nd-number'] },
+  { field: 'barcode', type: 'string', patterns: ['barcode', 'bar code', 'bar_code', 'ean', 'upc', 'ean-13', 'code'] },
+  { field: 'legacyCode', type: 'string', patterns: ['legacy code', 'legacycode', 'legacy_code', 'old code', 'oldcode', 'legacy'] },
+  { field: 'brand', type: 'string', patterns: ['brand', 'Brand', 'BRAND', 'manufacturer', 'make'] },
+  { field: 'brandAr', type: 'string', patterns: ['brand ar', 'brandar', 'brand_ar', 'brand arabic', 'brand_arabic', 'العلامة التجارية'] },
+  { field: 'brandCode', type: 'string', patterns: ['brand code', 'brandcode', 'brand_code', 'brand no', 'brandno'] },
+  { field: 'model', type: 'string', patterns: ['model', 'Model', 'MODEL', 'variant', 'model code'] },
+  // Classification
+  { field: 'department', type: 'string', patterns: ['department', 'dept', 'Department', 'DEPT'] },
+  { field: 'category', type: 'string', patterns: ['category', 'Category', 'CATEGORY', 'cat'] },
+  { field: 'subcategory', type: 'string', patterns: ['subcategory', 'sub-category', 'sub_category', 'sub category', 'subcat'] },
+  { field: 'sectionCode', type: 'string', patterns: ['section code', 'sectioncode', 'section_code', 'section', 'sect code'] },
+  { field: 'productFamily', type: 'string', patterns: ['product family', 'productfamily', 'product_family', 'family', 'prod family'] },
+  { field: 'productType', type: 'string', patterns: ['product type', 'producttype', 'product_type', 'type', 'prod type'] },
+  // Product Information
+  { field: 'nameAr', type: 'string', patterns: ['name ar', 'namear', 'name_ar', 'arabic name', 'الاسم', 'اسم المنتج', 'arabic description', 'arabicdescription', 'arabic_description'] },
+  { field: 'nameEn', type: 'string', patterns: ['name en', 'nameen', 'name_en', 'english name', 'english description', 'englishdescription', 'english_description', 'description', 'desc', 'product name'] },
+  { field: 'shortDescAr', type: 'string', patterns: ['short desc ar', 'shortdescar', 'short_desc_ar', 'short description ar', 'short_ar'] },
+  { field: 'shortDescEn', type: 'string', patterns: ['short desc en', 'shortdescen', 'short_desc_en', 'short description en', 'short_en', 'short desc'] },
+  { field: 'longDescAr', type: 'string', patterns: ['long desc ar', 'longdescar', 'long_desc_ar', 'long description ar', 'detailed desc ar'] },
+  { field: 'longDescEn', type: 'string', patterns: ['long desc en', 'longdescen', 'long_desc_en', 'long description en', 'detailed desc', 'full description'] },
+  // Attributes
+  { field: 'color', type: 'string', patterns: ['color', 'colour', 'Color', 'Colour', 'COLOR', 'COLOUR'] },
+  { field: 'colorAr', type: 'string', patterns: ['color ar', 'colour ar', 'colorar', 'colourar', 'color_ar', 'color arabic'] },
+  { field: 'material', type: 'string', patterns: ['material', 'Material', 'MATERIAL', 'mat'] },
+  { field: 'materialAr', type: 'string', patterns: ['material ar', 'materialar', 'material_ar', 'material arabic'] },
+  { field: 'capacity', type: 'decimal', patterns: ['capacity', 'Capacity', 'volume', 'CAPACITY'] },
+  { field: 'capacityUnit', type: 'string', patterns: ['capacity unit', 'capacityunit', 'capacity_unit', 'cap unit', 'vol unit'] },
+  { field: 'weight', type: 'decimal', patterns: ['weight', 'Weight', 'WEIGHT', 'wt'] },
+  { field: 'weightUnit', type: 'string', patterns: ['weight unit', 'weightunit', 'weight_unit', 'wt unit'] },
+  { field: 'length', type: 'decimal', patterns: ['length', 'Length', 'l', 'L', 'len', 'dimension l'] },
+  { field: 'width', type: 'decimal', patterns: ['width', 'Width', 'w', 'W', 'wid', 'dimension w'] },
+  { field: 'height', type: 'decimal', patterns: ['height', 'Height', 'h', 'H', 'ht', 'dimension h'] },
+  { field: 'diameter', type: 'decimal', patterns: ['diameter', 'Diameter', 'dia', 'DIAMETER'] },
+  { field: 'dimensionUnit', type: 'string', patterns: ['dimension unit', 'dimensionunit', 'dimension_unit', 'dim unit', 'size unit'] },
+  // Logistics
+  { field: 'countryOfOrigin', type: 'string', patterns: ['country of origin', 'countryoforigin', 'country_of_origin', 'origin', 'country', 'made in', 'made', 'made_in'] },
+  { field: 'unit', type: 'string', patterns: ['unit', 'Unit', 'UNIT', 'unit of sale', 'sale unit', 'uom'] },
+  { field: 'minSalesMultiples', type: 'string', patterns: ['min sales multiples', 'minsalesmultiples', 'min_sales_multiples', 'min sales', 'min multiples', 'min qty'] },
+  // Commercial
+  { field: 'defaultPrice', type: 'decimal', patterns: ['default price', 'defaultprice', 'default_price', 'price', 'Price', 'PRICE', 'unit price', 'retail price'] },
+  // SEO
+  { field: 'seoTitleEn', type: 'string', patterns: ['seo title en', 'seotitleen', 'seo_title_en', 'meta title', 'page title'] },
+  { field: 'seoTitleAr', type: 'string', patterns: ['seo title ar', 'seotitlear', 'seo_title_ar', 'meta title ar'] },
+  { field: 'seoDescriptionEn', type: 'string', patterns: ['seo description en', 'seodescriptionen', 'seo_description_en', 'meta description', 'meta desc'] },
+  { field: 'seoDescriptionAr', type: 'string', patterns: ['seo description ar', 'seodescriptionar', 'seo_description_ar', 'meta description ar'] },
+  { field: 'searchKeywords', type: 'string', patterns: ['search keywords', 'searchkeywords', 'search_keywords', 'keywords', 'tags'] },
+  // Internal
+  { field: 'internalNotes', type: 'string', patterns: ['internal notes', 'internalnotes', 'internal_notes', 'notes', 'staff notes'] },
+  { field: 'validationStatus', type: 'string', patterns: ['validation status', 'validationstatus', 'validation_status', 'status', 'review status'] },
+  { field: 'confidenceScore', type: 'integer', patterns: ['confidence score', 'confidencescore', 'confidence_score', 'quality score', 'score'] },
+  { field: 'pieces', type: 'integer', patterns: ['pieces', 'Pieces', 'PIECES', 'piece', 'pcs', 'Pcs', 'PCS', 'qty', 'quantity'] },
+  { field: 'setCount', type: 'integer', patterns: ['set count', 'setcount', 'set_count', 'items in set', 'set items'] },
+  { field: 'shape', type: 'string', patterns: ['shape', 'Shape', 'SHAPE', 'form'] },
+  { field: 'finish', type: 'string', patterns: ['finish', 'Finish', 'FINISH', 'surface'] },
+  { field: 'additionalInfo', type: 'string', patterns: ['additional info', 'additionalinfo', 'additional_info', 'additional information', 'add info', 'extra info', 'extra'] },
 ];
 
-const PARENT_HEADERS_NORMALIZED = ['sizemm', 'size', 'dimensions', 'dimension', 'sizemm'];
+// ─────────────────────────────────────────────────────────────
+// Group header names for two-row header detection
+// ─────────────────────────────────────────────────────────────
+
+const GROUP_HEADERS = new Set([
+  'product identity', 'classification', 'product information',
+  'attributes', 'logistics', 'commercial', 'seo', 'internal',
+]);
+
+// ─────────────────────────────────────────────────────────────
+// Helper functions
+// ─────────────────────────────────────────────────────────────
 
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[\s_-]/g, '').trim();
@@ -38,7 +109,6 @@ function normalize(s: string): string {
 function resolveTwoRowHeaders(worksheet: XLSX.WorkSheet): { headers: string[]; dataStartRow: number } {
   const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
   const maxCol = range.e.c;
-  const headers: string[] = [];
   const row1: string[] = [];
   const row2: string[] = [];
 
@@ -50,30 +120,21 @@ function resolveTwoRowHeaders(worksheet: XLSX.WorkSheet): { headers: string[]; d
   }
 
   const row2HasContent = row2.some(v => v !== '');
-  const row2LooksLikeSubHeaders = row2HasContent && row2.every(v => v === '' || v.length <= 20);
-  const row1HasParentHeader = row1.some(v => PARENT_HEADERS_NORMALIZED.includes(normalize(v)));
+  const row1HasGroupHeader = row1.some(v => GROUP_HEADERS.has(normalize(v)));
 
-  if (row2HasContent && (row2LooksLikeSubHeaders || row1HasParentHeader)) {
+  // If row 2 has content and row 1 has group headers, it's a two-row header format
+  if (row2HasContent && row1HasGroupHeader) {
+    const headers: string[] = [];
     for (let c = 0; c <= maxCol; c++) {
-      const r1 = row1[c];
       const r2 = row2[c];
-      const r1Norm = normalize(r1);
-
-      if (PARENT_HEADERS_NORMALIZED.includes(r1Norm) && r2 !== '') {
-        headers.push(r2);
-      } else if (r1 === '' && r2 !== '') {
-        headers.push(r2);
-      } else if (r2 === '') {
-        headers.push(r1);
-      } else if (PARENT_HEADERS_NORMALIZED.includes(r1Norm)) {
-        headers.push(r2);
-      } else {
-        headers.push(r1);
-      }
+      // Use Row 2 as the actual header if it has content
+      headers.push(r2 || row1[c]);
     }
     return { headers, dataStartRow: 2 };
   }
 
+  // Single-row header
+  const headers: string[] = [];
   for (let c = 0; c <= maxCol; c++) {
     headers.push(row1[c]);
   }
@@ -87,42 +148,45 @@ function matchHeader(header: string, patterns: string[]): boolean {
   return patterns.some(p => header === p || headerLower === p.toLowerCase() || headerNorm === normalize(p));
 }
 
-function buildColumnMapping(headers: string[]): { mapping: Map<number, { field: string; type: string }>; unmapped: string[] } {
-  const mapping = new Map<number, { field: string; type: string }>();
+function buildColumnMapping(headers: string[]): { mapping: Map<number, ColumnMapping>; unmapped: string[] } {
+  const mapping = new Map<number, ColumnMapping>();
   const mappedIndices = new Set<number>();
 
-  for (const colMapping of COLUMN_MAPPINGS) {
-    for (let c = 0; c < headers.length; c++) {
-      if (mappedIndices.has(c)) continue;
-      if (matchHeader(headers[c], colMapping.patterns)) {
-        mapping.set(c, { field: colMapping.field, type: colMapping.type });
+  // First pass: exact matches with COLUMN_DEFS header names
+  for (let c = 0; c < headers.length; c++) {
+    const header = headers[c];
+    if (!header) continue;
+    const headerNorm = normalize(header);
+    for (const colMapping of COLUMN_MAPPINGS) {
+      if (mappedIndices.has(c)) break;
+      // Check against COLUMN_DEFS header for exact match
+      const colDef = COLUMN_DEFS.find(cd => cd.field === colMapping.field);
+      if (colDef && (header === colDef.header || headerNorm === normalize(colDef.header))) {
+        mapping.set(c, colMapping);
         mappedIndices.add(c);
         break;
       }
     }
   }
 
-  const unmapped = headers.map((h, i) => ({ h, i })).filter(({ h, i }) => h && !mappedIndices.has(i)).map(({ h }) => h);
-  return { mapping, unmapped };
-}
+  // Second pass: pattern matching for unmatched columns
+  for (const colMapping of COLUMN_MAPPINGS) {
+    for (let c = 0; c < headers.length; c++) {
+      if (mappedIndices.has(c)) continue;
+      if (matchHeader(headers[c], colMapping.patterns)) {
+        mapping.set(c, colMapping);
+        mappedIndices.add(c);
+        break;
+      }
+    }
+  }
 
-function parseArrayField(value: any): string | null {
-  if (value === null || value === undefined || value === '') return null;
-  if (Array.isArray(value)) {
-    const filtered = value.filter(v => String(v).trim());
-    return filtered.length > 0 ? JSON.stringify(filtered) : null;
-  }
-  const str = String(value).trim();
-  if (!str) return null;
-  if (str.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(str);
-      if (Array.isArray(parsed) && parsed.length > 0) return JSON.stringify(parsed);
-      if (Array.isArray(parsed) && parsed.length === 0) return null;
-    } catch {}
-  }
-  const items = str.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
-  return items.length > 0 ? JSON.stringify(items) : null;
+  const unmapped = headers
+    .map((h, i) => ({ h, i }))
+    .filter(({ h, i }) => h && !mappedIndices.has(i))
+    .map(({ h }) => h);
+
+  return { mapping, unmapped };
 }
 
 function toNumber(value: any): number | null {
@@ -131,7 +195,7 @@ function toNumber(value: any): number | null {
   return isNaN(num) ? null : num;
 }
 
-function toPrice(value: any): number | null {
+function toDecimal(value: any): number | null {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'number') return value === 0 ? null : value;
   const cleaned = String(value).replace(/[^0-9.\-]/g, '').trim();
@@ -139,6 +203,12 @@ function toPrice(value: any): number | null {
   const num = Number(cleaned);
   if (isNaN(num) || num === 0) return null;
   return num;
+}
+
+function toInteger(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const num = parseInt(String(value), 10);
+  return isNaN(num) ? null : num;
 }
 
 function toString(value: any): string | null {
@@ -162,6 +232,10 @@ function getCellValue(worksheet: XLSX.WorkSheet, r: number, c: number): any {
   const cell = worksheet[XLSX.utils.encode_cell({ r, c })];
   return cell ? cell.v : '';
 }
+
+// ─────────────────────────────────────────────────────────────
+// POST handler
+// ─────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   const importStartTime = Date.now();
@@ -220,12 +294,12 @@ export async function POST(request: NextRequest) {
     let withPrice = 0;
     let withoutPrice = 0;
     const errorDetails: { row: number; error: string }[] = [];
-    const successDetails: { row: number; sr: number | null; description: string | null; ndNumber: string | null }[] = [];
+    const successDetails: { row: number; nameEn: string | null; ndNumber: string | null }[] = [];
     const previewRows: { row: number; data: Record<string, any> }[] = [];
 
-    // Parse and insert in batches
+    // Parse all rows first
     const BATCH_SIZE = 100;
-    const batchRows: { rowNum: number; data: Record<string, any>; record: Record<string, any> }[] = [];
+    const batchRows: { rowNum: number; data: Record<string, any> }[] = [];
 
     for (let r = dataStartRow; r <= range.e.r; r++) {
       const rowNum = r + 1;
@@ -234,12 +308,24 @@ export async function POST(request: NextRequest) {
       for (const [colIdx, mapInfo] of mapping) {
         const rawValue = getCellValue(worksheet, r, colIdx);
         switch (mapInfo.type) {
-          case 'number': record[mapInfo.field] = toNumber(rawValue); break;
-          case 'price': record[mapInfo.field] = toPrice(rawValue); break;
-          case 'string':
-            record[mapInfo.field] = mapInfo.field === 'barcode' ? toBarcode(rawValue) : toString(rawValue);
+          case 'integer':
+            record[mapInfo.field] = toInteger(rawValue);
             break;
-          case 'array': record[mapInfo.field] = parseArrayField(rawValue); break;
+          case 'decimal':
+            if (mapInfo.field === 'defaultPrice') {
+              record[mapInfo.field] = toDecimal(rawValue);
+            } else {
+              record[mapInfo.field] = toNumber(rawValue);
+            }
+            break;
+          case 'number':
+            record[mapInfo.field] = toNumber(rawValue);
+            break;
+          case 'string':
+            record[mapInfo.field] = (mapInfo.field === 'barcode' || mapInfo.field === 'productId' || mapInfo.field === 'sku')
+              ? toBarcode(rawValue)
+              : toString(rawValue);
+            break;
         }
       }
 
@@ -250,7 +336,10 @@ export async function POST(request: NextRequest) {
       const allFieldsNull = Object.values(record).every(v => v === null || v === undefined);
       if (allFieldsNull) { skipped++; continue; }
 
-      batchRows.push({ rowNum, data: record, record });
+      // Apply auto-derivation rules
+      const derivedRecord = applyAutoDerivations(record);
+
+      batchRows.push({ rowNum, data: derivedRecord });
     }
 
     // Insert in batches using Prisma
@@ -264,30 +353,28 @@ export async function POST(request: NextRequest) {
           )
         );
 
-        for (const { rowNum, record } of batch) {
+        for (const { rowNum, data } of batch) {
           imported++;
-          if (record.price != null && record.price !== 0) withPrice++;
+          if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
           else withoutPrice++;
           successDetails.push({
             row: rowNum,
-            sr: record.sr ?? null,
-            description: record.englishDescription ?? null,
-            ndNumber: record.ndNumber ?? null,
+            nameEn: data.nameEn ?? null,
+            ndNumber: data.ndNumber ?? null,
           });
         }
       } catch (err: any) {
         // Batch failed — retry row-by-row
-        for (const { rowNum, data, record } of batch) {
+        for (const { rowNum, data } of batch) {
           try {
             await db.product.create({ data });
             imported++;
-            if (record.price != null && record.price !== 0) withPrice++;
+            if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
             else withoutPrice++;
             successDetails.push({
               row: rowNum,
-              sr: record.sr ?? null,
-              description: record.englishDescription ?? null,
-              ndNumber: record.ndNumber ?? null,
+              nameEn: data.nameEn ?? null,
+              ndNumber: data.ndNumber ?? null,
             });
           } catch (singleErr: any) {
             errors++;

@@ -1,4 +1,3 @@
-[00:00:01.431] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
-[00:00:01.529] Server  LOG     ✓ Ready in 1220ms
-[00:00:17.201] Server  LOG     ○ Compiling / ...
-[00:00:55.379] Server  LOG     [CLEANUP ALL] Done: 1 products, 0 images
+[00:00:01.132] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.259] Server  LOG     ✓ Ready in 932ms
+[00:00:05.236] Server  LOG     ○ Compiling / ...

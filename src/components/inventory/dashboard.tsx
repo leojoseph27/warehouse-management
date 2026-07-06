@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useInventoryStore, DashboardStats } from '@/store/inventory-store';
+import { useInventoryStore, DashboardStats, Product } from '@/store/inventory-store';
 import {
   Package,
   Plus,
@@ -18,6 +18,9 @@ import {
   Trash2,
   Loader2,
   FileDown,
+  Tag,
+  Type,
+  DollarSign,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -39,10 +42,13 @@ export function Dashboard() {
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [isLoadingRecent, setIsLoadingRecent] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadStats();
+    loadRecentProducts();
   }, []);
 
   const loadStats = async () => {
@@ -57,6 +63,21 @@ export function Dashboard() {
       console.error('Error loading stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecentProducts = async () => {
+    setIsLoadingRecent(true);
+    try {
+      const res = await fetch('/api/products?limit=10&sortBy=recentlyAdded&sortOrder=desc');
+      if (res.ok) {
+        const data = await res.json();
+        setRecentProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Error loading recent products:', error);
+    } finally {
+      setIsLoadingRecent(false);
     }
   };
 
@@ -96,6 +117,27 @@ export function Dashboard() {
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
+    {
+      title: 'Missing Classification',
+      value: stats?.productsMissingClassification ?? 0,
+      icon: Tag,
+      color: 'text-orange-600',
+      bg: 'bg-orange-50',
+    },
+    {
+      title: 'Missing Name EN',
+      value: stats?.productsMissingNameEn ?? 0,
+      icon: Type,
+      color: 'text-teal-600',
+      bg: 'bg-teal-50',
+    },
+    {
+      title: 'Missing Price',
+      value: stats?.productsMissingPrice ?? 0,
+      icon: DollarSign,
+      color: 'text-rose-600',
+      bg: 'bg-rose-50',
+    },
   ];
 
   return (
@@ -113,7 +155,7 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
         {statCards.map((card) => (
           <Card key={card.title} className="overflow-hidden">
             <CardContent className="p-4">
@@ -145,14 +187,6 @@ export function Dashboard() {
             >
               <Plus className="h-6 w-6 text-emerald-600" />
               <span className="text-xs">Add Product</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => setView('products')}
-            >
-              <Search className="h-6 w-6 text-blue-600" />
-              <span className="text-xs">Browse Products</span>
             </Button>
             <Button
               variant="outline"
@@ -272,11 +306,63 @@ export function Dashboard() {
                 </>
               )}
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 flex-col gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                  disabled={isClearing || (stats?.totalProducts ?? 0) === 0}
+                >
+                  {isClearing ? (
+                    <Loader2 className="h-6 w-6 text-destructive animate-spin" />
+                  ) : (
+                    <Trash2 className="h-6 w-6 text-destructive" />
+                  )}
+                  <span className="text-xs">Clear All</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete all products?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete <strong>all {stats?.totalProducts ?? 0} products</strong>,
+                    all product images from the database, and all image files from storage.
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      setIsClearing(true);
+                      try {
+                        const res = await fetch('/api/products/cleanup?mode=all', { method: 'DELETE' });
+                        if (res.ok) {
+                          const data = await res.json();
+                          toast.success(data.message || 'All data cleared');
+                          await loadStats();
+                          setRecentProducts([]);
+                        } else {
+                          toast.error('Failed to clear data');
+                        }
+                      } catch {
+                        toast.error('Failed to clear data');
+                      } finally {
+                        setIsClearing(false);
+                      }
+                    }}
+                  >
+                    Yes, delete everything
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
 
-      {/* Empty State or Browse Products */}
+      {/* Empty State or Recent Products */}
       {(stats?.totalProducts ?? 0) === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
@@ -297,6 +383,7 @@ export function Dashboard() {
         </Card>
       ) : (
         <div className="space-y-3">
+          {/* Browse All Products Button */}
           <Button
             variant="outline"
             className="w-full h-14 text-base"
@@ -306,64 +393,64 @@ export function Dashboard() {
             Browse All Products ({stats?.totalProducts ?? 0})
           </Button>
 
-          {/* Clear All Data */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 h-10 text-sm"
-                disabled={isClearing}
-              >
-                {isClearing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Clearing all data...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Clear All Products & Start Over
-                  </>
-                )}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete all products?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete <strong>all {stats?.totalProducts ?? 0} products</strong>,
-                  all product images from the database, and all image files from storage.
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  onClick={async () => {
-                    setIsClearing(true);
-                    try {
-                      const res = await fetch('/api/products/cleanup?mode=all', { method: 'DELETE' });
-                      if (res.ok) {
-                        const data = await res.json();
-                        toast.success(data.message || 'All data cleared');
-                        // Refresh stats to show zeros
-                        await loadStats();
-                      } else {
-                        toast.error('Failed to clear data');
-                      }
-                    } catch {
-                      toast.error('Failed to clear data');
-                    } finally {
-                      setIsClearing(false);
-                    }
-                  }}
-                >
-                  Yes, delete everything
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Recent Products Table */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Recent Products</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setView('products')}>
+                  View All
+                  <Search className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingRecent ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : recentProducts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No recent products
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">SR</th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">ND Number</th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Barcode</th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Name EN</th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Product Type</th>
+                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Brand</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentProducts.map((product) => (
+                        <tr
+                          key={product.id}
+                          className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            const { setCurrentProduct } = useInventoryStore.getState();
+                            setCurrentProduct(product);
+                            setView('product-detail');
+                          }}
+                        >
+                          <td className="py-2 px-2 font-mono text-xs">{product.sourceRow ?? '-'}</td>
+                          <td className="py-2 px-2 font-mono text-xs">{product.ndNumber ?? '-'}</td>
+                          <td className="py-2 px-2 font-mono text-xs">{product.barcode ?? '-'}</td>
+                          <td className="py-2 px-2 truncate max-w-[200px]">{product.nameEn ?? '-'}</td>
+                          <td className="py-2 px-2 truncate max-w-[150px]">{product.productType ?? '-'}</td>
+                          <td className="py-2 px-2 truncate max-w-[150px]">{product.brand ?? '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

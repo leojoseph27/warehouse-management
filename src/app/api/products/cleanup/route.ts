@@ -30,13 +30,16 @@ export async function DELETE(request: Request) {
     }
 
     // ── Ghost-only mode (default) ──
+    // A ghost product has no identifying data in the new schema
     const ghostProducts = await db.product.findMany({
       where: {
-        englishDescription: null,
-        arabicDescription: null,
+        nameEn: null,
+        nameAr: null,
         ndNumber: null,
         barcode: null,
-        sr: null,
+        productId: null,
+        sku: null,
+        sourceRow: null,
       },
       select: { id: true },
     });

@@ -1,9 +1,4 @@
 {
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/products/[id]/route": "app/api/products/[id]/route.js",
-  "/api/products/cleanup/route": "app/api/products/cleanup/route.js",
   "/api/products/route": "app/api/products/route.js",
-  "/api/products/stats/route": "app/api/products/stats/route.js",
-  "/api/setup/route": "app/api/setup/route.js",
   "/page": "app/page.js"
 }

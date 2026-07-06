@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +13,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useInventoryStore, Product, SortBy, SortOrder } from '@/store/inventory-store';
+import { SearchableSingleSelect } from '@/components/inventory/searchable-single-select';
+import {
+  DEPARTMENTS,
+  getCategoriesForDepartment,
+  getSubcategoriesForCategory,
+  PRODUCT_FAMILIES,
+  getTypesForFamily,
+  BRAND_OPTIONS,
+  COLOR_OPTIONS,
+  MATERIAL_OPTIONS,
+  COUNTRY_OPTIONS,
+  UNIT_OPTIONS,
+  VALIDATION_STATUS_OPTIONS,
+  SHAPE_OPTIONS,
+} from '@/lib/lookups';
 import { toast } from 'sonner';
 import {
   Search,
@@ -30,10 +53,13 @@ import {
   ChevronDown,
   ChevronRight,
   Layers,
-  Coins,
+  Columns3,
   FileDown,
   ScanBarcode,
   Camera,
+  Eye,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { BarcodeScanner } from '@/components/inventory/barcode-scanner-modal';
 import { BarcodePhotoCapture } from '@/components/inventory/barcode-photo-capture';
@@ -64,15 +90,48 @@ function HighlightedText({ text, highlight }: { text: string; highlight: string 
   );
 }
 
+/** Column visibility configuration */
+interface ColumnConfig {
+  key: string;
+  label: string;
+  alwaysVisible: boolean;
+}
+
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { key: 'sourceRow', label: 'Sr', alwaysVisible: true },
+  { key: 'productId', label: 'Product ID', alwaysVisible: false },
+  { key: 'sku', label: 'SKU', alwaysVisible: false },
+  { key: 'ndNumber', label: 'ND Number', alwaysVisible: true },
+  { key: 'barcode', label: 'Barcode', alwaysVisible: true },
+  { key: 'nameEn', label: 'Name EN', alwaysVisible: true },
+  { key: 'brand', label: 'Brand', alwaysVisible: false },
+  { key: 'productType', label: 'Product Type', alwaysVisible: false },
+  { key: 'productFamily', label: 'Product Family', alwaysVisible: false },
+  { key: 'material', label: 'Material', alwaysVisible: false },
+  { key: 'color', label: 'Color', alwaysVisible: false },
+  { key: 'countryOfOrigin', label: 'Origin', alwaysVisible: false },
+  { key: 'defaultPrice', label: 'Price', alwaysVisible: false },
+  { key: 'pieces', label: 'Pcs', alwaysVisible: false },
+];
+
 export function ProductTable() {
   const {
     products,
     totalProducts,
     currentPage,
     searchQuery,
+    filterDepartment,
+    filterCategory,
+    filterSubcategory,
+    filterProductFamily,
+    filterProductType,
+    filterBrand,
+    filterColor,
     filterMaterial,
-    filterColour,
-    filterMade,
+    filterCountryOfOrigin,
+    filterUnit,
+    filterValidationStatus,
+    filterShape,
     filterPriceMin,
     filterPriceMax,
     sortBy,
@@ -86,6 +145,8 @@ export function ProductTable() {
     setProducts,
     setCurrentProduct,
     setSearchQuery,
+    setFilter,
+    clearFilters,
     setLoading,
     setCurrentPage,
     setSortBy,
@@ -106,8 +167,37 @@ export function ProductTable() {
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    DEFAULT_COLUMNS.filter(c => c.alwaysVisible || ['brand', 'defaultPrice', 'pieces'].includes(c.key)).map(c => c.key)
+  );
+  
   const totalPages = Math.ceil(totalProducts / 50);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── Dependent filter options ──
+  const categoryOptions = useMemo(() => getCategoriesForDepartment(filterDepartment), [filterDepartment]);
+  const subcategoryOptions = useMemo(() => getSubcategoriesForCategory(filterDepartment, filterCategory), [filterDepartment, filterCategory]);
+  const productTypeOptions = useMemo(() => getTypesForFamily(filterProductFamily), [filterProductFamily]);
+
+  // ── Reset dependent filters when parent changes ──
+  useEffect(() => {
+    if (filterDepartment && !categoryOptions.includes(filterCategory)) {
+      setFilter('filterCategory', '');
+      setFilter('filterSubcategory', '');
+    }
+  }, [filterDepartment, categoryOptions, filterCategory, setFilter]);
+
+  useEffect(() => {
+    if (filterCategory && !subcategoryOptions.includes(filterSubcategory)) {
+      setFilter('filterSubcategory', '');
+    }
+  }, [filterCategory, subcategoryOptions, filterSubcategory, setFilter]);
+
+  useEffect(() => {
+    if (filterProductFamily && !productTypeOptions.includes(filterProductType)) {
+      setFilter('filterProductType', '');
+    }
+  }, [filterProductFamily, productTypeOptions, filterProductType, setFilter]);
 
   // ── Load products (normal / search mode) ──
   useEffect(() => {
@@ -116,7 +206,7 @@ export function ProductTable() {
     } else if (!groupByNd) {
       loadProducts();
     }
-  }, [currentPage, searchQuery, filterMaterial, filterColour, filterMade, filterPriceMin, filterPriceMax, sortBy, sortOrder, selectedNdNumber, groupByNd]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, sortBy, sortOrder, selectedNdNumber, groupByNd]);
 
   // ── Load ND groups when grouping is enabled ──
   useEffect(() => {
@@ -135,9 +225,18 @@ export function ProductTable() {
         sortOrder,
       });
       if (searchQuery) params.set('search', searchQuery);
+      if (filterDepartment) params.set('department', filterDepartment);
+      if (filterCategory) params.set('category', filterCategory);
+      if (filterSubcategory) params.set('subcategory', filterSubcategory);
+      if (filterProductFamily) params.set('productFamily', filterProductFamily);
+      if (filterProductType) params.set('productType', filterProductType);
+      if (filterBrand) params.set('brand', filterBrand);
+      if (filterColor) params.set('color', filterColor);
       if (filterMaterial) params.set('material', filterMaterial);
-      if (filterColour) params.set('colour', filterColour);
-      if (filterMade) params.set('made', filterMade);
+      if (filterCountryOfOrigin) params.set('countryOfOrigin', filterCountryOfOrigin);
+      if (filterUnit) params.set('unit', filterUnit);
+      if (filterValidationStatus) params.set('validationStatus', filterValidationStatus);
+      if (filterShape) params.set('shape', filterShape);
       if (filterPriceMin) params.set('priceMin', filterPriceMin);
       if (filterPriceMax) params.set('priceMax', filterPriceMax);
 
@@ -151,7 +250,7 @@ export function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, filterMaterial, filterColour, filterMade, filterPriceMin, filterPriceMax, sortBy, sortOrder]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, sortBy, sortOrder]);
 
   const loadProductsByNdNumber = useCallback(async (ndNumber: string) => {
     setLoading(true);
@@ -213,33 +312,18 @@ export function ProductTable() {
     setCurrentPage(1);
   };
 
-  const parseJsonArray = (value: string | null | any[]): string[] => {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    try {
-      const arr = JSON.parse(value);
-      return Array.isArray(arr) ? arr : [];
-    } catch {
-      return [];
-    }
-  };
-
   const openProduct = (product: Product) => {
-    // Save current scroll position so we can restore it after returning from edit
     setScrollPosition(window.scrollY);
     setCurrentProduct(product);
     setView('product-detail');
   };
 
   // ── Restore scroll position when returning from edit/save ──
-  // Must wait until products are loaded and rendered, otherwise there's
-  // nothing to scroll to.  Clear the saved position after restoring so
-  // subsequent re-renders don't re-scroll.
   useEffect(() => {
     if (scrollPosition > 0 && products.length > 0 && !isLoading) {
       requestAnimationFrame(() => {
         window.scrollTo(0, scrollPosition);
-        setScrollPosition(0); // clear so it only restores once
+        setScrollPosition(0);
       });
     }
   }, [products, isLoading, scrollPosition]);
@@ -250,12 +334,10 @@ export function ProductTable() {
 
   const handleGroupToggle = () => {
     if (groupByNd) {
-      // Turning off grouping
       setGroupByNd(false);
       setSelectedNdNumber('');
       setProducts([], 0);
     } else {
-      // Turning on grouping
       setGroupByNd(true);
       setSelectedNdNumber('');
     }
@@ -263,11 +345,9 @@ export function ProductTable() {
 
   const handleGroupClick = (ndNumber: string) => {
     if (selectedNdNumber === ndNumber) {
-      // Deselect — collapse
       setSelectedNdNumber('');
       setProducts([], 0);
     } else {
-      // Select — expand and load products
       setSelectedNdNumber(ndNumber);
       toggleGroup(ndNumber);
     }
@@ -275,12 +355,23 @@ export function ProductTable() {
 
   // ── Sort options ──
   const sortOptions: { value: SortBy; label: string }[] = [
-    { value: 'sr', label: 'Sr Number' },
-    { value: 'nd_number', label: 'ND Number' },
-    { value: 'english_description', label: 'English Description' },
-    { value: 'recently_updated', label: 'Recently Updated' },
-    { value: 'recently_added', label: 'Recently Added' },
+    { value: 'sourceRow', label: 'Source Row' },
+    { value: 'ndNumber', label: 'ND Number' },
+    { value: 'nameEn', label: 'Name EN' },
+    { value: 'productType', label: 'Product Type' },
+    { value: 'productFamily', label: 'Product Family' },
+    { value: 'defaultPrice', label: 'Default Price' },
+    { value: 'recentlyAdded', label: 'Recently Added' },
+    { value: 'recentlyUpdated', label: 'Recently Updated' },
   ];
+
+  // ── Column visibility toggle ──
+  const toggleColumn = (key: string) => {
+    if (DEFAULT_COLUMNS.find(c => c.key === key)?.alwaysVisible) return;
+    setVisibleColumns(prev => 
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
 
   // ── Export handlers ──
   const downloadBlob = async (url: string, filename: string) => {
@@ -314,7 +405,6 @@ export function ProductTable() {
     setSrRangeError('');
 
     const trimmed = srRange.trim();
-    // Validate format: must be "number-number"
     const match = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
     if (!match) {
       setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150');
@@ -343,6 +433,23 @@ export function ProductTable() {
       setIsExporting(false);
     }
   };
+
+  const handleClearFilters = () => {
+    clearFilters();
+    setLocalSearch('');
+    setSearchQuery('');
+    setSelectedNdNumber('');
+    setCurrentPage(1);
+  };
+
+  const activeFiltersCount = useMemo(() => {
+    return [
+      filterDepartment, filterCategory, filterSubcategory, filterProductFamily,
+      filterProductType, filterBrand, filterColor, filterMaterial,
+      filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape,
+      filterPriceMin, filterPriceMax
+    ].filter(v => v && v.trim() !== '').length;
+  }, [filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax]);
 
   return (
     <div className="space-y-4">
@@ -378,12 +485,10 @@ export function ProductTable() {
 
           {showExportMenu && (
             <>
-              {/* Backdrop to close menu on outside click */}
               <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
               <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
                 <p className="text-sm font-medium">Export Excel</p>
 
-                {/* Export All */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -395,10 +500,8 @@ export function ProductTable() {
                   Export All Products
                 </Button>
 
-                {/* Divider */}
                 <div className="border-t" />
 
-                {/* Export by Range */}
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Export by Serial Number Range</p>
                   <Input
@@ -439,7 +542,7 @@ export function ProductTable() {
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search by ND Number, Barcode, Description..."
+            placeholder="Search by ND Number, Barcode, Product ID, SKU, Name, Brand, Type, Model, SEO Title..."
             className="h-11 pl-9 pr-9"
           />
           {localSearch && (
@@ -451,7 +554,6 @@ export function ProductTable() {
             </button>
           )}
         </div>
-        {/* Scan Barcode Button */}
         <Button
           variant="outline"
           size="sm"
@@ -462,7 +564,6 @@ export function ProductTable() {
           <ScanBarcode className="h-5 w-5" />
           <span className="text-xs">Scan</span>
         </Button>
-        {/* Capture Barcode Photo Button */}
         <Button
           variant="outline"
           size="sm"
@@ -517,7 +618,7 @@ export function ProductTable() {
               return (
                 <Badge variant="outline" className="font-normal bg-amber-50 border-amber-300 text-amber-800">
                   <Layers className="h-3 w-3 mr-1" />
-                  {ndMatches.length} product{ndMatches.length !== 1 ? 's' : ''} in {uniqueNdNumbers.length} ND group{uniqueNdNumbers.length !== 1 ? 's' : ''} (shown first)
+                  {ndMatches.length} product{ndMatches.length !== 1 ? 's' : ''} in {uniqueNdNumbers.length} ND group{uniqueNdNumbers.length !== 1 ? 's' : ''}
                 </Badge>
               );
             }
@@ -526,7 +627,7 @@ export function ProductTable() {
         </div>
       )}
 
-      {/* Controls row: Sort + Group toggle + Filters toggle */}
+      {/* Controls row: Sort + Group toggle + Columns + Filters toggle */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Sort */}
         <div className="flex items-center gap-1.5">
@@ -561,8 +662,34 @@ export function ProductTable() {
           className="h-9 text-xs"
         >
           <Layers className="h-3.5 w-3.5 mr-1.5" />
-          {groupByNd ? 'Grouped by ND' : 'Group by ND'}
+          {groupByNd ? 'Grouped' : 'Group by ND'}
         </Button>
+
+        {/* Column visibility */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 text-xs">
+              <Columns3 className="h-3.5 w-3.5 mr-1.5" />
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuLabel className="text-xs">Visible Columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {DEFAULT_COLUMNS.map(col => (
+              <DropdownMenuCheckboxItem
+                key={col.key}
+                checked={visibleColumns.includes(col.key)}
+                onCheckedChange={() => toggleColumn(col.key)}
+                disabled={col.alwaysVisible}
+                className="text-xs"
+              >
+                {col.label}
+                {col.alwaysVisible && <span className="ml-1 text-muted-foreground">(always)</span>}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Filters toggle */}
         <Button
@@ -573,67 +700,154 @@ export function ProductTable() {
         >
           <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
           Filters
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+              {activeFiltersCount}
+            </Badge>
+          )}
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Filters Panel */}
       {showFilters && (
         <Card>
-          <CardContent className="pt-4 space-y-3">
+          <CardContent className="pt-4 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Filters</p>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  useInventoryStore.getState().clearFilters();
-                  setLocalSearch('');
-                  setSearchQuery('');
-                  setSelectedNdNumber('');
-                  setCurrentPage(1);
-                }}
+                onClick={handleClearFilters}
                 className="h-7 text-xs"
+                disabled={activeFiltersCount === 0}
               >
                 Clear All
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                placeholder="Material"
+            
+            {/* Taxonomy Filters - Row 1 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <SearchableSingleSelect
+                label="Department"
+                value={filterDepartment}
+                onChange={(v) => setFilter('filterDepartment', v)}
+                suggestions={DEPARTMENTS}
+                placeholder="All departments"
+              />
+              <SearchableSingleSelect
+                label="Category"
+                value={filterCategory}
+                onChange={(v) => setFilter('filterCategory', v)}
+                suggestions={categoryOptions}
+                placeholder="All categories"
+              />
+              <SearchableSingleSelect
+                label="Subcategory"
+                value={filterSubcategory}
+                onChange={(v) => setFilter('filterSubcategory', v)}
+                suggestions={subcategoryOptions}
+                placeholder="All subcategories"
+              />
+              <SearchableSingleSelect
+                label="Product Family"
+                value={filterProductFamily}
+                onChange={(v) => setFilter('filterProductFamily', v)}
+                suggestions={[...PRODUCT_FAMILIES]}
+                placeholder="All families"
+              />
+            </div>
+
+            {/* Attribute Filters - Row 2 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <SearchableSingleSelect
+                label="Product Type"
+                value={filterProductType}
+                onChange={(v) => setFilter('filterProductType', v)}
+                suggestions={productTypeOptions}
+                placeholder="All types"
+              />
+              <SearchableSingleSelect
+                label="Brand"
+                value={filterBrand}
+                onChange={(v) => setFilter('filterBrand', v)}
+                suggestions={BRAND_OPTIONS}
+                placeholder="All brands"
+              />
+              <SearchableSingleSelect
+                label="Color"
+                value={filterColor}
+                onChange={(v) => setFilter('filterColor', v)}
+                suggestions={COLOR_OPTIONS}
+                placeholder="All colors"
+              />
+              <SearchableSingleSelect
+                label="Material"
                 value={filterMaterial}
-                onChange={(e) => useInventoryStore.getState().setFilter('filterMaterial', e.target.value)}
-                className="h-10"
+                onChange={(v) => setFilter('filterMaterial', v)}
+                suggestions={MATERIAL_OPTIONS}
+                placeholder="All materials"
               />
-              <Input
-                placeholder="Colour"
-                value={filterColour}
-                onChange={(e) => useInventoryStore.getState().setFilter('filterColour', e.target.value)}
-                className="h-10"
+            </div>
+
+            {/* Logistics & Status Filters - Row 3 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <SearchableSingleSelect
+                label="Country of Origin"
+                value={filterCountryOfOrigin}
+                onChange={(v) => setFilter('filterCountryOfOrigin', v)}
+                suggestions={[...COUNTRY_OPTIONS]}
+                placeholder="All countries"
               />
-              <Input
-                placeholder="Made In"
-                value={filterMade}
-                onChange={(e) => useInventoryStore.getState().setFilter('filterMade', e.target.value)}
-                className="h-10"
+              <SearchableSingleSelect
+                label="Unit"
+                value={filterUnit}
+                onChange={(v) => setFilter('filterUnit', v)}
+                suggestions={[...UNIT_OPTIONS]}
+                placeholder="All units"
               />
-              <div className="flex gap-2">
+              <SearchableSingleSelect
+                label="Validation Status"
+                value={filterValidationStatus}
+                onChange={(v) => setFilter('filterValidationStatus', v)}
+                suggestions={[...VALIDATION_STATUS_OPTIONS]}
+                placeholder="All statuses"
+              />
+              <SearchableSingleSelect
+                label="Shape"
+                value={filterShape}
+                onChange={(v) => setFilter('filterShape', v)}
+                suggestions={[...SHAPE_OPTIONS]}
+                placeholder="All shapes"
+              />
+            </div>
+
+            {/* Price Range */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Min Price (KD)</label>
                 <Input
-                  placeholder="Min Price (KD)"
                   type="number"
+                  step="0.001"
+                  placeholder="0.000"
                   value={filterPriceMin}
-                  onChange={(e) => useInventoryStore.getState().setFilter('filterPriceMin', e.target.value)}
-                  className="h-10"
+                  onChange={(e) => setFilter('filterPriceMin', e.target.value)}
+                  className="h-11"
                 />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Max Price (KD)</label>
                 <Input
-                  placeholder="Max Price (KD)"
                   type="number"
+                  step="0.001"
+                  placeholder="999.999"
                   value={filterPriceMax}
-                  onChange={(e) => useInventoryStore.getState().setFilter('filterPriceMax', e.target.value)}
-                  className="h-10"
+                  onChange={(e) => setFilter('filterPriceMax', e.target.value)}
+                  className="h-11"
                 />
               </div>
             </div>
-            <Button onClick={() => { setCurrentPage(1); }} className="w-full h-10">
+
+            <Button onClick={() => setCurrentPage(1)} className="w-full h-10">
               Apply Filters
             </Button>
           </CardContent>
@@ -717,14 +931,30 @@ export function ProductTable() {
               ))}
             </div>
           ) : (
-            products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                searchQuery={searchQuery}
-                onClick={() => openProduct(product)}
-              />
-            ))
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
+                      <th key={col.key} className="py-2 px-2 text-left font-medium whitespace-nowrap">{col.label}</th>
+                    ))}
+                    <th className="py-2 px-2 text-left font-medium whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <ProductRow
+                      key={product.id}
+                      product={product}
+                      searchQuery={searchQuery}
+                      visibleColumns={visibleColumns}
+                      onView={() => openProduct(product)}
+                      onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -761,20 +991,34 @@ export function ProductTable() {
                 ? `No product found for barcode ${searchQuery}`
                 : 'No products match your search'}
             </p>
-            <Button variant="outline" className="mt-4" onClick={clearSearch}>
-              Clear Search
+            <Button variant="outline" className="mt-4" onClick={handleClearFilters}>
+              Clear Filters
             </Button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                searchQuery={searchQuery}
-                onClick={() => openProduct(product)}
-              />
-            ))}
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                  {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
+                    <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
+                  ))}
+                  <th className="py-3 px-3 text-left font-medium whitespace-nowrap w-24">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {products.map((product) => (
+                  <ProductRow
+                    key={product.id}
+                    product={product}
+                    searchQuery={searchQuery}
+                    visibleColumns={visibleColumns}
+                    onView={() => openProduct(product)}
+                    onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )
       )}
@@ -783,7 +1027,7 @@ export function ProductTable() {
       {!groupByNd && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
           <p className="text-xs text-muted-foreground">
-            Page {currentPage} of {totalPages}
+            Page {currentPage} of {totalPages} ({totalProducts} products)
           </p>
           <div className="flex gap-2">
             <Button
@@ -811,7 +1055,179 @@ export function ProductTable() {
   );
 }
 
-// ── Reusable Product Card ──
+// ── Product Table Row ──
+function ProductRow({
+  product,
+  searchQuery,
+  visibleColumns,
+  onView,
+  onEdit,
+}: {
+  product: Product;
+  searchQuery: string;
+  visibleColumns: string[];
+  onView: () => void;
+  onEdit: () => void;
+}) {
+  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
+
+  const renderCell = (key: string) => {
+    const value = product[key as keyof Product];
+    
+    switch (key) {
+      case 'sourceRow':
+        return (
+          <span className="text-xs font-mono">
+            {product.sourceRow ?? '-'}
+          </span>
+        );
+      case 'productId':
+        return (
+          <span className="text-xs font-mono truncate max-w-[100px] block">
+            {product.productId || '-'}
+          </span>
+        );
+      case 'sku':
+        return (
+          <span className="text-xs font-mono truncate max-w-[100px] block">
+            {product.sku || '-'}
+          </span>
+        );
+      case 'ndNumber':
+        return (
+          <Badge 
+            variant="outline" 
+            className={`text-xs h-5 px-1.5 font-mono ${
+              searchQuery && product.ndNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+                ? 'bg-amber-50 border-amber-300 text-amber-800'
+                : ''
+            }`}
+          >
+            {searchQuery && product.ndNumber ? (
+              <HighlightedText text={product.ndNumber} highlight={searchQuery} />
+            ) : (
+              product.ndNumber || '-'
+            )}
+          </Badge>
+        );
+      case 'barcode':
+        return (
+          <span className="text-xs font-mono">
+            {searchQuery && product.barcode ? (
+              <HighlightedText text={product.barcode} highlight={searchQuery} />
+            ) : (
+              product.barcode || '-'
+            )}
+          </span>
+        );
+      case 'nameEn':
+        return (
+          <div className="min-w-0 max-w-[200px]">
+            <p className="text-sm font-medium truncate">
+              {searchQuery && product.nameEn ? (
+                <HighlightedText text={product.nameEn} highlight={searchQuery} />
+              ) : (
+                product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed')
+              )}
+            </p>
+            {product.nameAr && (
+              <p className="text-xs text-muted-foreground truncate" dir="rtl">
+                {product.nameAr}
+              </p>
+            )}
+          </div>
+        );
+      case 'brand':
+        return (
+          <Badge variant="secondary" className="text-xs h-5 px-1.5">
+            {product.brand || '-'}
+          </Badge>
+        );
+      case 'productType':
+        return (
+          <span className="text-xs truncate max-w-[120px] block">
+            {product.productType || '-'}
+          </span>
+        );
+      case 'productFamily':
+        return (
+          <span className="text-xs truncate max-w-[100px] block">
+            {product.productFamily || '-'}
+          </span>
+        );
+      case 'material':
+        return (
+          <Badge variant="outline" className="text-xs h-5 px-1.5">
+            {product.material || '-'}
+          </Badge>
+        );
+      case 'color':
+        return (
+          <Badge variant="outline" className="text-xs h-5 px-1.5">
+            {product.color || '-'}
+          </Badge>
+        );
+      case 'countryOfOrigin':
+        return (
+          <Badge variant="outline" className="text-xs h-5 px-1.5">
+            {product.countryOfOrigin || '-'}
+          </Badge>
+        );
+      case 'defaultPrice':
+        return (
+          <span className="text-sm font-semibold">
+            {formatPrice(product.defaultPrice)}
+          </span>
+        );
+      case 'pieces':
+        return (
+          <Badge variant="outline" className="text-xs h-5 px-1.5">
+            {product.pieces != null ? `${product.pieces} pcs` : '-'}
+          </Badge>
+        );
+      default:
+        // Handle images array specially - don't render it in table cells
+        if (Array.isArray(value)) {
+          return <span className="text-xs">-</span>;
+        }
+        return <span className="text-xs">{value ?? '-'}</span>;
+    }
+  };
+
+  return (
+    <tr className="hover:bg-muted/30 transition-colors">
+      {visibleColumns.map(key => (
+        <td key={key} className="py-2.5 px-3">
+          {renderCell(key)}
+        </td>
+      ))}
+      <td className="py-2.5 px-3">
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onView}
+            className="h-7 w-7 p-0"
+            title="View details"
+          >
+            <Eye className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            className="h-7 w-7 p-0"
+            title="Edit product"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ── Product Card (for compact/mobile view) ──
 function ProductCard({
   product,
   searchQuery,
@@ -821,8 +1237,6 @@ function ProductCard({
   searchQuery: string;
   onClick: () => void;
 }) {
-  const colours = parseJsonArray(product.colours);
-  const materials = parseJsonArray(product.materials);
   const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
 
   return (
@@ -852,24 +1266,28 @@ function ProductCard({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm truncate">
-                  {product.englishDescription || product.ndNumber || (product.sr != null ? `Item #${product.sr}` : 'Unnamed Product')}
+                  {searchQuery && product.nameEn ? (
+                    <HighlightedText text={product.nameEn} highlight={searchQuery} />
+                  ) : (
+                    product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed Product')
+                  )}
                 </p>
-                {product.arabicDescription && (
+                {product.nameAr && (
                   <p className="text-xs text-muted-foreground truncate" dir="rtl">
-                    {product.arabicDescription}
+                    {product.nameAr}
                   </p>
                 )}
               </div>
               <div className="text-right shrink-0">
                 <p className="font-semibold text-sm">
-                  {formatPrice(product.price)}
+                  {formatPrice(product.defaultPrice)}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                Sr: {product.sr ?? '-'}
+                Sr: {product.sourceRow ?? '-'}
               </Badge>
               {product.ndNumber && (
                 <Badge
@@ -888,43 +1306,33 @@ function ProductCard({
                 </Badge>
               )}
               {product.barcode && (
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-mono">
                   {product.barcode}
                 </Badge>
               )}
-              {product.made && (
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {product.made}
-                </Badge>
-              )}
-              {(product.length != null || product.width != null || product.height != null) && (
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {product.length ?? '?'}×{product.width ?? '?'}×{product.height ?? '?'}
-                </Badge>
-              )}
-              {materials.slice(0, 1).map((m, i) => (
-                <Badge key={i} variant="secondary" className="text-[10px] h-5 px-1.5">
-                  {m}
-                </Badge>
-              ))}
-              {materials.length > 1 && (
+              {product.brand && (
                 <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  +{materials.length - 1}
+                  {product.brand}
                 </Badge>
               )}
-              {colours.slice(0, 2).map((c, i) => (
-                <Badge key={i} variant="secondary" className="text-[10px] h-5 px-1.5">
-                  {c}
-                </Badge>
-              ))}
-              {colours.length > 2 && (
+              {product.material && (
                 <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  +{colours.length - 2}
+                  {product.material}
                 </Badge>
               )}
-              {product.pcs != null && (
+              {product.color && (
+                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                  {product.color}
+                </Badge>
+              )}
+              {product.countryOfOrigin && (
                 <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {product.pcs} pcs
+                  {product.countryOfOrigin}
+                </Badge>
+              )}
+              {product.pieces != null && (
+                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                  {product.pieces} pcs
                 </Badge>
               )}
               {product.images.length > 0 && (
@@ -938,16 +1346,4 @@ function ProductCard({
       </CardContent>
     </Card>
   );
-}
-
-function parseJsonArray(value: string | null): string[] {
-  if (!value) return [];
-  // Already an array (shouldn't happen with mapper, but be safe)
-  if (Array.isArray(value)) return value;
-  try {
-    const arr = JSON.parse(value);
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
 }

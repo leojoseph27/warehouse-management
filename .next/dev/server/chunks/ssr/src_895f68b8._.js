@@ -29,8 +29,20 @@ const useInventoryStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$no
         filterMade: '',
         filterPriceMin: '',
         filterPriceMax: '',
+        // New filter fields
+        filterDepartment: '',
+        filterCategory: '',
+        filterSubcategory: '',
+        filterProductFamily: '',
+        filterProductType: '',
+        filterBrand: '',
+        filterColor: '',
+        filterCountryOfOrigin: '',
+        filterShape: '',
+        filterValidationStatus: '',
+        filterUnit: '',
         // Sort
-        sortBy: 'sr',
+        sortBy: 'sourceRow',
         sortOrder: 'asc',
         // ND Number Groups
         groupByNd: false,
@@ -80,7 +92,18 @@ const useInventoryStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$no
                 filterColour: '',
                 filterMade: '',
                 filterPriceMin: '',
-                filterPriceMax: ''
+                filterPriceMax: '',
+                filterDepartment: '',
+                filterCategory: '',
+                filterSubcategory: '',
+                filterProductFamily: '',
+                filterProductType: '',
+                filterBrand: '',
+                filterColor: '',
+                filterCountryOfOrigin: '',
+                filterShape: '',
+                filterValidationStatus: '',
+                filterUnit: ''
             }),
         setLoading: (loading)=>set({
                 isLoading: loading
