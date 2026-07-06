@@ -298,3 +298,186 @@ Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts_
 
 Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
 [00:49:04.023] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:53:11.337] Server  LOG     ✓ Compiled in 408ms
+[00:54:03.733] Server  LOG     ✓ Compiled in 280ms
+[00:54:06.953] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:54:10.012] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:55:42.799] Server  LOG     ✓ Compiled in 386ms
+[00:55:45.008] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:55:46.722] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:59:24.096] Server  LOG     ✓ Compiled in 569ms
+[00:59:56.711] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[01:00:00.109] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[01:00:40.474] Server  LOG     ✓ Compiled in 219ms
+[01:01:42.833] Server  LOG     ✓ Compiled in 320ms
+[01:03:09.542] Browser ERROR   Error importing: {}
+[01:03:43.695] Server  LOG     ✓ Compiled in 344ms
+[01:04:02.892] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:04:11.305] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[01:04:14.716] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[01:04:59.116] Server  LOG     ✓ Compiled in 225ms
+[01:05:22.410] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[01:05:25.286] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[01:05:28.301] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[01:05:31.920] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[01:05:49.800] Server  LOG     ✓ Compiled in 210ms
+[01:07:04.253] Server  LOG     ✓ Compiled in 230ms
+[01:07:12.702] Server  LOG     ✓ Compiled in 280ms
+[01:07:30.082] Browser ERROR   Error importing: {}
+[01:07:30.929] Server  LOG     ✓ Compiled in 144ms

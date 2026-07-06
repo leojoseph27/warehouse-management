@@ -19,15 +19,7 @@ interface ImageGalleryProps {
   onDelete: (imageId: string) => Promise<void>;
   onSetPrimary: (imageId: string) => Promise<void>;
   readOnly?: boolean;
-  /**
-   * If true, use background upload queue instead of blocking uploads.
-   * When background mode is enabled, uploads are added to a queue and
-   * processed asynchronously, allowing the user to continue working.
-   */
   useBackgroundUpload?: boolean;
-  /**
-   * Optional variant ID if this gallery is for a product variant.
-   */
   variantId?: string;
 }
 
@@ -45,29 +37,23 @@ export function ImageGallery({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Background upload queue
   const { addToQueue, state } = useUploadQueue();
 
-  // Handle file selection - add to background queue or upload directly
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, isCamera: boolean = false) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Determine if this is the first image (should be primary)
     const isFirstImage = images.length === 0;
 
     if (useBackgroundUpload) {
-      // Add files to background upload queue
       for (const file of Array.from(files)) {
         addToQueue(file, productId, {
           isPrimary: isFirstImage && files.length === 1 && files[0] === file,
           variantId,
         });
       }
-      // Clear input
       e.target.value = '';
     } else {
-      // Blocking upload (original behavior)
       for (const file of Array.from(files)) {
         await onUpload(file, images.length === 0);
       }
@@ -79,22 +65,29 @@ export function ImageGallery({
     await onDelete(imageId);
   };
 
-  // Check for pending/uploading items for this product
   const pendingUploads = useBackgroundUpload
     ? state.items.filter(i => i.productId === productId && i.status !== 'completed' && i.status !== 'failed')
     : [];
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">
-          Product Images
+      {/* Header row with responsive layout */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-foreground">
+            Product Images
+          </label>
           {pendingUploads.length > 0 && (
-            <Badge variant="secondary" className="ml-2 text-xs">
+            <Badge variant="secondary" className="text-xs">
               {pendingUploads.length} uploading
             </Badge>
           )}
-        </label>
+          {images.length > 0 && (
+            <Badge variant="outline" className="text-xs">
+              {images.length} images
+            </Badge>
+          )}
+        </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
             <Button
@@ -102,20 +95,20 @@ export function ImageGallery({
               variant="outline"
               size="sm"
               onClick={() => cameraInputRef.current?.click()}
-              className="h-9"
+              className="h-11 px-3 flex-1 sm:flex-none"
             >
-              <Camera className="h-4 w-4 mr-1" />
-              Take Photo
+              <Camera className="h-4 w-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm">Photo</span>
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              className="h-9"
+              className="h-11 px-3 flex-1 sm:flex-none"
             >
-              <Upload className="h-4 w-4 mr-1" />
-              Upload
+              <Upload className="h-4 w-4 sm:mr-1" />
+              <span className="text-xs sm:text-sm">Upload</span>
             </Button>
           </div>
         )}
@@ -145,13 +138,12 @@ export function ImageGallery({
           <div className="text-xs text-muted-foreground">
             {pendingUploads.length} image(s) pending upload...
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {pendingUploads.map((item) => (
               <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
-                {/* Show placeholder or local preview */}
                 <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                  <div className="text-center p-2">
+                    <div className="h-5 w-5 border-2 border-muted-foreground border-t-transparent animate-spin rounded-full mx-auto" />
                     <div className="text-xs text-muted-foreground mt-1">
                       {item.status === 'queued' ? 'Queued' : `${item.progress}%`}
                     </div>
@@ -163,9 +155,9 @@ export function ImageGallery({
         </div>
       )}
 
-      {/* Image grid */}
+      {/* Image grid - responsive: 2 cols on mobile, 3 on tablet, 4 on desktop */}
       {images.length > 0 ? (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
           {images
             .sort((a, b) => {
               if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
@@ -194,7 +186,7 @@ export function ImageGallery({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-8 w-8 p-0"
+                        className="h-9 w-9 p-0"
                         onClick={() => onSetPrimary(image.id)}
                         title="Set as primary"
                       >
@@ -205,7 +197,7 @@ export function ImageGallery({
                       type="button"
                       variant="destructive"
                       size="sm"
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 p-0"
                       onClick={() => handleDelete(image.id)}
                       title="Delete image"
                     >
@@ -217,8 +209,8 @@ export function ImageGallery({
             ))}
         </div>
       ) : (
-        <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
-          <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+        <div className="border-2 border-dashed rounded-lg p-6 sm:p-8 text-center text-muted-foreground">
+          <ImageIcon className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No images yet</p>
           {!readOnly && (
             <p className="text-xs mt-1">Take a photo or upload images</p>
@@ -226,9 +218,9 @@ export function ImageGallery({
         </div>
       )}
 
-      {/* Image preview dialog */}
+      {/* Image preview dialog - responsive */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="max-w-lg p-2">
+        <DialogContent className="max-w-sm sm:max-w-lg md:max-w-xl p-2 sm:p-3">
           <DialogTitle className="sr-only">Image Preview</DialogTitle>
           {previewImage && (
             <img src={previewImage} alt="Product preview" className="w-full rounded-md" />
@@ -238,6 +230,3 @@ export function ImageGallery({
     </div>
   );
 }
-
-// Import Loader2 for pending upload display
-import { Loader2 } from 'lucide-react';

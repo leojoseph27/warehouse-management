@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useInventoryStore } from '@/store/inventory-store';
-import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, AlertTriangle, Info, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImportResult {
@@ -91,53 +91,36 @@ export function ExcelImport() {
     }
   };
 
-  const fieldLabelMap: Record<string, string> = {
-    sr: 'Sr No.',
-    englishDescription: 'English Description',
-    arabicDescription: 'Arabic Description',
-    ndNumber: 'ND Number',
-    barcode: 'Barcode',
-    colours: 'Colour',
-    length: 'Length (L)',
-    width: 'Width (W)',
-    height: 'Height (H)',
-    made: 'Made',
-    materials: 'Material',
-    additionalInfo: 'Additional Info',
-    price: 'Price',
-    pcs: 'Pcs',
-  };
-
   return (
     <div className="space-y-4 pb-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={goBack} className="h-9 w-9 p-0">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Button variant="ghost" size="sm" onClick={goBack} className="h-11 w-11 p-0 shrink-0">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">Import from Excel</h1>
-          <p className="text-sm text-muted-foreground">Upload an Excel file to import products</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold">Import from Excel</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Upload an Excel file to import products</p>
         </div>
       </div>
 
       {/* Expected Format */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Supported Column Headers</CardTitle>
+        <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
+          <CardTitle className="text-sm sm:text-base">Supported Columns</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-xs text-muted-foreground space-y-1">
+        <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+          <div className="text-xs sm:text-sm text-muted-foreground space-y-2">
             <p>The importer will automatically match your column headers (case-insensitive):</p>
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-2">
               {['sr', 'English Description', 'Arabic Description', 'ND Number', 'barcode', 'Colour', 'L', 'W', 'H', 'Made', 'Material', 'Additional INFO', 'PRICE', 'Pcs'].map((col) => (
-                <span key={col} className="bg-muted px-2 py-0.5 rounded text-[10px] font-mono">
+                <Badge key={col} variant="outline" className="text-[10px] sm:text-xs font-mono px-1.5 sm:px-2 py-0.5">
                   {col}
-                </span>
+                </Badge>
               ))}
             </div>
             <p className="mt-2 text-xs">
-              Multi-value fields (Colour, Material, Additional Info) can be comma-separated: <code className="bg-muted px-1 rounded">Silver, Black, Gold</code>
+              Multi-value fields (Colour, Material, Additional Info) can be comma-separated: <code className="bg-muted px-1 rounded text-xs">Silver, Black, Gold</code>
             </p>
           </div>
         </CardContent>
@@ -145,16 +128,16 @@ export function ExcelImport() {
 
       {/* File Upload Area */}
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-3 sm:pt-4 px-3 sm:px-4 pb-3 sm:pb-4">
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors ${
               dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
             }`}
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
           >
-            <FileSpreadsheet className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+            <FileSpreadsheet className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 text-muted-foreground/50" />
             {selectedFile ? (
               <div>
                 <p className="font-medium text-sm">{selectedFile.name}</p>
@@ -164,7 +147,7 @@ export function ExcelImport() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-3"
+                  className="mt-3 h-11"
                   onClick={() => { setSelectedFile(null); setResult(null); }}
                 >
                   Remove
@@ -178,6 +161,7 @@ export function ExcelImport() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-11"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -221,23 +205,23 @@ export function ExcelImport() {
         <div className="space-y-3">
           {/* Summary */}
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="pt-3 sm:pt-4 px-3 sm:px-4 pb-3 sm:pb-4">
               {result.imported > 0 ? (
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium">Import Complete</p>
-                    <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                      <p>Total rows in file: {result.total}</p>
-                      <p className="text-emerald-600">Successfully inserted: {result.imported}</p>
+                    <p className="font-medium text-sm sm:text-base">Import Complete</p>
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1 space-y-0.5">
+                      <p>Total rows: {result.total}</p>
+                      <p className="text-emerald-600">Inserted: {result.imported}</p>
                       {result.withPrice != null && (
-                        <p className="text-emerald-600">Products with price: {result.withPrice}</p>
+                        <p className="text-emerald-600">With price: {result.withPrice}</p>
                       )}
                       {result.withoutPrice != null && result.withoutPrice > 0 && (
-                        <p className="text-amber-600">Products without price: {result.withoutPrice}</p>
+                        <p className="text-amber-600">Without price: {result.withoutPrice}</p>
                       )}
                       {result.skipped > 0 && (
-                        <p className="text-muted-foreground">Skipped (empty rows): {result.skipped}</p>
+                        <p className="text-muted-foreground">Skipped (empty): {result.skipped}</p>
                       )}
                       {result.errors > 0 && (
                         <p className="text-amber-600 flex items-center gap-1">
@@ -246,20 +230,22 @@ export function ExcelImport() {
                         </p>
                       )}
                       {result.elapsedMs != null && (
-                        <p className="text-xs text-muted-foreground">Duration: {result.elapsedMs < 1000 ? `${result.elapsedMs}ms` : `${(result.elapsedMs / 1000).toFixed(1)}s`}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Duration: {result.elapsedMs < 1000 ? `${result.elapsedMs}ms` : `${(result.elapsedMs / 1000).toFixed(1)}s`}
+                        </p>
                       )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-6 w-6 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-medium">Import Issues</p>
-                    <div className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                      <p>Total rows in file: {result.total}</p>
+                    <p className="font-medium text-sm sm:text-base">Import Issues</p>
+                    <div className="text-xs sm:text-sm text-muted-foreground mt-1 space-y-0.5">
+                      <p>Total rows: {result.total}</p>
                       <p>Inserted: {result.imported}</p>
-                      {result.skipped > 0 && <p>Skipped (empty): {result.skipped}</p>}
+                      {result.skipped > 0 && <p>Skipped: {result.skipped}</p>}
                       {result.errors > 0 && <p>Failed: {result.errors}</p>}
                       {result.elapsedMs != null && (
                         <p className="text-xs">Duration: {result.elapsedMs < 1000 ? `${result.elapsedMs}ms` : `${(result.elapsedMs / 1000).toFixed(1)}s`}</p>
@@ -274,15 +260,15 @@ export function ExcelImport() {
           {/* Column Mapping Detected */}
           {result.detectedHeaders && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Info className="h-4 w-4 text-blue-500" />
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Info className="h-4 w-4 text-blue-500 shrink-0" />
                   Column Mapping
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-2">Detected headers in your file:</p>
+                  <p className="text-xs text-muted-foreground mb-2">Detected headers:</p>
                   <div className="flex flex-wrap gap-1">
                     {result.detectedHeaders.map((h) => (
                       <Badge key={h} variant="outline" className="text-[10px] font-mono">
@@ -302,7 +288,7 @@ export function ExcelImport() {
                             {excelHeader}
                           </Badge>
                           <span className="text-muted-foreground">→</span>
-                          <span className="text-foreground">{fieldLabelMap[dbField] || dbField}</span>
+                          <span className="text-foreground">{dbField}</span>
                         </div>
                       ))}
                     </div>
@@ -311,7 +297,7 @@ export function ExcelImport() {
 
                 {result.unmappedColumns && result.unmappedColumns.length > 0 && (
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Unmapped columns (ignored):</p>
+                    <p className="text-xs text-muted-foreground mb-2">Unmapped (ignored):</p>
                     <div className="flex flex-wrap gap-1">
                       {result.unmappedColumns.map((col) => (
                         <Badge key={col} variant="outline" className="text-[10px] text-amber-600 border-amber-300">
@@ -328,14 +314,14 @@ export function ExcelImport() {
           {/* Error Details */}
           {result.errorDetails && result.errorDetails.length > 0 && (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-amber-600">
-                  <AlertCircle className="h-4 w-4" />
-                  Error Details ({result.errorDetails.length}{result.errorDetails.length >= 20 ? '+' : ''})
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2 text-amber-600">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  Errors ({result.errorDetails.length}{result.errorDetails.length >= 20 ? '+' : ''})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="max-h-48 overflow-y-auto space-y-1">
+              <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                <div className="max-h-40 sm:max-h-48 overflow-y-auto space-y-1">
                   {result.errorDetails.map((err, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs">
                       <span className="text-muted-foreground shrink-0">Row {err.row}:</span>
@@ -349,7 +335,7 @@ export function ExcelImport() {
 
           {/* Action buttons after import */}
           {result.imported > 0 && (
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 className="flex-1 h-11"

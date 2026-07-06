@@ -23,6 +23,7 @@ import {
   DollarSign,
   Edit3,
   Layers,
+  ArrowRight,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -83,7 +84,8 @@ export function Dashboard() {
     }
   };
 
-  const statCards = [
+  // Group stats into categories for better organization
+  const mainStats = [
     {
       title: 'Total Products',
       value: stats?.totalProducts ?? 0,
@@ -104,7 +106,7 @@ export function Dashboard() {
       icon: Edit3,
       color: 'text-red-600',
       bg: 'bg-red-50',
-      description: 'Manually edited fields',
+      description: 'Manually edited',
     },
     {
       title: 'Variant Groups',
@@ -112,8 +114,11 @@ export function Dashboard() {
       icon: Layers,
       color: 'text-indigo-600',
       bg: 'bg-indigo-50',
-      description: 'Linked product variants',
+      description: 'Linked variants',
     },
+  ];
+
+  const issueStats = [
     {
       title: 'Missing Images',
       value: stats?.productsMissingImages ?? 0,
@@ -122,35 +127,35 @@ export function Dashboard() {
       bg: 'bg-amber-50',
     },
     {
-      title: 'Missing Barcode',
+      title: 'No Barcode',
       value: stats?.productsMissingBarcode ?? 0,
       icon: Barcode,
       color: 'text-red-600',
       bg: 'bg-red-50',
     },
     {
-      title: 'Missing Dimensions',
+      title: 'No Dimensions',
       value: stats?.productsMissingDimensions ?? 0,
       icon: Ruler,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
     {
-      title: 'Missing Classification',
+      title: 'No Classification',
       value: stats?.productsMissingClassification ?? 0,
       icon: Tag,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
     },
     {
-      title: 'Missing Name EN',
+      title: 'No Name EN',
       value: stats?.productsMissingNameEn ?? 0,
       icon: Type,
       color: 'text-teal-600',
       bg: 'bg-teal-50',
     },
     {
-      title: 'Missing Price',
+      title: 'No Price',
       value: stats?.productsMissingPrice ?? 0,
       icon: DollarSign,
       color: 'text-rose-600',
@@ -159,33 +164,33 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-responsive-xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">Product Inventory & Catalog Management</p>
         </div>
-        <Button onClick={() => setView('add-product')} className="h-11 px-4">
-          <Plus className="h-5 w-5 mr-2" />
+        <Button onClick={() => setView('add-product')} className="h-11 sm:h-10 px-4 w-full sm:w-auto">
+          <Plus className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
           Add Product
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10 gap-3">
-        {statCards.map((card) => (
+      {/* Main Stats - Primary 4 cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {mainStats.map((card) => (
           <Card key={card.title} className="overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`${card.bg} p-2.5 rounded-lg shrink-0`}>
-                  <card.icon className={`h-5 w-5 ${card.color}`} />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className={`${card.bg} p-2 sm:p-2.5 rounded-lg shrink-0`}>
+                  <card.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${card.color}`} />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold">{card.value}</p>
-                  <p className="text-xs text-muted-foreground leading-tight truncate">{card.title}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xl sm:text-2xl font-bold">{card.value}</p>
+                  <p className="text-xs text-muted-foreground leading-tight text-truncate">{card.title}</p>
                   {card.description && (
-                    <p className="text-xs text-muted-foreground/70 leading-tight truncate">{card.description}</p>
+                    <p className="text-xs text-muted-foreground/70 leading-tight text-truncate hidden sm:block">{card.description}</p>
                   )}
                 </div>
               </div>
@@ -194,40 +199,72 @@ export function Dashboard() {
         ))}
       </div>
 
+      {/* Issue Stats - Collapsible section for mobile */}
+      <Card>
+        <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
+          <CardTitle className="text-base sm:text-lg">Data Quality Issues</CardTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Products with missing or incomplete data
+          </p>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+          {/* Responsive grid: 2 on mobile, 3 on tablet, 6 on desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            {issueStats.map((card) => (
+              <div
+                key={card.title}
+                className={`flex items-center gap-2 p-2 sm:p-3 rounded-lg border ${
+                  card.value > 0 ? 'border-amber-200 bg-amber-50/50' : 'border-border bg-muted/30'
+                }`}
+              >
+                <div className={`${card.bg} p-1.5 sm:p-2 rounded shrink-0`}>
+                  <card.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${card.color}`} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg sm:text-xl font-bold">{card.value}</p>
+                  <p className="text-xs text-muted-foreground leading-tight text-truncate">{card.title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Quick Actions */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+          {/* 2x2 grid on mobile, 4 columns on desktop */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
               onClick={() => setView('add-product')}
             >
-              <Plus className="h-6 w-6 text-emerald-600" />
+              <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
               <span className="text-xs">Add Product</span>
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-4 flex-col gap-2"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
               onClick={() => setView('import')}
             >
-              <Upload className="h-6 w-6 text-amber-600" />
+              <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               <span className="text-xs">Import Excel</span>
             </Button>
             <div className="relative" ref={exportMenuRef}>
               <Button
                 variant="outline"
-                className="h-auto py-4 flex-col gap-2 w-full"
+                className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 w-full min-h-[44px]"
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 disabled={isExporting}
               >
                 {isExporting ? (
-                  <span className="h-6 w-6 border-2 border-purple-600 border-t-transparent animate-spin rounded-full" />
+                  <span className="h-5 w-5 sm:h-6 sm:w-6 border-2 border-purple-600 border-t-transparent animate-spin rounded-full" />
                 ) : (
-                  <Download className="h-6 w-6 text-purple-600" />
+                  <Download className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                 )}
                 <span className="text-xs">Export Excel</span>
               </Button>
@@ -235,13 +272,13 @@ export function Dashboard() {
               {showExportMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
-                  <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
+                  <div className="absolute left-0 right-0 sm:left-0 sm:right-auto sm:w-72 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
                     <p className="text-sm font-medium">Export Excel</p>
 
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start h-9"
+                      className="w-full justify-start h-11 sm:h-9"
                       onClick={async () => {
                         setIsExporting(true);
                         setShowExportMenu(false);
@@ -269,7 +306,7 @@ export function Dashboard() {
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Export by Serial Number Range</p>
                       <Input
-                        placeholder="e.g. 1-7, 25-40, 100-150"
+                        placeholder="e.g. 1-7, 25-40"
                         value={srRange}
                         onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
                         onKeyDown={(e) => {
@@ -277,9 +314,9 @@ export function Dashboard() {
                             setSrRangeError('');
                             const trimmed = srRange.trim();
                             const m = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-                            if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150'); return; }
+                            if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40'); return; }
                             const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
-                            if (from > to) { setSrRangeError('Start number cannot be greater than end number.'); return; }
+                            if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                             setIsExporting(true);
                             fetch(`/api/products/export?srFrom=${from}&srTo=${to}`)
                               .then(res => { if (!res.ok) return res.json().then(b => { throw new Error(b.error || 'Export failed'); }); return res.blob(); })
@@ -292,21 +329,21 @@ export function Dashboard() {
                               .finally(() => setIsExporting(false));
                           }
                         }}
-                        className="h-9 text-sm"
+                        className="h-11 sm:h-9 text-sm"
                         disabled={isExporting}
                       />
                       {srRangeError && <p className="text-xs text-destructive">{srRangeError}</p>}
                       <Button
                         size="sm"
-                        className="w-full h-9"
+                        className="w-full h-11 sm:h-9"
                         disabled={isExporting || !srRange.trim()}
                         onClick={() => {
                           setSrRangeError('');
                           const trimmed = srRange.trim();
                           const m = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-                          if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150'); return; }
+                          if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40'); return; }
                           const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
-                          if (from > to) { setSrRangeError('Start number cannot be greater than end number.'); return; }
+                          if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                           setIsExporting(true);
                           fetch(`/api/products/export?srFrom=${from}&srTo=${to}`)
                             .then(res => { if (!res.ok) return res.json().then(b => { throw new Error(b.error || 'Export failed'); }); return res.blob(); })
@@ -331,13 +368,13 @@ export function Dashboard() {
               <AlertDialogTrigger asChild>
                 <Button
                   variant="outline"
-                  className="h-auto py-4 flex-col gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                  className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 min-h-[44px]"
                   disabled={isClearing || (stats?.totalProducts ?? 0) === 0}
                 >
                   {isClearing ? (
-                    <Loader2 className="h-6 w-6 text-destructive animate-spin" />
+                    <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-destructive animate-spin" />
                   ) : (
-                    <Trash2 className="h-6 w-6 text-destructive" />
+                    <Trash2 className="h-5 w-5 sm:h-6 sm:w-6 text-destructive" />
                   )}
                   <span className="text-xs">Clear All</span>
                 </Button>
@@ -386,16 +423,16 @@ export function Dashboard() {
       {/* Empty State or Recent Products */}
       {(stats?.totalProducts ?? 0) === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <Package className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No products found</p>
+          <CardContent className="py-10 sm:py-12 text-center px-4">
+            <Package className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-base sm:text-lg font-medium text-muted-foreground">No products found</p>
             <p className="text-sm text-muted-foreground mt-1">Import an Excel file to begin.</p>
-            <div className="flex gap-3 justify-center mt-6">
-              <Button onClick={() => setView('import')}>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+              <Button onClick={() => setView('import')} className="h-11 sm:h-10 w-full sm:w-auto">
                 <Upload className="h-4 w-4 mr-2" />
                 Import Excel
               </Button>
-              <Button variant="outline" onClick={() => setView('add-product')}>
+              <Button variant="outline" onClick={() => setView('add-product')} className="h-11 sm:h-10 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
@@ -407,25 +444,31 @@ export function Dashboard() {
           {/* Browse All Products Button */}
           <Button
             variant="outline"
-            className="w-full h-14 text-base"
+            className="w-full h-12 sm:h-14 text-base justify-between"
             onClick={() => setView('products')}
           >
-            <Package className="h-5 w-5 mr-2" />
-            Browse All Products ({stats?.totalProducts ?? 0})
+            <span className="flex items-center">
+              <Package className="h-5 w-5 mr-2" />
+              Browse All Products
+            </span>
+            <span className="flex items-center text-muted-foreground">
+              {stats?.totalProducts ?? 0}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </span>
           </Button>
 
           {/* Recent Products Table */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Recent Products</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setView('products')}>
+                <Button variant="ghost" size="sm" onClick={() => setView('products')} className="h-9 hidden sm:flex">
                   View All
                   <Search className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
               {isLoadingRecent ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -435,39 +478,44 @@ export function Dashboard() {
                   No recent products
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">SR</th>
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">ND Number</th>
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Barcode</th>
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Name EN</th>
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Product Type</th>
-                        <th className="text-left py-2 px-2 font-medium text-muted-foreground">Brand</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentProducts.map((product) => (
-                        <tr
-                          key={product.id}
-                          className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            const { setCurrentProduct } = useInventoryStore.getState();
-                            setCurrentProduct(product);
-                            setView('product-detail');
-                          }}
-                        >
-                          <td className="py-2 px-2 font-mono text-xs">{product.sourceRow ?? '-'}</td>
-                          <td className="py-2 px-2 font-mono text-xs">{product.ndNumber ?? '-'}</td>
-                          <td className="py-2 px-2 font-mono text-xs">{product.barcode ?? '-'}</td>
-                          <td className="py-2 px-2 truncate max-w-[200px]">{product.nameEn ?? '-'}</td>
-                          <td className="py-2 px-2 truncate max-w-[150px]">{product.productType ?? '-'}</td>
-                          <td className="py-2 px-2 truncate max-w-[150px]">{product.brand ?? '-'}</td>
+                <div className="overflow-x-auto -mx-3 sm:mx-0">
+                  {/* Mobile-friendly table layout */}
+                  <div className="min-w-[600px] sm:min-w-0">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground">SR</th>
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground">ND Number</th>
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground hidden sm:table-cell">Barcode</th>
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground">Name</th>
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground hidden md:table-cell">Type</th>
+                          <th className="text-left py-2 px-3 font-medium text-muted-foreground hidden lg:table-cell">Brand</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {recentProducts.map((product) => (
+                          <tr
+                            key={product.id}
+                            className="border-b last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => {
+                              const { setCurrentProduct } = useInventoryStore.getState();
+                              setCurrentProduct(product);
+                              setView('product-detail');
+                            }}
+                          >
+                            <td className="py-2.5 px-3 font-mono text-xs">{product.sourceRow ?? '-'}</td>
+                            <td className="py-2.5 px-3 font-mono text-xs">{product.ndNumber ?? '-'}</td>
+                            <td className="py-2.5 px-3 font-mono text-xs hidden sm:table-cell">{product.barcode ?? '-'}</td>
+                            <td className="py-2.5 px-3">
+                              <span className="text-truncate max-w-[150px] sm:max-w-[200px] block">{product.nameEn ?? '-'}</span>
+                            </td>
+                            <td className="py-2.5 px-3 text-truncate max-w-[120px] hidden md:table-cell">{product.productType ?? '-'}</td>
+                            <td className="py-2.5 px-3 text-truncate max-w-[100px] hidden lg:table-cell">{product.brand ?? '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </CardContent>

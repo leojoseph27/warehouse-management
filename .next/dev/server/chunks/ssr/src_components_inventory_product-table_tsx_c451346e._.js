@@ -14,7 +14,6 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$c
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/badge.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/skeleton.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/select.tsx [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dropdown-menu.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/store/inventory-store.ts [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/searchable-single-select.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/lib/lookups.ts [app-ssr] (ecmascript)");
@@ -39,10 +38,10 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$camera$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Camera$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/camera.js [app-ssr] (ecmascript) <export default as Camera>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$eye$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Eye$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/eye.js [app-ssr] (ecmascript) <export default as Eye>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pencil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Pencil$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/pencil.js [app-ssr] (ecmascript) <export default as Pencil>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/chevron-left.js [app-ssr] (ecmascript) <export default as ChevronLeft>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$barcode$2d$scanner$2d$modal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/barcode-scanner-modal.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$barcode$2d$photo$2d$capture$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/barcode-photo-capture.tsx [app-ssr] (ecmascript)");
 'use client';
-;
 ;
 ;
 ;
@@ -172,6 +171,9 @@ function ProductTable() {
             'defaultPrice',
             'pieces'
         ].includes(c.key)).map((c)=>c.key));
+    const [showColumnMenu, setShowColumnMenu] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const exportMenuRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
+    const columnMenuRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const totalPages = Math.ceil(totalProducts / 50);
     const debounceRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     // ── Dependent filter options ──
@@ -485,13 +487,13 @@ function ProductTable() {
         const trimmed = srRange.trim();
         const match = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
         if (!match) {
-            setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150');
+            setSrRangeError('Invalid format. Use: 1-7, 25-40');
             return;
         }
         const from = parseInt(match[1], 10);
         const to = parseInt(match[2], 10);
         if (from > to) {
-            setSrRangeError('Start number cannot be greater than end number.');
+            setSrRangeError('Start cannot be greater than end.');
             return;
         }
         setIsExporting(true);
@@ -545,95 +547,118 @@ function ProductTable() {
         filterPriceMin,
         filterPriceMax
     ]);
+    // Close menus on outside click
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        const handleClickOutside = (e)=>{
+            if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+                setShowExportMenu(false);
+            }
+            if (columnMenuRef.current && !columnMenuRef.current.contains(e.target)) {
+                setShowColumnMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return ()=>document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "space-y-4",
+        className: "space-y-4 pb-6",
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex items-center gap-3",
+                className: "flex flex-col sm:flex-row sm:items-center gap-3",
                 children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                        variant: "ghost",
-                        size: "sm",
-                        onClick: ()=>setView('dashboard'),
-                        className: "h-9 w-9 p-0",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__["ArrowLeft"], {
-                            className: "h-5 w-5"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 459,
-                            columnNumber: 11
-                        }, this)
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 458,
-                        columnNumber: 9
-                    }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex-1",
+                        className: "flex items-center gap-2",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                className: "text-xl font-bold",
-                                children: "Products"
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "ghost",
+                                size: "sm",
+                                onClick: ()=>setView('dashboard'),
+                                className: "h-11 w-11 p-0 shrink-0",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__["ArrowLeft"], {
+                                    className: "h-5 w-5"
+                                }, void 0, false, {
+                                    fileName: "[project]/src/components/inventory/product-table.tsx",
+                                    lineNumber: 482,
+                                    columnNumber: 13
+                                }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 462,
+                                lineNumber: 476,
                                 columnNumber: 11
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                className: "text-sm text-muted-foreground",
-                                children: groupByNd && selectedNdNumber ? `${totalProducts} products in ND ${selectedNdNumber}` : groupByNd ? `${ndGroups.length} ND groups` : `${totalProducts} total`
-                            }, void 0, false, {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex-1 min-w-0",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                                        className: "text-lg sm:text-xl font-bold text-truncate",
+                                        children: "Products"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 485,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-xs sm:text-sm text-muted-foreground",
+                                        children: groupByNd && selectedNdNumber ? `${totalProducts} in ND ${selectedNdNumber}` : groupByNd ? `${ndGroups.length} ND groups` : `${totalProducts} total`
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 486,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 463,
+                                lineNumber: 484,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 461,
+                        lineNumber: 475,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "relative",
+                        className: "flex items-center gap-2 sm:ml-auto",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                size: "sm",
-                                className: "h-9",
-                                onClick: ()=>setShowExportMenu(!showExportMenu),
-                                disabled: isExporting,
-                                children: isExporting ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 480,
-                                    columnNumber: 15
-                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$download$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Download$3e$__["Download"], {
-                                    className: "h-4 w-4"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 482,
-                                    columnNumber: 15
-                                }, this)
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 472,
-                                columnNumber: 11
-                            }, this),
-                            showExportMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "relative",
+                                ref: exportMenuRef,
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "fixed inset-0 z-40",
-                                        onClick: ()=>{
-                                            setShowExportMenu(false);
-                                            setSrRangeError('');
-                                        }
-                                    }, void 0, false, {
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                        variant: "outline",
+                                        size: "sm",
+                                        className: "h-11 px-3",
+                                        onClick: ()=>setShowExportMenu(!showExportMenu),
+                                        disabled: isExporting,
+                                        children: [
+                                            isExporting ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                lineNumber: 507,
+                                                columnNumber: 17
+                                            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$download$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Download$3e$__["Download"], {
+                                                className: "h-5 w-5"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                lineNumber: 509,
+                                                columnNumber: 17
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "ml-1 hidden sm:inline text-xs",
+                                                children: "Export"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                lineNumber: 511,
+                                                columnNumber: 15
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 488,
-                                        columnNumber: 15
+                                        lineNumber: 499,
+                                        columnNumber: 13
                                     }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    showExportMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-lg shadow-lg p-3 space-y-3",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -641,13 +666,13 @@ function ProductTable() {
                                                 children: "Export Excel"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 490,
+                                                lineNumber: 516,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                                 variant: "outline",
                                                 size: "sm",
-                                                className: "w-full justify-start h-9",
+                                                className: "w-full justify-start h-11",
                                                 onClick: handleExportAll,
                                                 disabled: isExporting,
                                                 children: [
@@ -655,21 +680,21 @@ function ProductTable() {
                                                         className: "h-4 w-4 mr-2"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                        lineNumber: 499,
+                                                        lineNumber: 525,
                                                         columnNumber: 19
                                                     }, this),
                                                     "Export All Products"
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 492,
+                                                lineNumber: 518,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "border-t"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 503,
+                                                lineNumber: 529,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -677,14 +702,14 @@ function ProductTable() {
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                         className: "text-xs text-muted-foreground",
-                                                        children: "Export by Serial Number Range"
+                                                        children: "Export by SR Range"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                        lineNumber: 506,
+                                                        lineNumber: 532,
                                                         columnNumber: 19
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                        placeholder: "e.g. 1-7, 25-40, 100-150",
+                                                        placeholder: "e.g. 1-7, 25-40",
                                                         value: srRange,
                                                         onChange: (e)=>{
                                                             setSrRange(e.target.value);
@@ -693,11 +718,11 @@ function ProductTable() {
                                                         onKeyDown: (e)=>{
                                                             if (e.key === 'Enter') handleExportByRange();
                                                         },
-                                                        className: "h-9 text-sm",
+                                                        className: "h-11 text-sm",
                                                         disabled: isExporting
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                        lineNumber: 507,
+                                                        lineNumber: 533,
                                                         columnNumber: 19
                                                     }, this),
                                                     srRangeError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -705,12 +730,12 @@ function ProductTable() {
                                                         children: srRangeError
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                        lineNumber: 516,
-                                                        columnNumber: 21
+                                                        lineNumber: 541,
+                                                        columnNumber: 36
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                                         size: "sm",
-                                                        className: "w-full h-9",
+                                                        className: "w-full h-11",
                                                         onClick: handleExportByRange,
                                                         disabled: isExporting || !srRange.trim(),
                                                         children: [
@@ -718,60 +743,74 @@ function ProductTable() {
                                                                 className: "h-4 w-4 mr-2"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                                lineNumber: 524,
+                                                                lineNumber: 548,
                                                                 columnNumber: 21
                                                             }, this),
                                                             "Export Range"
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                        lineNumber: 518,
+                                                        lineNumber: 542,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 505,
+                                                lineNumber: 531,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 489,
+                                        lineNumber: 515,
                                         columnNumber: 15
                                     }, this)
                                 ]
-                            }, void 0, true)
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                lineNumber: 498,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                size: "sm",
+                                onClick: ()=>setView('add-product'),
+                                className: "h-11 px-3 sm:px-4",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
+                                        className: "h-5 w-5 sm:h-4 sm:w-4"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 560,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "ml-1 text-xs sm:text-sm",
+                                        children: "Add"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 561,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                lineNumber: 555,
+                                columnNumber: 11
+                            }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 471,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                        size: "sm",
-                        onClick: ()=>setView('add-product'),
-                        className: "h-9",
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
-                            className: "h-4 w-4"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 533,
-                            columnNumber: 11
-                        }, this)
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 532,
+                        lineNumber: 497,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 457,
+                lineNumber: 474,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex gap-2",
+                className: "flex flex-col sm:flex-row gap-2",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "relative flex-1",
@@ -780,101 +819,110 @@ function ProductTable() {
                                 className: "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 540,
+                                lineNumber: 569,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                 value: localSearch,
                                 onChange: (e)=>handleSearchChange(e.target.value),
                                 onKeyDown: handleSearchKeyDown,
-                                placeholder: "Search by ND Number, Barcode, Product ID, SKU, Name, Brand, Type, Model, SEO Title...",
-                                className: "h-11 pl-9 pr-9"
+                                placeholder: "Search ND, Barcode, ID, SKU, Name, Brand...",
+                                className: "h-11 pl-9 pr-9 text-sm"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 541,
+                                lineNumber: 570,
                                 columnNumber: 11
                             }, this),
                             localSearch && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                 onClick: clearSearch,
-                                className: "absolute right-3 top-1/2 -translate-y-1/2",
+                                className: "absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center",
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$x$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__X$3e$__["X"], {
                                     className: "h-4 w-4 text-muted-foreground"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 553,
+                                    lineNumber: 582,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 549,
+                                lineNumber: 578,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 539,
+                        lineNumber: 568,
                         columnNumber: 9
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                        variant: "outline",
-                        size: "sm",
-                        onClick: ()=>setShowBarcodeScanner(true),
-                        className: "h-11 px-3 shrink-0 gap-1.5",
-                        title: "Scan Barcode",
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex gap-2",
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$scan$2d$barcode$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ScanBarcode$3e$__["ScanBarcode"], {
-                                className: "h-5 w-5"
-                            }, void 0, false, {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "outline",
+                                size: "sm",
+                                onClick: ()=>setShowBarcodeScanner(true),
+                                className: "h-11 px-3 sm:px-4 shrink-0 gap-1.5 flex-1 sm:flex-none",
+                                title: "Scan Barcode",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$scan$2d$barcode$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ScanBarcode$3e$__["ScanBarcode"], {
+                                        className: "h-5 w-5"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 596,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-xs",
+                                        children: "Scan"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 597,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 564,
+                                lineNumber: 589,
                                 columnNumber: 11
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                className: "text-xs",
-                                children: "Scan"
-                            }, void 0, false, {
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "outline",
+                                size: "sm",
+                                onClick: ()=>setShowPhotoCapture(true),
+                                className: "h-11 px-3 sm:px-4 shrink-0 gap-1.5 flex-1 sm:flex-none",
+                                title: "Capture Barcode Photo",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$camera$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Camera$3e$__["Camera"], {
+                                        className: "h-5 w-5"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 606,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                        className: "text-xs",
+                                        children: "Photo"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 607,
+                                        columnNumber: 13
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 565,
+                                lineNumber: 599,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 557,
-                        columnNumber: 9
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                        variant: "outline",
-                        size: "sm",
-                        onClick: ()=>setShowPhotoCapture(true),
-                        className: "h-11 px-3 shrink-0 gap-1.5",
-                        title: "Capture Barcode Photo",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$camera$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Camera$3e$__["Camera"], {
-                                className: "h-5 w-5"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 574,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                className: "text-xs",
-                                children: "Photo"
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 575,
-                                columnNumber: 11
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 567,
+                        lineNumber: 588,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 538,
+                lineNumber: 567,
                 columnNumber: 7
             }, this),
             showBarcodeScanner && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$barcode$2d$scanner$2d$modal$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BarcodeScanner"], {
@@ -887,7 +935,7 @@ function ProductTable() {
                 onClose: ()=>setShowBarcodeScanner(false)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 581,
+                lineNumber: 614,
                 columnNumber: 9
             }, this),
             showPhotoCapture && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$barcode$2d$photo$2d$capture$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BarcodePhotoCapture"], {
@@ -900,7 +948,7 @@ function ProductTable() {
                 onClose: ()=>setShowPhotoCapture(false)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 594,
+                lineNumber: 627,
                 columnNumber: 9
             }, this),
             searchQuery && !groupByNd && totalProducts > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -914,16 +962,15 @@ function ProductTable() {
                                 className: "h-3 w-3 mr-1"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 609,
+                                lineNumber: 642,
                                 columnNumber: 13
                             }, this),
                             totalProducts,
-                            " matching product",
-                            totalProducts !== 1 ? 's' : ''
+                            " matching"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 608,
+                        lineNumber: 641,
                         columnNumber: 11
                     }, this),
                     (()=>{
@@ -940,20 +987,17 @@ function ProductTable() {
                                         className: "h-3 w-3 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 620,
+                                        lineNumber: 653,
                                         columnNumber: 19
                                     }, this),
                                     ndMatches.length,
-                                    " product",
-                                    ndMatches.length !== 1 ? 's' : '',
                                     " in ",
                                     uniqueNdNumbers.length,
-                                    " ND group",
-                                    uniqueNdNumbers.length !== 1 ? 's' : ''
+                                    " ND groups"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 619,
+                                lineNumber: 652,
                                 columnNumber: 17
                             }, this);
                         }
@@ -962,228 +1006,255 @@ function ProductTable() {
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 607,
+                lineNumber: 640,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "flex items-center gap-2 flex-wrap",
                 children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center gap-1.5",
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
+                        value: sortBy,
+                        onValueChange: (v)=>setSortBy(v),
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Select"], {
-                                value: sortBy,
-                                onValueChange: (v)=>setSortBy(v),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
+                                className: "h-11 w-full sm:w-[140px] text-xs",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectTrigger"], {
-                                        className: "h-9 w-[160px] text-xs",
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$up$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowUpDown$3e$__["ArrowUpDown"], {
-                                                className: "h-3.5 w-3.5 mr-1"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 636,
-                                                columnNumber: 15
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectValue"], {
-                                                placeholder: "Sort by"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 637,
-                                                columnNumber: 15
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 635,
-                                        columnNumber: 13
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
-                                        children: sortOptions.map((opt)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
-                                                value: opt.value,
-                                                className: "text-xs",
-                                                children: opt.label
-                                            }, opt.value, false, {
-                                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 641,
-                                                columnNumber: 17
-                                            }, this))
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$up$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowUpDown$3e$__["ArrowUpDown"], {
+                                        className: "h-4 w-4 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 639,
+                                        lineNumber: 668,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectValue"], {
+                                        placeholder: "Sort"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 669,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 634,
+                                lineNumber: 667,
                                 columnNumber: 11
                             }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                variant: "outline",
-                                size: "sm",
-                                onClick: toggleSortOrder,
-                                className: "h-9 w-9 p-0",
-                                children: sortOrder === 'asc' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$up$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowUp$3e$__["ArrowUp"], {
-                                    className: "h-3.5 w-3.5"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 653,
-                                    columnNumber: 36
-                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowDown$3e$__["ArrowDown"], {
-                                    className: "h-3.5 w-3.5"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 653,
-                                    columnNumber: 74
-                                }, this)
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectContent"], {
+                                children: sortOptions.map((opt)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SelectItem"], {
+                                        value: opt.value,
+                                        className: "text-xs",
+                                        children: opt.label
+                                    }, opt.value, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 673,
+                                        columnNumber: 15
+                                    }, this))
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 647,
+                                lineNumber: 671,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 633,
+                        lineNumber: 666,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                        variant: "outline",
+                        size: "sm",
+                        onClick: toggleSortOrder,
+                        className: "h-11 w-11 p-0",
+                        children: sortOrder === 'asc' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$up$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowUp$3e$__["ArrowUp"], {
+                            className: "h-4 w-4"
+                        }, void 0, false, {
+                            fileName: "[project]/src/components/inventory/product-table.tsx",
+                            lineNumber: 685,
+                            columnNumber: 34
+                        }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowDown$3e$__["ArrowDown"], {
+                            className: "h-4 w-4"
+                        }, void 0, false, {
+                            fileName: "[project]/src/components/inventory/product-table.tsx",
+                            lineNumber: 685,
+                            columnNumber: 68
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                        lineNumber: 679,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                         variant: groupByNd ? 'default' : 'outline',
                         size: "sm",
                         onClick: handleGroupToggle,
-                        className: "h-9 text-xs",
+                        className: "h-11 text-xs px-3",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layers$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Layers$3e$__["Layers"], {
-                                className: "h-3.5 w-3.5 mr-1.5"
+                                className: "h-4 w-4 mr-1"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 664,
+                                lineNumber: 695,
                                 columnNumber: 11
                             }, this),
-                            groupByNd ? 'Grouped' : 'Group by ND'
+                            groupByNd ? 'Grouped' : 'Group'
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 658,
+                        lineNumber: 689,
                         columnNumber: 9
                     }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenu"], {
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "relative",
+                        ref: columnMenuRef,
                         children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuTrigger"], {
-                                asChild: true,
-                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
-                                    variant: "outline",
-                                    size: "sm",
-                                    className: "h-9 text-xs",
-                                    children: [
-                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$columns$2d$3$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Columns3$3e$__["Columns3"], {
-                                            className: "h-3.5 w-3.5 mr-1.5"
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 672,
-                                            columnNumber: 15
-                                        }, this),
-                                        "Columns"
-                                    ]
-                                }, void 0, true, {
-                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 671,
-                                    columnNumber: 13
-                                }, this)
-                            }, void 0, false, {
-                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 670,
-                                columnNumber: 11
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuContent"], {
-                                align: "start",
-                                className: "w-48",
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "outline",
+                                size: "sm",
+                                className: "h-11 text-xs px-3",
+                                onClick: ()=>setShowColumnMenu(!showColumnMenu),
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuLabel"], {
-                                        className: "text-xs",
-                                        children: "Visible Columns"
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$columns$2d$3$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Columns3$3e$__["Columns3"], {
+                                        className: "h-4 w-4 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 677,
+                                        lineNumber: 707,
                                         columnNumber: 13
                                     }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuSeparator"], {}, void 0, false, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 678,
-                                        columnNumber: 13
-                                    }, this),
-                                    DEFAULT_COLUMNS.map((col)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dropdown$2d$menu$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DropdownMenuCheckboxItem"], {
-                                            checked: visibleColumns.includes(col.key),
-                                            onCheckedChange: ()=>toggleColumn(col.key),
-                                            disabled: col.alwaysVisible,
-                                            className: "text-xs",
-                                            children: [
-                                                col.label,
-                                                col.alwaysVisible && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "ml-1 text-muted-foreground",
-                                                    children: "(always)"
-                                                }, void 0, false, {
-                                                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                    lineNumber: 688,
-                                                    columnNumber: 39
-                                                }, this)
-                                            ]
-                                        }, col.key, true, {
-                                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 680,
-                                            columnNumber: 15
-                                        }, this))
+                                    "Columns"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 676,
+                                lineNumber: 701,
                                 columnNumber: 11
+                            }, this),
+                            showColumnMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "absolute left-0 top-full mt-1 z-50 w-48 bg-popover border rounded-lg shadow-lg p-2",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                        className: "text-xs font-medium px-2 py-1.5 text-muted-foreground",
+                                        children: "Visible Columns"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 713,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "border-t"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 714,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "py-1 max-h-[300px] overflow-y-auto",
+                                        children: DEFAULT_COLUMNS.map((col)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                                onClick: ()=>toggleColumn(col.key),
+                                                disabled: col.alwaysVisible,
+                                                className: `flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded transition-colors ${col.alwaysVisible ? 'text-muted-foreground cursor-default' : 'hover:bg-accent'}`,
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                        className: `h-4 w-4 rounded border flex items-center justify-center ${visibleColumns.includes(col.key) ? 'bg-primary border-primary text-primary-foreground' : 'border-input'}`,
+                                                        children: visibleColumns.includes(col.key) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
+                                                            className: "h-3 w-3",
+                                                            viewBox: "0 0 12 12",
+                                                            fill: "none",
+                                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
+                                                                d: "M2 6L5 9L10 3",
+                                                                stroke: "currentColor",
+                                                                strokeWidth: "2",
+                                                                strokeLinecap: "round",
+                                                                strokeLinejoin: "round"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                                lineNumber: 734,
+                                                                columnNumber: 27
+                                                            }, this)
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                            lineNumber: 733,
+                                                            columnNumber: 25
+                                                        }, this)
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                        lineNumber: 727,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        children: col.label
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                        lineNumber: 738,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    col.alwaysVisible && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground ml-auto",
+                                                        children: "(fixed)"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                        lineNumber: 739,
+                                                        columnNumber: 43
+                                                    }, this)
+                                                ]
+                                            }, col.key, true, {
+                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                lineNumber: 717,
+                                                columnNumber: 19
+                                            }, this))
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 715,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                lineNumber: 712,
+                                columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 669,
+                        lineNumber: 700,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                         variant: showFilters ? 'default' : 'outline',
                         size: "sm",
                         onClick: ()=>setShowFilters(!showFilters),
-                        className: "h-9 text-xs",
+                        className: "h-11 text-xs px-3",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sliders$2d$horizontal$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__SlidersHorizontal$3e$__["SlidersHorizontal"], {
-                                className: "h-3.5 w-3.5 mr-1.5"
+                                className: "h-4 w-4 mr-1"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 701,
+                                lineNumber: 754,
                                 columnNumber: 11
                             }, this),
                             "Filters",
                             activeFiltersCount > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
                                 variant: "secondary",
-                                className: "ml-1.5 h-5 px-1.5 text-xs",
+                                className: "ml-1 h-5 px-1.5 text-xs",
                                 children: activeFiltersCount
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 704,
+                                lineNumber: 757,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 695,
+                        lineNumber: 748,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 631,
+                lineNumber: 664,
                 columnNumber: 7
             }, this),
             showFilters && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                    className: "pt-4 space-y-4",
+                    className: "pt-4 pb-4 px-4 space-y-4",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "flex items-center justify-between",
@@ -1193,39 +1264,39 @@ function ProductTable() {
                                     children: "Filters"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 716,
+                                    lineNumber: 769,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                     variant: "ghost",
                                     size: "sm",
                                     onClick: handleClearFilters,
-                                    className: "h-7 text-xs",
+                                    className: "h-9 text-xs",
                                     disabled: activeFiltersCount === 0,
                                     children: "Clear All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 717,
+                                    lineNumber: 770,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 715,
+                            lineNumber: 768,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3",
+                            className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
                                     label: "Department",
                                     value: filterDepartment,
                                     onChange: (v)=>setFilter('filterDepartment', v),
                                     suggestions: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DEPARTMENTS"],
-                                    placeholder: "All departments"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 730,
+                                    lineNumber: 783,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1233,10 +1304,10 @@ function ProductTable() {
                                     value: filterCategory,
                                     onChange: (v)=>setFilter('filterCategory', v),
                                     suggestions: categoryOptions,
-                                    placeholder: "All categories"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 737,
+                                    lineNumber: 790,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1244,10 +1315,10 @@ function ProductTable() {
                                     value: filterSubcategory,
                                     onChange: (v)=>setFilter('filterSubcategory', v),
                                     suggestions: subcategoryOptions,
-                                    placeholder: "All subcategories"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 744,
+                                    lineNumber: 797,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1257,30 +1328,30 @@ function ProductTable() {
                                     suggestions: [
                                         ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["PRODUCT_FAMILIES"]
                                     ],
-                                    placeholder: "All families"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 751,
+                                    lineNumber: 804,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 729,
+                            lineNumber: 782,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3",
+                            className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
                                     label: "Product Type",
                                     value: filterProductType,
                                     onChange: (v)=>setFilter('filterProductType', v),
                                     suggestions: productTypeOptions,
-                                    placeholder: "All types"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 762,
+                                    lineNumber: 815,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1288,10 +1359,10 @@ function ProductTable() {
                                     value: filterBrand,
                                     onChange: (v)=>setFilter('filterBrand', v),
                                     suggestions: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BRAND_OPTIONS"],
-                                    placeholder: "All brands"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 769,
+                                    lineNumber: 822,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1299,10 +1370,10 @@ function ProductTable() {
                                     value: filterColor,
                                     onChange: (v)=>setFilter('filterColor', v),
                                     suggestions: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["COLOR_OPTIONS"],
-                                    placeholder: "All colors"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 776,
+                                    lineNumber: 829,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1310,32 +1381,32 @@ function ProductTable() {
                                     value: filterMaterial,
                                     onChange: (v)=>setFilter('filterMaterial', v),
                                     suggestions: __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["MATERIAL_OPTIONS"],
-                                    placeholder: "All materials"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 783,
+                                    lineNumber: 836,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 761,
+                            lineNumber: 814,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3",
+                            className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
-                                    label: "Country of Origin",
+                                    label: "Origin",
                                     value: filterCountryOfOrigin,
                                     onChange: (v)=>setFilter('filterCountryOfOrigin', v),
                                     suggestions: [
                                         ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["COUNTRY_OPTIONS"]
                                     ],
-                                    placeholder: "All countries"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 794,
+                                    lineNumber: 847,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1345,23 +1416,23 @@ function ProductTable() {
                                     suggestions: [
                                         ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["UNIT_OPTIONS"]
                                     ],
-                                    placeholder: "All units"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 801,
+                                    lineNumber: 854,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
-                                    label: "Validation Status",
+                                    label: "Status",
                                     value: filterValidationStatus,
                                     onChange: (v)=>setFilter('filterValidationStatus', v),
                                     suggestions: [
                                         ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["VALIDATION_STATUS_OPTIONS"]
                                     ],
-                                    placeholder: "All statuses"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 808,
+                                    lineNumber: 861,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -1371,30 +1442,29 @@ function ProductTable() {
                                     suggestions: [
                                         ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SHAPE_OPTIONS"]
                                     ],
-                                    placeholder: "All shapes"
+                                    placeholder: "All"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 815,
+                                    lineNumber: 868,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 793,
+                            lineNumber: 846,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex gap-2 items-end",
+                            className: "grid grid-cols-1 sm:grid-cols-2 gap-3",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "flex-1",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                            className: "text-sm font-medium mb-2 block",
+                                            className: "text-sm font-medium mb-1.5 block",
                                             children: "Min Price (KD)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 827,
+                                            lineNumber: 880,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -1406,24 +1476,23 @@ function ProductTable() {
                                             className: "h-11"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 828,
+                                            lineNumber: 881,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 826,
+                                    lineNumber: 879,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "flex-1",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
-                                            className: "text-sm font-medium mb-2 block",
+                                            className: "text-sm font-medium mb-1.5 block",
                                             children: "Max Price (KD)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 838,
+                                            lineNumber: 891,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -1435,39 +1504,39 @@ function ProductTable() {
                                             className: "h-11"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 839,
+                                            lineNumber: 892,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 837,
+                                    lineNumber: 890,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 825,
+                            lineNumber: 878,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                             onClick: ()=>setCurrentPage(1),
-                            className: "w-full h-10",
+                            className: "w-full h-11",
                             children: "Apply Filters"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 850,
+                            lineNumber: 903,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 714,
+                    lineNumber: 767,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 713,
+                lineNumber: 766,
                 columnNumber: 9
             }, this),
             groupByNd && !selectedNdNumber ? isLoading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1482,12 +1551,12 @@ function ProductTable() {
                         className: "h-14 w-full rounded-lg"
                     }, i, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 862,
+                        lineNumber: 915,
                         columnNumber: 15
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 860,
+                lineNumber: 913,
                 columnNumber: 11
             }, this) : ndGroups.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "text-center py-12",
@@ -1496,7 +1565,7 @@ function ProductTable() {
                         className: "h-12 w-12 mx-auto text-muted-foreground/50 mb-3"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 867,
+                        lineNumber: 920,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1504,23 +1573,23 @@ function ProductTable() {
                         children: "No ND Number groups found"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 868,
+                        lineNumber: 921,
                         columnNumber: 13
                     }, this),
                     searchQuery && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                         variant: "outline",
-                        className: "mt-4",
+                        className: "mt-4 h-11",
                         onClick: clearSearch,
                         children: "Clear Search"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 870,
+                        lineNumber: 923,
                         columnNumber: 15
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 866,
+                lineNumber: 919,
                 columnNumber: 11
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "space-y-1.5",
@@ -1528,84 +1597,80 @@ function ProductTable() {
                         className: "cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]",
                         onClick: ()=>handleGroupClick(group.ndNumber),
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-                            className: "p-3",
+                            className: "p-3 sm:p-4",
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "flex items-center gap-3",
                                 children: [
                                     expandedGroups.has(group.ndNumber) ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$down$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronDown$3e$__["ChevronDown"], {
-                                        className: "h-4 w-4 text-muted-foreground shrink-0"
+                                        className: "h-5 w-5 text-muted-foreground shrink-0"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 886,
+                                        lineNumber: 939,
                                         columnNumber: 23
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
-                                        className: "h-4 w-4 text-muted-foreground shrink-0"
+                                        className: "h-5 w-5 text-muted-foreground shrink-0"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 888,
+                                        lineNumber: 941,
                                         columnNumber: 23
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                         className: "flex-1 min-w-0",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                            className: "font-semibold text-sm",
+                                            className: "font-semibold text-sm sm:text-base",
                                             children: searchQuery ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(HighlightedText, {
                                                 text: group.ndNumber,
                                                 highlight: searchQuery
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 893,
+                                                lineNumber: 946,
                                                 columnNumber: 27
                                             }, this) : group.ndNumber
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 891,
+                                            lineNumber: 944,
                                             columnNumber: 23
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 890,
+                                        lineNumber: 943,
                                         columnNumber: 21
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
                                         variant: "secondary",
-                                        className: "shrink-0",
-                                        children: [
-                                            group.count,
-                                            " product",
-                                            group.count !== 1 ? 's' : ''
-                                        ]
-                                    }, void 0, true, {
+                                        className: "shrink-0 text-xs sm:text-sm",
+                                        children: group.count
+                                    }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 899,
+                                        lineNumber: 952,
                                         columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 884,
+                                lineNumber: 937,
                                 columnNumber: 19
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 883,
+                            lineNumber: 936,
                             columnNumber: 17
                         }, this)
                     }, group.ndNumber, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 878,
+                        lineNumber: 931,
                         columnNumber: 15
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 876,
+                lineNumber: 929,
                 columnNumber: 11
             }, this) : null,
             groupByNd && selectedNdNumber && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "space-y-2",
+                className: "space-y-3",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex items-center gap-2",
+                        className: "flex items-center gap-2 flex-wrap",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                 variant: "ghost",
@@ -1614,42 +1679,40 @@ function ProductTable() {
                                     setSelectedNdNumber('');
                                     setProducts([], 0);
                                 },
-                                className: "h-8 px-2",
+                                className: "h-11 px-3",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__["ArrowLeft"], {
-                                        className: "h-4 w-4 mr-1"
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__["ChevronLeft"], {
+                                        className: "h-5 w-5 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 920,
+                                        lineNumber: 973,
                                         columnNumber: 15
                                     }, this),
-                                    "Back to Groups"
+                                    "Back"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 914,
+                                lineNumber: 967,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
                                 variant: "secondary",
-                                className: "font-medium",
+                                className: "font-medium text-xs sm:text-sm",
                                 children: [
                                     "ND ",
                                     selectedNdNumber,
                                     " — ",
-                                    totalProducts,
-                                    " product",
-                                    totalProducts !== 1 ? 's' : ''
+                                    totalProducts
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 923,
+                                lineNumber: 976,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 913,
+                        lineNumber: 966,
                         columnNumber: 11
                     }, this),
                     isLoading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1659,53 +1722,54 @@ function ProductTable() {
                             2,
                             3
                         ].map((i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Skeleton"], {
-                                className: "h-24 w-full rounded-lg"
+                                className: "h-20 w-full rounded-lg"
                             }, i, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 930,
+                                lineNumber: 983,
                                 columnNumber: 17
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 928,
+                        lineNumber: 981,
                         columnNumber: 13
-                    }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "overflow-x-auto",
+                    }, this) : /* Mobile-friendly card list + desktop table */ /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "hidden sm:block overflow-x-auto rounded-lg border",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
-                            className: "w-full min-w-[800px]",
+                            className: "w-full min-w-[700px]",
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
-                                        className: "border-b text-xs text-muted-foreground",
+                                        className: "border-b bg-muted/50 text-xs text-muted-foreground",
                                         children: [
                                             DEFAULT_COLUMNS.filter((c)=>visibleColumns.includes(c.key)).map((col)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                                    className: "py-2 px-2 text-left font-medium whitespace-nowrap",
+                                                    className: "py-3 px-3 text-left font-medium whitespace-nowrap",
                                                     children: col.label
                                                 }, col.key, false, {
                                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                    lineNumber: 939,
+                                                    lineNumber: 993,
                                                     columnNumber: 23
                                                 }, this)),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                                className: "py-2 px-2 text-left font-medium whitespace-nowrap",
+                                                className: "py-3 px-3 text-left font-medium whitespace-nowrap w-24",
                                                 children: "Actions"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 941,
+                                                lineNumber: 995,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 937,
+                                        lineNumber: 991,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 936,
+                                    lineNumber: 990,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
+                                    className: "divide-y",
                                     children: products.map((product)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ProductRow, {
                                             product: product,
                                             searchQuery: searchQuery,
@@ -1717,29 +1781,45 @@ function ProductTable() {
                                             }
                                         }, product.id, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 946,
+                                            lineNumber: 1000,
                                             columnNumber: 21
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 944,
+                                    lineNumber: 998,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 935,
+                            lineNumber: 989,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 934,
+                        lineNumber: 988,
+                        columnNumber: 13
+                    }, this),
+                    !isLoading && products.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "sm:hidden space-y-2",
+                        children: products.map((product)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ProductCard, {
+                                product: product,
+                                searchQuery: searchQuery,
+                                onClick: ()=>openProduct(product)
+                            }, product.id, false, {
+                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                lineNumber: 1018,
+                                columnNumber: 17
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                        lineNumber: 1016,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 912,
+                lineNumber: 965,
                 columnNumber: 9
             }, this),
             !groupByNd && (isLoading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1751,32 +1831,32 @@ function ProductTable() {
                     4,
                     5
                 ].map((i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$skeleton$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Skeleton"], {
-                        className: "h-24 w-full rounded-lg"
+                        className: "h-20 sm:h-24 w-full rounded-lg"
                     }, i, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 967,
+                        lineNumber: 1035,
                         columnNumber: 15
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 965,
+                lineNumber: 1033,
                 columnNumber: 11
             }, this) : products.length === 0 && totalProducts === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "text-center py-16",
+                className: "text-center py-12 sm:py-16",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Image$3e$__["Image"], {
-                        className: "h-16 w-16 mx-auto text-muted-foreground/30 mb-4"
+                        className: "h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/30 mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 972,
+                        lineNumber: 1040,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-lg font-medium text-muted-foreground",
+                        className: "text-base sm:text-lg font-medium text-muted-foreground",
                         children: "No products found"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 973,
+                        lineNumber: 1041,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1784,57 +1864,59 @@ function ProductTable() {
                         children: "Import an Excel file to begin."
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 974,
+                        lineNumber: 1042,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex gap-3 justify-center mt-6",
+                        className: "flex flex-col sm:flex-row gap-3 justify-center mt-6",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                 onClick: ()=>setView('import'),
+                                className: "h-11 w-full sm:w-auto",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$upload$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Upload$3e$__["Upload"], {
                                         className: "h-4 w-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 977,
+                                        lineNumber: 1045,
                                         columnNumber: 17
                                     }, this),
                                     "Import Excel"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 976,
+                                lineNumber: 1044,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                 variant: "outline",
                                 onClick: ()=>setView('add-product'),
+                                className: "h-11 w-full sm:w-auto",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"], {
                                         className: "h-4 w-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 981,
+                                        lineNumber: 1049,
                                         columnNumber: 17
                                     }, this),
                                     "Add Product"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 980,
+                                lineNumber: 1048,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 975,
+                        lineNumber: 1043,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 971,
+                lineNumber: 1039,
                 columnNumber: 11
             }, this) : products.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "text-center py-12",
@@ -1843,132 +1925,161 @@ function ProductTable() {
                         className: "h-12 w-12 mx-auto text-muted-foreground/50 mb-3"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 988,
+                        lineNumber: 1056,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                         className: "text-muted-foreground",
-                        children: searchQuery && /^\d+$/.test(searchQuery) ? `No product found for barcode ${searchQuery}` : 'No products match your search'
+                        children: searchQuery && /^\d+$/.test(searchQuery) ? `No product for barcode ${searchQuery}` : 'No matching products'
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 989,
+                        lineNumber: 1057,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                         variant: "outline",
-                        className: "mt-4",
+                        className: "mt-4 h-11",
                         onClick: handleClearFilters,
                         children: "Clear Filters"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 994,
+                        lineNumber: 1062,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 987,
+                lineNumber: 1055,
                 columnNumber: 11
-            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "overflow-x-auto rounded-lg border",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
-                    className: "w-full min-w-[900px]",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
-                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
-                                className: "border-b bg-muted/50 text-xs text-muted-foreground",
-                                children: [
-                                    DEFAULT_COLUMNS.filter((c)=>visibleColumns.includes(c.key)).map((col)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                            className: "py-3 px-3 text-left font-medium whitespace-nowrap",
-                                            children: col.label
-                                        }, col.key, false, {
-                                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 1004,
-                                            columnNumber: 21
-                                        }, this)),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                        className: "py-3 px-3 text-left font-medium whitespace-nowrap w-24",
-                                        children: "Actions"
-                                    }, void 0, false, {
+            }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "hidden sm:block overflow-x-auto rounded-lg border",
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
+                            className: "w-full min-w-[800px]",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                                        className: "border-b bg-muted/50 text-xs text-muted-foreground",
+                                        children: [
+                                            DEFAULT_COLUMNS.filter((c)=>visibleColumns.includes(c.key)).map((col)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                    className: "py-3 px-3 text-left font-medium whitespace-nowrap",
+                                                    children: col.label
+                                                }, col.key, false, {
+                                                    fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                    lineNumber: 1074,
+                                                    columnNumber: 23
+                                                }, this)),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                                className: "py-3 px-3 text-left font-medium whitespace-nowrap w-24",
+                                                children: "Actions"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                                lineNumber: 1076,
+                                                columnNumber: 21
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1006,
+                                        lineNumber: 1072,
                                         columnNumber: 19
                                     }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1002,
-                                columnNumber: 17
-                            }, this)
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1001,
-                            columnNumber: 15
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
-                            className: "divide-y",
-                            children: products.map((product)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ProductRow, {
-                                    product: product,
-                                    searchQuery: searchQuery,
-                                    visibleColumns: visibleColumns,
-                                    onView: ()=>openProduct(product),
-                                    onEdit: ()=>{
-                                        setCurrentProduct(product);
-                                        setView('edit-product');
-                                    }
-                                }, product.id, false, {
+                                }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                    lineNumber: 1011,
-                                    columnNumber: 19
-                                }, this))
-                        }, void 0, false, {
+                                    lineNumber: 1071,
+                                    columnNumber: 17
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
+                                    className: "divide-y",
+                                    children: products.map((product)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ProductRow, {
+                                            product: product,
+                                            searchQuery: searchQuery,
+                                            visibleColumns: visibleColumns,
+                                            onView: ()=>openProduct(product),
+                                            onEdit: ()=>{
+                                                setCurrentProduct(product);
+                                                setView('edit-product');
+                                            }
+                                        }, product.id, false, {
+                                            fileName: "[project]/src/components/inventory/product-table.tsx",
+                                            lineNumber: 1081,
+                                            columnNumber: 21
+                                        }, this))
+                                }, void 0, false, {
+                                    fileName: "[project]/src/components/inventory/product-table.tsx",
+                                    lineNumber: 1079,
+                                    columnNumber: 17
+                                }, this)
+                            ]
+                        }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1009,
+                            lineNumber: 1070,
                             columnNumber: 15
                         }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1000,
-                    columnNumber: 13
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 999,
-                columnNumber: 11
-            }, this)),
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                        lineNumber: 1069,
+                        columnNumber: 13
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "sm:hidden space-y-2",
+                        children: products.map((product)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ProductCard, {
+                                product: product,
+                                searchQuery: searchQuery,
+                                onClick: ()=>openProduct(product)
+                            }, product.id, false, {
+                                fileName: "[project]/src/components/inventory/product-table.tsx",
+                                lineNumber: 1097,
+                                columnNumber: 17
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                        lineNumber: 1095,
+                        columnNumber: 13
+                    }, this)
+                ]
+            }, void 0, true)),
             !groupByNd && totalPages > 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex items-center justify-between pt-2",
+                className: "flex flex-col sm:flex-row items-center justify-between gap-3 pt-3",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-xs text-muted-foreground",
+                        className: "text-xs sm:text-sm text-muted-foreground text-center sm:text-left",
                         children: [
                             "Page ",
                             currentPage,
                             " of ",
                             totalPages,
-                            " (",
+                            " • ",
                             totalProducts,
-                            " products)"
+                            " products"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1029,
+                        lineNumber: 1112,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "flex gap-2",
+                        className: "flex gap-2 w-full sm:w-auto justify-center",
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                                 variant: "outline",
                                 size: "sm",
                                 disabled: currentPage <= 1,
                                 onClick: ()=>setCurrentPage(currentPage - 1),
-                                className: "h-8",
-                                children: "Previous"
-                            }, void 0, false, {
+                                className: "h-11 px-4 flex-1 sm:flex-none",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$left$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronLeft$3e$__["ChevronLeft"], {
+                                        className: "h-4 w-4 mr-1"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 1123,
+                                        columnNumber: 15
+                                    }, this),
+                                    "Prev"
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1033,
+                                lineNumber: 1116,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -1976,35 +2087,43 @@ function ProductTable() {
                                 size: "sm",
                                 disabled: currentPage >= totalPages,
                                 onClick: ()=>setCurrentPage(currentPage + 1),
-                                className: "h-8",
-                                children: "Next"
-                            }, void 0, false, {
+                                className: "h-11 px-4 flex-1 sm:flex-none",
+                                children: [
+                                    "Next",
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
+                                        className: "h-4 w-4 ml-1"
+                                    }, void 0, false, {
+                                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                                        lineNumber: 1134,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1042,
+                                lineNumber: 1126,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1032,
+                        lineNumber: 1115,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 1028,
+                lineNumber: 1111,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/product-table.tsx",
-        lineNumber: 455,
+        lineNumber: 472,
         columnNumber: 5
     }, this);
 }
 // ── Product Table Row ──
 function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
-    const primaryImage = product.images.find((img)=>img.isPrimary) || product.images[0];
     const renderCell = (key)=>{
         const value = product[key];
         switch(key){
@@ -2014,25 +2133,25 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.sourceRow ?? '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1080,
+                    lineNumber: 1163,
                     columnNumber: 11
                 }, this);
             case 'productId':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                    className: "text-xs font-mono truncate max-w-[100px] block",
+                    className: "text-xs font-mono text-truncate max-w-[100px] block",
                     children: product.productId || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1086,
+                    lineNumber: 1169,
                     columnNumber: 11
                 }, this);
             case 'sku':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                    className: "text-xs font-mono truncate max-w-[100px] block",
+                    className: "text-xs font-mono text-truncate max-w-[100px] block",
                     children: product.sku || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1092,
+                    lineNumber: 1175,
                     columnNumber: 11
                 }, this);
             case 'ndNumber':
@@ -2044,12 +2163,12 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                         highlight: searchQuery
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1107,
+                        lineNumber: 1190,
                         columnNumber: 15
                     }, this) : product.ndNumber || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1098,
+                    lineNumber: 1181,
                     columnNumber: 11
                 }, this);
             case 'barcode':
@@ -2060,12 +2179,12 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                         highlight: searchQuery
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1117,
+                        lineNumber: 1200,
                         columnNumber: 15
                     }, this) : product.barcode || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1115,
+                    lineNumber: 1198,
                     columnNumber: 11
                 }, this);
             case 'nameEn':
@@ -2073,33 +2192,33 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     className: "min-w-0 max-w-[200px]",
                     children: [
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-sm font-medium truncate",
+                            className: "text-sm font-medium text-truncate",
                             children: searchQuery && product.nameEn ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(HighlightedText, {
                                 text: product.nameEn,
                                 highlight: searchQuery
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1128,
+                                lineNumber: 1211,
                                 columnNumber: 17
                             }, this) : product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed')
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1126,
+                            lineNumber: 1209,
                             columnNumber: 13
                         }, this),
                         product.nameAr && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                            className: "text-xs text-muted-foreground truncate",
+                            className: "text-xs text-muted-foreground text-truncate",
                             dir: "rtl",
                             children: product.nameAr
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1134,
+                            lineNumber: 1217,
                             columnNumber: 15
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1125,
+                    lineNumber: 1208,
                     columnNumber: 11
                 }, this);
             case 'brand':
@@ -2109,25 +2228,25 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.brand || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1142,
+                    lineNumber: 1225,
                     columnNumber: 11
                 }, this);
             case 'productType':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                    className: "text-xs truncate max-w-[120px] block",
+                    className: "text-xs text-truncate max-w-[120px] block",
                     children: product.productType || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1148,
+                    lineNumber: 1231,
                     columnNumber: 11
                 }, this);
             case 'productFamily':
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                    className: "text-xs truncate max-w-[100px] block",
+                    className: "text-xs text-truncate max-w-[100px] block",
                     children: product.productFamily || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1154,
+                    lineNumber: 1237,
                     columnNumber: 11
                 }, this);
             case 'material':
@@ -2137,7 +2256,7 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.material || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1160,
+                    lineNumber: 1243,
                     columnNumber: 11
                 }, this);
             case 'color':
@@ -2147,7 +2266,7 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.color || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1166,
+                    lineNumber: 1249,
                     columnNumber: 11
                 }, this);
             case 'countryOfOrigin':
@@ -2157,7 +2276,7 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.countryOfOrigin || '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1172,
+                    lineNumber: 1255,
                     columnNumber: 11
                 }, this);
             case 'defaultPrice':
@@ -2166,7 +2285,7 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: formatPrice(product.defaultPrice)
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1178,
+                    lineNumber: 1261,
                     columnNumber: 11
                 }, this);
             case 'pieces':
@@ -2176,27 +2295,37 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                     children: product.pieces != null ? `${product.pieces} pcs` : '-'
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1184,
+                    lineNumber: 1267,
                     columnNumber: 11
                 }, this);
             default:
-                // Handle images array specially - don't render it in table cells
+                // Handle special types that can't be rendered directly
                 if (Array.isArray(value)) {
                     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                         className: "text-xs",
                         children: "-"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1191,
+                        lineNumber: 1274,
+                        columnNumber: 18
+                    }, this);
+                }
+                if (typeof value === 'object' && value !== null) {
+                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "text-xs",
+                        children: "-"
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/product-table.tsx",
+                        lineNumber: 1277,
                         columnNumber: 18
                     }, this);
                 }
                 return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                     className: "text-xs",
-                    children: value ?? '-'
+                    children: String(value ?? '-')
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1193,
+                    lineNumber: 1279,
                     columnNumber: 16
                 }, this);
         }
@@ -2205,15 +2334,15 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
         className: "hover:bg-muted/30 transition-colors",
         children: [
             visibleColumns.map((key)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
-                    className: "py-2.5 px-3",
+                    className: "py-3 px-3",
                     children: renderCell(key)
                 }, key, false, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1200,
+                    lineNumber: 1286,
                     columnNumber: 9
                 }, this)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
-                className: "py-2.5 px-3",
+                className: "py-3 px-3",
                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "flex gap-1",
                     children: [
@@ -2221,94 +2350,94 @@ function ProductRow({ product, searchQuery, visibleColumns, onView, onEdit }) {
                             variant: "ghost",
                             size: "sm",
                             onClick: onView,
-                            className: "h-7 w-7 p-0",
-                            title: "View details",
+                            className: "h-9 w-9 p-0",
+                            title: "View",
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$eye$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Eye$3e$__["Eye"], {
-                                className: "h-3.5 w-3.5"
+                                className: "h-4 w-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1213,
+                                lineNumber: 1299,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1206,
+                            lineNumber: 1292,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
                             variant: "ghost",
                             size: "sm",
                             onClick: onEdit,
-                            className: "h-7 w-7 p-0",
-                            title: "Edit product",
+                            className: "h-9 w-9 p-0",
+                            title: "Edit",
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pencil$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Pencil$3e$__["Pencil"], {
-                                className: "h-3.5 w-3.5"
+                                className: "h-4 w-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1222,
+                                lineNumber: 1308,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1215,
+                            lineNumber: 1301,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                    lineNumber: 1205,
+                    lineNumber: 1291,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 1204,
+                lineNumber: 1290,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/product-table.tsx",
-        lineNumber: 1198,
+        lineNumber: 1284,
         columnNumber: 5
     }, this);
 }
-// ── Product Card (for compact/mobile view) ──
+// ── Product Card (for mobile view) ──
 function ProductCard({ product, searchQuery, onClick }) {
     const primaryImage = product.images.find((img)=>img.isPrimary) || product.images[0];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
         className: "cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]",
         onClick: onClick,
         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
-            className: "p-3",
+            className: "p-3 sm:p-4",
             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "flex gap-3",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0",
+                        className: "w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted shrink-0",
                         children: primaryImage ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
                             src: primaryImage.imageUrl,
                             alt: "Product",
                             className: "w-full h-full object-cover"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1252,
+                            lineNumber: 1338,
                             columnNumber: 15
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "w-full h-full flex items-center justify-center",
                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Image$3e$__["Image"], {
-                                className: "h-6 w-6 text-muted-foreground/50"
+                                className: "h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground/50"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1259,
+                                lineNumber: 1345,
                                 columnNumber: 17
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                            lineNumber: 1258,
+                            lineNumber: 1344,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1250,
+                        lineNumber: 1336,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2321,33 +2450,33 @@ function ProductCard({ product, searchQuery, onClick }) {
                                         className: "min-w-0 flex-1",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                className: "font-medium text-sm truncate",
+                                                className: "font-medium text-sm text-truncate",
                                                 children: searchQuery && product.nameEn ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(HighlightedText, {
                                                     text: product.nameEn,
                                                     highlight: searchQuery
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                    lineNumber: 1270,
+                                                    lineNumber: 1356,
                                                     columnNumber: 21
-                                                }, this) : product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed Product')
+                                                }, this) : product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed')
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 1268,
+                                                lineNumber: 1354,
                                                 columnNumber: 17
                                             }, this),
                                             product.nameAr && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                className: "text-xs text-muted-foreground truncate",
+                                                className: "text-xs text-muted-foreground text-truncate",
                                                 dir: "rtl",
                                                 children: product.nameAr
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                                lineNumber: 1276,
+                                                lineNumber: 1362,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1267,
+                                        lineNumber: 1353,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2357,49 +2486,30 @@ function ProductCard({ product, searchQuery, onClick }) {
                                             children: formatPrice(product.defaultPrice)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 1282,
+                                            lineNumber: 1368,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1281,
+                                        lineNumber: 1367,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1266,
+                                lineNumber: 1352,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "flex items-center gap-2 mt-1.5 flex-wrap",
+                                className: "flex items-center gap-1.5 mt-1.5 flex-wrap",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                        variant: "outline",
-                                        className: "text-[10px] h-5 px-1.5",
-                                        children: [
-                                            "Sr: ",
-                                            product.sourceRow ?? '-'
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1289,
-                                        columnNumber: 15
-                                    }, this),
                                     product.ndNumber && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
                                         variant: "outline",
                                         className: `text-[10px] h-5 px-1.5 ${searchQuery && product.ndNumber.toLowerCase().includes(searchQuery.toLowerCase()) ? 'bg-amber-50 border-amber-300 text-amber-800' : ''}`,
-                                        children: searchQuery ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(HighlightedText, {
-                                            text: product.ndNumber,
-                                            highlight: searchQuery
-                                        }, void 0, false, {
-                                            fileName: "[project]/src/components/inventory/product-table.tsx",
-                                            lineNumber: 1302,
-                                            columnNumber: 21
-                                        }, this) : product.ndNumber
+                                        children: product.ndNumber
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1293,
+                                        lineNumber: 1376,
                                         columnNumber: 17
                                     }, this),
                                     product.barcode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
@@ -2408,7 +2518,7 @@ function ProductCard({ product, searchQuery, onClick }) {
                                         children: product.barcode
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1309,
+                                        lineNumber: 1388,
                                         columnNumber: 17
                                     }, this),
                                     product.brand && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
@@ -2417,46 +2527,7 @@ function ProductCard({ product, searchQuery, onClick }) {
                                         children: product.brand
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1314,
-                                        columnNumber: 17
-                                    }, this),
-                                    product.material && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                        variant: "secondary",
-                                        className: "text-[10px] h-5 px-1.5",
-                                        children: product.material
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1319,
-                                        columnNumber: 17
-                                    }, this),
-                                    product.color && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                        variant: "secondary",
-                                        className: "text-[10px] h-5 px-1.5",
-                                        children: product.color
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1324,
-                                        columnNumber: 17
-                                    }, this),
-                                    product.countryOfOrigin && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                        variant: "outline",
-                                        className: "text-[10px] h-5 px-1.5",
-                                        children: product.countryOfOrigin
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1329,
-                                        columnNumber: 17
-                                    }, this),
-                                    product.pieces != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
-                                        variant: "outline",
-                                        className: "text-[10px] h-5 px-1.5",
-                                        children: [
-                                            product.pieces,
-                                            " pcs"
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1334,
+                                        lineNumber: 1393,
                                         columnNumber: 17
                                     }, this),
                                     product.images.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Badge"], {
@@ -2468,35 +2539,35 @@ function ProductCard({ product, searchQuery, onClick }) {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                                        lineNumber: 1339,
+                                        lineNumber: 1398,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                                lineNumber: 1288,
+                                lineNumber: 1374,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-table.tsx",
-                        lineNumber: 1265,
+                        lineNumber: 1351,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-table.tsx",
-                lineNumber: 1248,
+                lineNumber: 1334,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/inventory/product-table.tsx",
-            lineNumber: 1247,
+            lineNumber: 1333,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/components/inventory/product-table.tsx",
-        lineNumber: 1243,
+        lineNumber: 1329,
         columnNumber: 5
     }, this);
 }

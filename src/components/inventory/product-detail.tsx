@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { ImageGallery } from './image-gallery';
-import { useInventoryStore, Product } from '@/store/inventory-store';
+import { useInventoryStore, Product, hasModifications, getFieldChanges } from '@/store/inventory-store';
 import {
   ArrowLeft,
   Edit,
@@ -20,6 +21,8 @@ import {
   Settings,
   Package,
   LucideIcon,
+  ChevronLeft,
+  Edit3,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -33,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 // Helper function to display value or dash
 const displayValue = (value: string | number | null | undefined): string => {
@@ -41,37 +45,54 @@ const displayValue = (value: string | number | null | undefined): string => {
   return value;
 };
 
-// Field row component - defined outside render
-function FieldRow({ label, value, isArabic = false }: { label: string; value: string | number | null | undefined; isArabic?: boolean }) {
+// Field row component - responsive layout
+function FieldRow({ label, value, isArabic = false, className = '' }: { 
+  label: string; 
+  value: string | number | null | undefined; 
+  isArabic?: boolean;
+  className?: string;
+}) {
   return (
-    <div className={`grid grid-cols-3 gap-2 py-1.5 ${isArabic ? 'dir-rtl' : ''}`}>
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className={`col-span-2 text-sm ${isArabic ? 'text-right' : ''}`} dir={isArabic ? 'rtl' : undefined}>
+    <div className={`flex items-start gap-2 py-2 ${isArabic ? 'dir-rtl' : ''} ${className}`}>
+      <span className="text-xs sm:text-sm font-medium text-muted-foreground shrink-0 min-w-[100px] sm:min-w-[120px]">{label}</span>
+      <span className={`text-xs sm:text-sm flex-1 ${isArabic ? 'text-right' : ''}`} dir={isArabic ? 'rtl' : undefined}>
         {displayValue(value)}
       </span>
     </div>
   );
 }
 
-// Section card component - defined outside render
+// Compact field row for mobile
+function CompactFieldRow({ label, value }: { label: string; value: string | number | null | undefined }) {
+  return (
+    <div className="flex justify-between items-center py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs font-medium">{displayValue(value)}</span>
+    </div>
+  );
+}
+
+// Section card component - responsive padding
 function SectionCard({ 
   title, 
   icon: Icon, 
-  children 
+  children,
+  className = '',
 }: { 
   title: string; 
   icon: LucideIcon; 
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-3 pt-4 px-4">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Icon className="h-4 w-4" />
+    <Card className={className}>
+      <CardHeader className="pb-2 sm:pb-3 pt-3 sm:pt-4 px-3 sm:px-4">
+        <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+          <Icon className="h-4 w-4 shrink-0" />
           {title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
         {children}
       </CardContent>
     </Card>
@@ -85,7 +106,6 @@ export function ProductDetail() {
 
   useEffect(() => {
     if (currentProduct?.id) {
-      // Refresh product data
       fetch(`/api/products/${currentProduct.id}`)
         .then(res => res.json())
         .then(data => {
@@ -194,47 +214,80 @@ export function ProductDetail() {
     }
   };
 
+  // Check for modifications
+  const modifications = product ? getFieldChanges(product) : [];
+  const hasMods = modifications.length > 0;
+
   return (
     <div className="space-y-4 pb-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => setView('products')} className="h-9 w-9 p-0">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">{product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Product Details')}</h1>
-          <p className="text-sm text-muted-foreground">
-            {product.ndNumber && `ND: ${product.ndNumber}`}
-            {product.barcode && ` | Barcode: ${product.barcode}`}
-          </p>
-        </div>
+      {/* Header - responsive layout */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setView('products')} 
+            className="h-11 w-11 p-0 shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-truncate">
+              {product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Product Details')}
+            </h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {product.ndNumber && (
+                <Badge variant="outline" className="text-xs font-mono">
+                  {product.ndNumber}
+                </Badge>
+              )}
+              {product.barcode && (
+                <Badge variant="outline" className="text-xs font-mono">
+                  {product.barcode}
+                </Badge>
+              )}
+              {hasMods && (
+                <Badge variant="destructive" className="text-xs gap-1">
+                  <Edit3 className="h-3 w-3" />
+                  {modifications.length} Modified
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 sm:ml-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setView('edit-product')}
-            className="h-9"
+            className="h-11 px-3 sm:px-4"
           >
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
+            <Edit className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Edit</span>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="h-9">
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+              <Button variant="destructive" size="sm" className="h-11 px-3 sm:px-4">
+                <Trash2 className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Delete</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Product</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete &ldquo;{product.nameEn || product.ndNumber}&rdquo;? This action cannot be undone and will also delete all associated images.
+                  Are you sure you want to delete &ldquo;{product.nameEn || product.ndNumber}&rdquo;? 
+                  This will also delete all images. This cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <AlertDialogAction 
+                  onClick={handleDelete} 
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
                   Delete
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -245,13 +298,13 @@ export function ProductDetail() {
 
       {/* Images Section */}
       <Card>
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" />
+        <CardHeader className="pb-2 sm:pb-3 pt-3 sm:pt-4 px-3 sm:px-4">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+            <Package className="h-4 w-4 shrink-0" />
             Images
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
           <ImageGallery
             images={product.images}
             productId={product.id}
@@ -264,7 +317,7 @@ export function ProductDetail() {
 
       {/* Product Identity Section */}
       <SectionCard title="Product Identity" icon={Fingerprint}>
-        <div className="space-y-0">
+        <div className="space-y-0 divide-y divide-border">
           <FieldRow label="Source Row" value={product.sourceRow} />
           <FieldRow label="Product ID" value={product.productId} />
           <FieldRow label="SKU" value={product.sku} />
@@ -280,7 +333,7 @@ export function ProductDetail() {
 
       {/* Classification Section */}
       <SectionCard title="Classification" icon={Layers}>
-        <div className="space-y-0">
+        <div className="space-y-0 divide-y divide-border">
           <FieldRow label="Department" value={product.department} />
           <FieldRow label="Category" value={product.category} />
           <FieldRow label="Subcategory" value={product.subcategory} />
@@ -293,7 +346,7 @@ export function ProductDetail() {
       {/* Product Information Section */}
       <SectionCard title="Product Information" icon={FileText}>
         <div className="space-y-3">
-          <div className="space-y-0">
+          <div className="space-y-0 divide-y divide-border">
             <FieldRow label="Name (English)" value={product.nameEn} />
             <FieldRow label="Name (Arabic)" value={product.nameAr} isArabic />
           </div>
@@ -301,14 +354,14 @@ export function ProductDetail() {
           {(product.shortDescEn || product.shortDescAr) && (
             <>
               <Separator />
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Short Description (English)</p>
-                <p className="text-sm">{displayValue(product.shortDescEn)}</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Short Description (EN)</p>
+                <p className="text-xs sm:text-sm">{displayValue(product.shortDescEn)}</p>
               </div>
               {product.shortDescAr && (
-                <div className="space-y-1" dir="rtl">
-                  <p className="text-sm font-medium text-muted-foreground" dir="ltr">Short Description (Arabic)</p>
-                  <p className="text-sm text-right">{product.shortDescAr}</p>
+                <div className="space-y-2" dir="rtl">
+                  <p className="text-xs font-medium text-muted-foreground" dir="ltr">Short Description (AR)</p>
+                  <p className="text-xs sm:text-sm text-right">{product.shortDescAr}</p>
                 </div>
               )}
             </>
@@ -317,14 +370,14 @@ export function ProductDetail() {
           {(product.longDescEn || product.longDescAr) && (
             <>
               <Separator />
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Long Description (English)</p>
-                <p className="text-sm whitespace-pre-wrap">{displayValue(product.longDescEn)}</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Long Description (EN)</p>
+                <p className="text-xs sm:text-sm whitespace-pre-wrap">{displayValue(product.longDescEn)}</p>
               </div>
               {product.longDescAr && (
-                <div className="space-y-1" dir="rtl">
-                  <p className="text-sm font-medium text-muted-foreground" dir="ltr">Long Description (Arabic)</p>
-                  <p className="text-sm text-right whitespace-pre-wrap">{product.longDescAr}</p>
+                <div className="space-y-2" dir="rtl">
+                  <p className="text-xs font-medium text-muted-foreground" dir="ltr">Long Description (AR)</p>
+                  <p className="text-xs sm:text-sm text-right whitespace-pre-wrap">{product.longDescAr}</p>
                 </div>
               )}
             </>
@@ -335,12 +388,13 @@ export function ProductDetail() {
       {/* Attributes Section */}
       <SectionCard title="Attributes" icon={Palette}>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          {/* Color & Material - responsive grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-0 divide-y divide-border">
               <FieldRow label="Color" value={product.color} />
               <FieldRow label="Color (Arabic)" value={product.colorAr} isArabic />
             </div>
-            <div>
+            <div className="space-y-0 divide-y divide-border">
               <FieldRow label="Material" value={product.material} />
               <FieldRow label="Material (Arabic)" value={product.materialAr} isArabic />
             </div>
@@ -348,25 +402,25 @@ export function ProductDetail() {
 
           <Separator />
 
-          {/* Dimensions */}
+          {/* Dimensions - responsive grid */}
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-2">Dimensions</p>
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="bg-muted/50 rounded p-2">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Dimensions</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Length</p>
-                <p className="text-sm font-semibold">{displayValue(product.length)}</p>
+                <p className="text-sm sm:text-base font-semibold">{displayValue(product.length)}</p>
               </div>
-              <div className="bg-muted/50 rounded p-2">
+              <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Width</p>
-                <p className="text-sm font-semibold">{displayValue(product.width)}</p>
+                <p className="text-sm sm:text-base font-semibold">{displayValue(product.width)}</p>
               </div>
-              <div className="bg-muted/50 rounded p-2">
+              <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Height</p>
-                <p className="text-sm font-semibold">{displayValue(product.height)}</p>
+                <p className="text-sm sm:text-base font-semibold">{displayValue(product.height)}</p>
               </div>
-              <div className="bg-muted/50 rounded p-2">
+              <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Diameter</p>
-                <p className="text-sm font-semibold">{displayValue(product.diameter)}</p>
+                <p className="text-sm sm:text-base font-semibold">{displayValue(product.diameter)}</p>
               </div>
             </div>
             {product.dimensionUnit && (
@@ -377,19 +431,19 @@ export function ProductDetail() {
           <Separator />
 
           {/* Capacity & Weight */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Capacity</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Capacity</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{displayValue(product.capacity)}</span>
-                {product.capacityUnit && <span className="text-sm text-muted-foreground">{product.capacityUnit}</span>}
+                <span className="text-sm sm:text-base font-semibold">{displayValue(product.capacity)}</span>
+                {product.capacityUnit && <span className="text-xs sm:text-sm text-muted-foreground">{product.capacityUnit}</span>}
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Weight</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Weight</p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{displayValue(product.weight)}</span>
-                {product.weightUnit && <span className="text-sm text-muted-foreground">{product.weightUnit}</span>}
+                <span className="text-sm sm:text-base font-semibold">{displayValue(product.weight)}</span>
+                {product.weightUnit && <span className="text-xs sm:text-sm text-muted-foreground">{product.weightUnit}</span>}
               </div>
             </div>
           </div>
@@ -398,7 +452,7 @@ export function ProductDetail() {
 
       {/* Logistics Section */}
       <SectionCard title="Logistics" icon={Truck}>
-        <div className="space-y-0">
+        <div className="space-y-0 divide-y divide-border">
           <FieldRow label="Country of Origin" value={product.countryOfOrigin} />
           <FieldRow label="Unit" value={product.unit} />
           <FieldRow label="Min Sales Multiples" value={product.minSalesMultiples} />
@@ -407,38 +461,41 @@ export function ProductDetail() {
 
       {/* Commercial Section */}
       <SectionCard title="Commercial" icon={DollarSign}>
-        <div className="space-y-0">
-          <FieldRow label="Default Price" value={product.defaultPrice != null ? `${product.defaultPrice.toFixed(3)} KD` : null} />
+        <div className="flex items-center justify-between py-2">
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground">Default Price</span>
+          <span className="text-base sm:text-lg font-bold">
+            {product.defaultPrice != null ? `${product.defaultPrice.toFixed(3)} KD` : '—'}
+          </span>
         </div>
       </SectionCard>
 
       {/* SEO Section */}
       <SectionCard title="SEO" icon={Search}>
         <div className="space-y-3">
-          <div className="space-y-0">
+          <div className="space-y-0 divide-y divide-border">
             <FieldRow label="Title (English)" value={product.seoTitleEn} />
             <FieldRow label="Title (Arabic)" value={product.seoTitleAr} isArabic />
           </div>
           
           <Separator />
           
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Description (English)</p>
-            <p className="text-sm">{displayValue(product.seoDescriptionEn)}</p>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Description (EN)</p>
+            <p className="text-xs sm:text-sm">{displayValue(product.seoDescriptionEn)}</p>
           </div>
           
           {product.seoDescriptionAr && (
-            <div className="space-y-1" dir="rtl">
-              <p className="text-sm font-medium text-muted-foreground" dir="ltr">Description (Arabic)</p>
-              <p className="text-sm text-right">{product.seoDescriptionAr}</p>
+            <div className="space-y-2" dir="rtl">
+              <p className="text-xs font-medium text-muted-foreground" dir="ltr">Description (AR)</p>
+              <p className="text-xs sm:text-sm text-right">{product.seoDescriptionAr}</p>
             </div>
           )}
           
           <Separator />
           
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Search Keywords</p>
-            <p className="text-sm">{displayValue(product.searchKeywords)}</p>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Search Keywords</p>
+            <p className="text-xs sm:text-sm">{displayValue(product.searchKeywords)}</p>
           </div>
         </div>
       </SectionCard>
@@ -446,16 +503,16 @@ export function ProductDetail() {
       {/* Internal Section */}
       <SectionCard title="Internal" icon={Settings}>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-0">
-              <FieldRow label="Pieces" value={product.pieces} />
-              <FieldRow label="Set Count" value={product.setCount} />
-              <FieldRow label="Shape" value={product.shape} />
-              <FieldRow label="Finish" value={product.finish} />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-0 divide-y divide-border">
+              <CompactFieldRow label="Pieces" value={product.pieces} />
+              <CompactFieldRow label="Set Count" value={product.setCount} />
+              <CompactFieldRow label="Shape" value={product.shape} />
+              <CompactFieldRow label="Finish" value={product.finish} />
             </div>
-            <div className="space-y-0">
-              <FieldRow label="Validation Status" value={product.validationStatus} />
-              <FieldRow label="Confidence Score" value={product.confidenceScore != null ? `${(product.confidenceScore * 100).toFixed(0)}%` : null} />
+            <div className="space-y-0 divide-y divide-border">
+              <CompactFieldRow label="Status" value={product.validationStatus} />
+              <CompactFieldRow label="Confidence" value={product.confidenceScore != null ? `${(product.confidenceScore * 100).toFixed(0)}%` : null} />
             </div>
           </div>
 
@@ -463,15 +520,15 @@ export function ProductDetail() {
             <>
               <Separator />
               {product.internalNotes && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Internal Notes</p>
-                  <p className="text-sm whitespace-pre-wrap">{product.internalNotes}</p>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Internal Notes</p>
+                  <p className="text-xs sm:text-sm whitespace-pre-wrap">{product.internalNotes}</p>
                 </div>
               )}
               {product.additionalInfo && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Additional Info</p>
-                  <p className="text-sm whitespace-pre-wrap">{product.additionalInfo}</p>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Additional Info</p>
+                  <p className="text-xs sm:text-sm whitespace-pre-wrap">{product.additionalInfo}</p>
                 </div>
               )}
             </>
@@ -481,8 +538,8 @@ export function ProductDetail() {
 
       {/* System Info */}
       <Card className="bg-muted/30">
-        <CardContent className="py-3 px-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <CardContent className="py-2 sm:py-3 px-3 sm:px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>Created: {new Date(product.createdAt).toLocaleString()}</span>
             <span>Updated: {new Date(product.updatedAt).toLocaleString()}</span>
           </div>
@@ -492,38 +549,38 @@ export function ProductDetail() {
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <Card>
-          <CardHeader className="pb-3 pt-4 px-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Other Products with Same ND Number ({product.ndNumber})
+          <CardHeader className="pb-2 sm:pb-3 pt-3 sm:pt-4 px-3 sm:px-4">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Package className="h-4 w-4 shrink-0" />
+              Other Products with Same ND ({product.ndNumber})
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="max-h-64 overflow-y-auto space-y-2">
+          <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+            <div className="max-h-48 sm:max-h-64 overflow-y-auto space-y-2">
               {relatedProducts.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() => {
                     setCurrentProduct(p);
                     setView('product-detail');
                   }}
                 >
-                  <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
                     {p.images?.[0]?.imageUrl ? (
                       <img src={p.images[0].imageUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <Package className="h-6 w-6 text-muted-foreground" />
+                      <Package className="h-5 sm:h-6 w-5 sm:w-6 text-muted-foreground" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{p.nameEn || 'No name'}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs sm:text-sm font-medium text-truncate">{p.nameEn || 'No name'}</p>
+                    <p className="text-xs text-muted-foreground text-truncate">
                       {p.productId && `ID: ${p.productId}`}
-                      {p.barcode && ` | Barcode: ${p.barcode}`}
+                      {p.barcode && ` | ${p.barcode}`}
                     </p>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs sm:text-sm text-muted-foreground shrink-0">
                     {p.defaultPrice != null ? `${p.defaultPrice.toFixed(3)} KD` : ''}
                   </div>
                 </div>

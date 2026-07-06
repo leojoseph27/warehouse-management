@@ -59,7 +59,7 @@ import {
   Camera,
   Eye,
   Pencil,
-  Trash2,
+  ChevronLeft,
 } from 'lucide-react';
 import { BarcodeScanner } from '@/components/inventory/barcode-scanner-modal';
 import { BarcodePhotoCapture } from '@/components/inventory/barcode-photo-capture';
@@ -170,6 +170,9 @@ export function ProductTable() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     DEFAULT_COLUMNS.filter(c => c.alwaysVisible || ['brand', 'defaultPrice', 'pieces'].includes(c.key)).map(c => c.key)
   );
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const columnMenuRef = useRef<HTMLDivElement>(null);
   
   const totalPages = Math.ceil(totalProducts / 50);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -407,7 +410,7 @@ export function ProductTable() {
     const trimmed = srRange.trim();
     const match = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
     if (!match) {
-      setSrRangeError('Invalid format. Use: 1-7, 25-40, 100-150');
+      setSrRangeError('Invalid format. Use: 1-7, 25-40');
       return;
     }
 
@@ -415,7 +418,7 @@ export function ProductTable() {
     const to = parseInt(match[2], 10);
 
     if (from > to) {
-      setSrRangeError('Start number cannot be greater than end number.');
+      setSrRangeError('Start cannot be greater than end.');
       return;
     }
 
@@ -451,48 +454,71 @@ export function ProductTable() {
     ].filter(v => v && v.trim() !== '').length;
   }, [filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax]);
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => setView('dashboard')} className="h-9 w-9 p-0">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-xl font-bold">Products</h1>
-          <p className="text-sm text-muted-foreground">
-            {groupByNd && selectedNdNumber
-              ? `${totalProducts} products in ND ${selectedNdNumber}`
-              : groupByNd
-                ? `${ndGroups.length} ND groups`
-                : `${totalProducts} total`}
-          </p>
-        </div>
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9"
-            onClick={() => setShowExportMenu(!showExportMenu)}
-            disabled={isExporting}
-          >
-            {isExporting ? (
-              <span className="h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-          </Button>
+  // Close menus on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+      if (columnMenuRef.current && !columnMenuRef.current.contains(e.target as Node)) {
+        setShowColumnMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-          {showExportMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
+  return (
+    <div className="space-y-4 pb-6">
+      {/* Header - improved for mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setView('dashboard')} 
+            className="h-11 w-11 p-0 shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-truncate">Products</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {groupByNd && selectedNdNumber
+                ? `${totalProducts} in ND ${selectedNdNumber}`
+                : groupByNd
+                  ? `${ndGroups.length} ND groups`
+                  : `${totalProducts} total`}
+            </p>
+          </div>
+        </div>
+        
+        {/* Actions - right aligned on desktop */}
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="relative" ref={exportMenuRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11 px-3"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <span className="h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+              ) : (
+                <Download className="h-5 w-5" />
+              )}
+              <span className="ml-1 hidden sm:inline text-xs">Export</span>
+            </Button>
+
+            {showExportMenu && (
               <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
                 <p className="text-sm font-medium">Export Excel</p>
 
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-full justify-start h-9"
+                  className="w-full justify-start h-11"
                   onClick={handleExportAll}
                   disabled={isExporting}
                 >
@@ -503,21 +529,19 @@ export function ProductTable() {
                 <div className="border-t" />
 
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Export by Serial Number Range</p>
+                  <p className="text-xs text-muted-foreground">Export by SR Range</p>
                   <Input
-                    placeholder="e.g. 1-7, 25-40, 100-150"
+                    placeholder="e.g. 1-7, 25-40"
                     value={srRange}
                     onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleExportByRange(); }}
-                    className="h-9 text-sm"
+                    className="h-11 text-sm"
                     disabled={isExporting}
                   />
-                  {srRangeError && (
-                    <p className="text-xs text-destructive">{srRangeError}</p>
-                  )}
+                  {srRangeError && <p className="text-xs text-destructive">{srRangeError}</p>}
                   <Button
                     size="sm"
-                    className="w-full h-9"
+                    className="w-full h-11"
                     onClick={handleExportByRange}
                     disabled={isExporting || !srRange.trim()}
                   >
@@ -526,54 +550,63 @@ export function ProductTable() {
                   </Button>
                 </div>
               </div>
-            </>
-          )}
+            )}
+          </div>
+          <Button 
+            size="sm" 
+            onClick={() => setView('add-product')} 
+            className="h-11 px-3 sm:px-4"
+          >
+            <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
+            <span className="ml-1 text-xs sm:text-sm">Add</span>
+          </Button>
         </div>
-        <Button size="sm" onClick={() => setView('add-product')} className="h-9">
-          <Plus className="h-4 w-4" />
-        </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-2">
+      {/* Search Bar - responsive layout */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={localSearch}
             onChange={(e) => handleSearchChange(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search by ND Number, Barcode, Product ID, SKU, Name, Brand, Type, Model, SEO Title..."
-            className="h-11 pl-9 pr-9"
+            placeholder="Search ND, Barcode, ID, SKU, Name, Brand..."
+            className="h-11 pl-9 pr-9 text-sm"
           />
           {localSearch && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           )}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowBarcodeScanner(true)}
-          className="h-11 px-3 shrink-0 gap-1.5"
-          title="Scan Barcode"
-        >
-          <ScanBarcode className="h-5 w-5" />
-          <span className="text-xs">Scan</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowPhotoCapture(true)}
-          className="h-11 px-3 shrink-0 gap-1.5"
-          title="Capture Barcode Photo"
-        >
-          <Camera className="h-5 w-5" />
-          <span className="text-xs">Photo</span>
-        </Button>
+        
+        {/* Scanner buttons - stack on very small screens */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBarcodeScanner(true)}
+            className="h-11 px-3 sm:px-4 shrink-0 gap-1.5 flex-1 sm:flex-none"
+            title="Scan Barcode"
+          >
+            <ScanBarcode className="h-5 w-5" />
+            <span className="text-xs">Scan</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPhotoCapture(true)}
+            className="h-11 px-3 sm:px-4 shrink-0 gap-1.5 flex-1 sm:flex-none"
+            title="Capture Barcode Photo"
+          >
+            <Camera className="h-5 w-5" />
+            <span className="text-xs">Photo</span>
+          </Button>
+        </div>
       </div>
 
       {/* Barcode Scanner Modal */}
@@ -607,7 +640,7 @@ export function ProductTable() {
         <div className="flex items-center gap-2 text-sm flex-wrap">
           <Badge variant="secondary" className="font-normal">
             <Search className="h-3 w-3 mr-1" />
-            {totalProducts} matching product{totalProducts !== 1 ? 's' : ''}
+            {totalProducts} matching
           </Badge>
           {(() => {
             const ndMatches = products.filter(p =>
@@ -618,7 +651,7 @@ export function ProductTable() {
               return (
                 <Badge variant="outline" className="font-normal bg-amber-50 border-amber-300 text-amber-800">
                   <Layers className="h-3 w-3 mr-1" />
-                  {ndMatches.length} product{ndMatches.length !== 1 ? 's' : ''} in {uniqueNdNumbers.length} ND group{uniqueNdNumbers.length !== 1 ? 's' : ''}
+                  {ndMatches.length} in {uniqueNdNumbers.length} ND groups
                 </Badge>
               );
             }
@@ -627,204 +660,224 @@ export function ProductTable() {
         </div>
       )}
 
-      {/* Controls row: Sort + Group toggle + Columns + Filters toggle */}
+      {/* Controls row - improved responsive layout */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Sort */}
-        <div className="flex items-center gap-1.5">
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-            <SelectTrigger className="h-9 w-[160px] text-xs">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleSortOrder}
-            className="h-9 w-9 p-0"
-          >
-            {sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
-          </Button>
-        </div>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+          <SelectTrigger className="h-11 w-full sm:w-[140px] text-xs">
+            <ArrowUpDown className="h-4 w-4 mr-1" />
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortOptions.map(opt => (
+              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleSortOrder}
+          className="h-11 w-11 p-0"
+        >
+          {sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+        </Button>
 
         {/* Group by ND Number */}
         <Button
           variant={groupByNd ? 'default' : 'outline'}
           size="sm"
           onClick={handleGroupToggle}
-          className="h-9 text-xs"
+          className="h-11 text-xs px-3"
         >
-          <Layers className="h-3.5 w-3.5 mr-1.5" />
-          {groupByNd ? 'Grouped' : 'Group by ND'}
+          <Layers className="h-4 w-4 mr-1" />
+          {groupByNd ? 'Grouped' : 'Group'}
         </Button>
 
         {/* Column visibility */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 text-xs">
-              <Columns3 className="h-3.5 w-3.5 mr-1.5" />
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuLabel className="text-xs">Visible Columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {DEFAULT_COLUMNS.map(col => (
-              <DropdownMenuCheckboxItem
-                key={col.key}
-                checked={visibleColumns.includes(col.key)}
-                onCheckedChange={() => toggleColumn(col.key)}
-                disabled={col.alwaysVisible}
-                className="text-xs"
-              >
-                {col.label}
-                {col.alwaysVisible && <span className="ml-1 text-muted-foreground">(always)</span>}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="relative" ref={columnMenuRef}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-11 text-xs px-3"
+            onClick={() => setShowColumnMenu(!showColumnMenu)}
+          >
+            <Columns3 className="h-4 w-4 mr-1" />
+            Columns
+          </Button>
+          
+          {showColumnMenu && (
+            <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-popover border rounded-lg shadow-lg p-2">
+              <p className="text-xs font-medium px-2 py-1.5 text-muted-foreground">Visible Columns</p>
+              <div className="border-t" />
+              <div className="py-1 max-h-[300px] overflow-y-auto">
+                {DEFAULT_COLUMNS.map(col => (
+                  <button
+                    key={col.key}
+                    onClick={() => toggleColumn(col.key)}
+                    disabled={col.alwaysVisible}
+                    className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded transition-colors ${
+                      col.alwaysVisible 
+                        ? 'text-muted-foreground cursor-default' 
+                        : 'hover:bg-accent'
+                    }`}
+                  >
+                    <div className={`h-4 w-4 rounded border flex items-center justify-center ${
+                      visibleColumns.includes(col.key) 
+                        ? 'bg-primary border-primary text-primary-foreground' 
+                        : 'border-input'
+                    }`}>
+                      {visibleColumns.includes(col.key) && (
+                        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <span>{col.label}</span>
+                    {col.alwaysVisible && <span className="text-muted-foreground ml-auto">(fixed)</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Filters toggle */}
         <Button
           variant={showFilters ? 'default' : 'outline'}
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className="h-9 text-xs"
+          className="h-11 text-xs px-3"
         >
-          <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
+          <SlidersHorizontal className="h-4 w-4 mr-1" />
           Filters
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-xs">
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
               {activeFiltersCount}
             </Badge>
           )}
         </Button>
       </div>
 
-      {/* Filters Panel */}
+      {/* Filters Panel - improved responsive grid */}
       {showFilters && (
         <Card>
-          <CardContent className="pt-4 space-y-4">
+          <CardContent className="pt-4 pb-4 px-4 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Filters</p>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleClearFilters}
-                className="h-7 text-xs"
+                className="h-9 text-xs"
                 disabled={activeFiltersCount === 0}
               >
                 Clear All
               </Button>
             </div>
             
-            {/* Taxonomy Filters - Row 1 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {/* Taxonomy Filters - responsive grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <SearchableSingleSelect
                 label="Department"
                 value={filterDepartment}
                 onChange={(v) => setFilter('filterDepartment', v)}
                 suggestions={DEPARTMENTS}
-                placeholder="All departments"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Category"
                 value={filterCategory}
                 onChange={(v) => setFilter('filterCategory', v)}
                 suggestions={categoryOptions}
-                placeholder="All categories"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Subcategory"
                 value={filterSubcategory}
                 onChange={(v) => setFilter('filterSubcategory', v)}
                 suggestions={subcategoryOptions}
-                placeholder="All subcategories"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Product Family"
                 value={filterProductFamily}
                 onChange={(v) => setFilter('filterProductFamily', v)}
                 suggestions={[...PRODUCT_FAMILIES]}
-                placeholder="All families"
+                placeholder="All"
               />
             </div>
 
-            {/* Attribute Filters - Row 2 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {/* Attribute Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <SearchableSingleSelect
                 label="Product Type"
                 value={filterProductType}
                 onChange={(v) => setFilter('filterProductType', v)}
                 suggestions={productTypeOptions}
-                placeholder="All types"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Brand"
                 value={filterBrand}
                 onChange={(v) => setFilter('filterBrand', v)}
                 suggestions={BRAND_OPTIONS}
-                placeholder="All brands"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Color"
                 value={filterColor}
                 onChange={(v) => setFilter('filterColor', v)}
                 suggestions={COLOR_OPTIONS}
-                placeholder="All colors"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Material"
                 value={filterMaterial}
                 onChange={(v) => setFilter('filterMaterial', v)}
                 suggestions={MATERIAL_OPTIONS}
-                placeholder="All materials"
+                placeholder="All"
               />
             </div>
 
-            {/* Logistics & Status Filters - Row 3 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {/* Logistics & Status Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <SearchableSingleSelect
-                label="Country of Origin"
+                label="Origin"
                 value={filterCountryOfOrigin}
                 onChange={(v) => setFilter('filterCountryOfOrigin', v)}
                 suggestions={[...COUNTRY_OPTIONS]}
-                placeholder="All countries"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Unit"
                 value={filterUnit}
                 onChange={(v) => setFilter('filterUnit', v)}
                 suggestions={[...UNIT_OPTIONS]}
-                placeholder="All units"
+                placeholder="All"
               />
               <SearchableSingleSelect
-                label="Validation Status"
+                label="Status"
                 value={filterValidationStatus}
                 onChange={(v) => setFilter('filterValidationStatus', v)}
                 suggestions={[...VALIDATION_STATUS_OPTIONS]}
-                placeholder="All statuses"
+                placeholder="All"
               />
               <SearchableSingleSelect
                 label="Shape"
                 value={filterShape}
                 onChange={(v) => setFilter('filterShape', v)}
                 suggestions={[...SHAPE_OPTIONS]}
-                placeholder="All shapes"
+                placeholder="All"
               />
             </div>
 
-            {/* Price Range */}
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Min Price (KD)</label>
+            {/* Price Range - responsive layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Min Price (KD)</label>
                 <Input
                   type="number"
                   step="0.001"
@@ -834,8 +887,8 @@ export function ProductTable() {
                   className="h-11"
                 />
               </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Max Price (KD)</label>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Max Price (KD)</label>
                 <Input
                   type="number"
                   step="0.001"
@@ -847,7 +900,7 @@ export function ProductTable() {
               </div>
             </div>
 
-            <Button onClick={() => setCurrentPage(1)} className="w-full h-10">
+            <Button onClick={() => setCurrentPage(1)} className="w-full h-11">
               Apply Filters
             </Button>
           </CardContent>
@@ -867,7 +920,7 @@ export function ProductTable() {
             <Layers className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-muted-foreground">No ND Number groups found</p>
             {searchQuery && (
-              <Button variant="outline" className="mt-4" onClick={clearSearch}>
+              <Button variant="outline" className="mt-4 h-11" onClick={clearSearch}>
                 Clear Search
               </Button>
             )}
@@ -880,15 +933,15 @@ export function ProductTable() {
                 className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
                 onClick={() => handleGroupClick(group.ndNumber)}
               >
-                <CardContent className="p-3">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center gap-3">
                     {expandedGroups.has(group.ndNumber) ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <ChevronDown className="h-5 w-5 text-muted-foreground shrink-0" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">
+                      <p className="font-semibold text-sm sm:text-base">
                         {searchQuery ? (
                           <HighlightedText text={group.ndNumber} highlight={searchQuery} />
                         ) : (
@@ -896,8 +949,8 @@ export function ProductTable() {
                         )}
                       </p>
                     </div>
-                    <Badge variant="secondary" className="shrink-0">
-                      {group.count} product{group.count !== 1 ? 's' : ''}
+                    <Badge variant="secondary" className="shrink-0 text-xs sm:text-sm">
+                      {group.count}
                     </Badge>
                   </div>
                 </CardContent>
@@ -909,39 +962,40 @@ export function ProductTable() {
 
       {/* ── Products in selected ND group ── */}
       {groupByNd && selectedNdNumber && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => { setSelectedNdNumber(''); setProducts([], 0); }}
-              className="h-8 px-2"
+              className="h-11 px-3"
             >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Groups
+              <ChevronLeft className="h-5 w-5 mr-1" />
+              Back
             </Button>
-            <Badge variant="secondary" className="font-medium">
-              ND {selectedNdNumber} — {totalProducts} product{totalProducts !== 1 ? 's' : ''}
+            <Badge variant="secondary" className="font-medium text-xs sm:text-sm">
+              ND {selectedNdNumber} — {totalProducts}
             </Badge>
           </div>
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+            /* Mobile-friendly card list + desktop table */
+            <div className="hidden sm:block overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[700px]">
                 <thead>
-                  <tr className="border-b text-xs text-muted-foreground">
+                  <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
                     {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
-                      <th key={col.key} className="py-2 px-2 text-left font-medium whitespace-nowrap">{col.label}</th>
+                      <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
                     ))}
-                    <th className="py-2 px-2 text-left font-medium whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-3 text-left font-medium whitespace-nowrap w-24">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y">
                   {products.map((product) => (
                     <ProductRow
                       key={product.id}
@@ -956,6 +1010,20 @@ export function ProductTable() {
               </table>
             </div>
           )}
+          
+          {/* Mobile card view */}
+          {!isLoading && products.length > 0 && (
+            <div className="sm:hidden space-y-2">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  searchQuery={searchQuery}
+                  onClick={() => openProduct(product)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -964,20 +1032,20 @@ export function ProductTable() {
         isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+              <Skeleton key={i} className="h-20 sm:h-24 w-full rounded-lg" />
             ))}
           </div>
         ) : products.length === 0 && totalProducts === 0 ? (
-          <div className="text-center py-16">
-            <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No products found</p>
+          <div className="text-center py-12 sm:py-16">
+            <ImageIcon className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-base sm:text-lg font-medium text-muted-foreground">No products found</p>
             <p className="text-sm text-muted-foreground mt-1">Import an Excel file to begin.</p>
-            <div className="flex gap-3 justify-center mt-6">
-              <Button onClick={() => setView('import')}>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+              <Button onClick={() => setView('import')} className="h-11 w-full sm:w-auto">
                 <Upload className="h-4 w-4 mr-2" />
                 Import Excel
               </Button>
-              <Button variant="outline" onClick={() => setView('add-product')}>
+              <Button variant="outline" onClick={() => setView('add-product')} className="h-11 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Product
               </Button>
@@ -988,65 +1056,82 @@ export function ProductTable() {
             <ScanBarcode className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-muted-foreground">
               {searchQuery && /^\d+$/.test(searchQuery)
-                ? `No product found for barcode ${searchQuery}`
-                : 'No products match your search'}
+                ? `No product for barcode ${searchQuery}`
+                : 'No matching products'}
             </p>
-            <Button variant="outline" className="mt-4" onClick={handleClearFilters}>
+            <Button variant="outline" className="mt-4 h-11" onClick={handleClearFilters}>
               Clear Filters
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[900px]">
-              <thead>
-                <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                  {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
-                    <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
+          <>
+            {/* Desktop table view */}
+            <div className="hidden sm:block overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                    {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
+                      <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
+                    ))}
+                    <th className="py-3 px-3 text-left font-medium whitespace-nowrap w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {products.map((product) => (
+                    <ProductRow
+                      key={product.id}
+                      product={product}
+                      searchQuery={searchQuery}
+                      visibleColumns={visibleColumns}
+                      onView={() => openProduct(product)}
+                      onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
+                    />
                   ))}
-                  <th className="py-3 px-3 text-left font-medium whitespace-nowrap w-24">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {products.map((product) => (
-                  <ProductRow
-                    key={product.id}
-                    product={product}
-                    searchQuery={searchQuery}
-                    visibleColumns={visibleColumns}
-                    onView={() => openProduct(product)}
-                    onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile card view */}
+            <div className="sm:hidden space-y-2">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  searchQuery={searchQuery}
+                  onClick={() => openProduct(product)}
+                />
+              ))}
+            </div>
+          </>
         )
       )}
 
-      {/* Pagination */}
+      {/* Pagination - larger touch targets */}
       {!groupByNd && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-muted-foreground">
-            Page {currentPage} of {totalPages} ({totalProducts} products)
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+            Page {currentPage} of {totalPages} • {totalProducts} products
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-center">
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(currentPage - 1)}
-              className="h-8"
+              className="h-11 px-4 flex-1 sm:flex-none"
             >
-              Previous
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Prev
             </Button>
             <Button
               variant="outline"
               size="sm"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
-              className="h-8"
+              className="h-11 px-4 flex-1 sm:flex-none"
             >
               Next
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>
@@ -1069,8 +1154,6 @@ function ProductRow({
   onView: () => void;
   onEdit: () => void;
 }) {
-  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
-
   const renderCell = (key: string) => {
     const value = product[key as keyof Product];
     
@@ -1083,13 +1166,13 @@ function ProductRow({
         );
       case 'productId':
         return (
-          <span className="text-xs font-mono truncate max-w-[100px] block">
+          <span className="text-xs font-mono text-truncate max-w-[100px] block">
             {product.productId || '-'}
           </span>
         );
       case 'sku':
         return (
-          <span className="text-xs font-mono truncate max-w-[100px] block">
+          <span className="text-xs font-mono text-truncate max-w-[100px] block">
             {product.sku || '-'}
           </span>
         );
@@ -1123,7 +1206,7 @@ function ProductRow({
       case 'nameEn':
         return (
           <div className="min-w-0 max-w-[200px]">
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium text-truncate">
               {searchQuery && product.nameEn ? (
                 <HighlightedText text={product.nameEn} highlight={searchQuery} />
               ) : (
@@ -1131,7 +1214,7 @@ function ProductRow({
               )}
             </p>
             {product.nameAr && (
-              <p className="text-xs text-muted-foreground truncate" dir="rtl">
+              <p className="text-xs text-muted-foreground text-truncate" dir="rtl">
                 {product.nameAr}
               </p>
             )}
@@ -1145,13 +1228,13 @@ function ProductRow({
         );
       case 'productType':
         return (
-          <span className="text-xs truncate max-w-[120px] block">
+          <span className="text-xs text-truncate max-w-[120px] block">
             {product.productType || '-'}
           </span>
         );
       case 'productFamily':
         return (
-          <span className="text-xs truncate max-w-[100px] block">
+          <span className="text-xs text-truncate max-w-[100px] block">
             {product.productFamily || '-'}
           </span>
         );
@@ -1186,40 +1269,43 @@ function ProductRow({
           </Badge>
         );
       default:
-        // Handle images array specially - don't render it in table cells
+        // Handle special types that can't be rendered directly
         if (Array.isArray(value)) {
           return <span className="text-xs">-</span>;
         }
-        return <span className="text-xs">{value ?? '-'}</span>;
+        if (typeof value === 'object' && value !== null) {
+          return <span className="text-xs">-</span>;
+        }
+        return <span className="text-xs">{String(value ?? '-')}</span>;
     }
   };
 
   return (
     <tr className="hover:bg-muted/30 transition-colors">
       {visibleColumns.map(key => (
-        <td key={key} className="py-2.5 px-3">
+        <td key={key} className="py-3 px-3">
           {renderCell(key)}
         </td>
       ))}
-      <td className="py-2.5 px-3">
+      <td className="py-3 px-3">
         <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={onView}
-            className="h-7 w-7 p-0"
-            title="View details"
+            className="h-9 w-9 p-0"
+            title="View"
           >
-            <Eye className="h-3.5 w-3.5" />
+            <Eye className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={onEdit}
-            className="h-7 w-7 p-0"
-            title="Edit product"
+            className="h-9 w-9 p-0"
+            title="Edit"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </Button>
         </div>
       </td>
@@ -1227,7 +1313,7 @@ function ProductRow({
   );
 }
 
-// ── Product Card (for compact/mobile view) ──
+// ── Product Card (for mobile view) ──
 function ProductCard({
   product,
   searchQuery,
@@ -1244,10 +1330,10 @@ function ProductCard({
       className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
       onClick={onClick}
     >
-      <CardContent className="p-3">
+      <CardContent className="p-3 sm:p-4">
         <div className="flex gap-3">
           {/* Thumbnail */}
-          <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-muted shrink-0">
             {primaryImage ? (
               <img
                 src={primaryImage.imageUrl}
@@ -1256,7 +1342,7 @@ function ProductCard({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground/50" />
               </div>
             )}
           </div>
@@ -1265,15 +1351,15 @@ function ProductCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm truncate">
+                <p className="font-medium text-sm text-truncate">
                   {searchQuery && product.nameEn ? (
                     <HighlightedText text={product.nameEn} highlight={searchQuery} />
                   ) : (
-                    product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed Product')
+                    product.nameEn || product.ndNumber || (product.sourceRow != null ? `Item #${product.sourceRow}` : 'Unnamed')
                   )}
                 </p>
                 {product.nameAr && (
-                  <p className="text-xs text-muted-foreground truncate" dir="rtl">
+                  <p className="text-xs text-muted-foreground text-truncate" dir="rtl">
                     {product.nameAr}
                   </p>
                 )}
@@ -1285,10 +1371,7 @@ function ProductCard({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                Sr: {product.sourceRow ?? '-'}
-              </Badge>
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               {product.ndNumber && (
                 <Badge
                   variant="outline"
@@ -1298,11 +1381,7 @@ function ProductCard({
                       : ''
                   }`}
                 >
-                  {searchQuery ? (
-                    <HighlightedText text={product.ndNumber} highlight={searchQuery} />
-                  ) : (
-                    product.ndNumber
-                  )}
+                  {product.ndNumber}
                 </Badge>
               )}
               {product.barcode && (
@@ -1313,26 +1392,6 @@ function ProductCard({
               {product.brand && (
                 <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
                   {product.brand}
-                </Badge>
-              )}
-              {product.material && (
-                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  {product.material}
-                </Badge>
-              )}
-              {product.color && (
-                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  {product.color}
-                </Badge>
-              )}
-              {product.countryOfOrigin && (
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {product.countryOfOrigin}
-                </Badge>
-              )}
-              {product.pieces != null && (
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {product.pieces} pcs
                 </Badge>
               )}
               {product.images.length > 0 && (
