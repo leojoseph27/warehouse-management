@@ -76,7 +76,7 @@ export function AuthScreen() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-b from-background to-muted/30">
+    <div className="flex items-center justify-center min-h-[100dvh] p-4 bg-gradient-to-b from-background to-muted/30 overscroll-contain">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">

@@ -116,8 +116,29 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Prevent overscroll/bounce effect on mobile browsers */
+    overscroll-behavior: none;
+    /* Enable momentum scrolling on iOS Safari */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent iOS Safari address bar from causing layout shifts */
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    /* Use dynamic viewport height that accounts for mobile browser UI */
+    min-height: 100dvh;
+    /* Support browsers without dvh */
+    min-height: -webkit-fill-available;
+    /* Prevent overscroll propagation */
+    overscroll-behavior: none;
+    /* Enable smooth touch scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Ensure body is scrollable */
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Prevent touch-action issues */
+    touch-action: pan-y;
   }
 
   /* Responsive touch-friendly targets */
@@ -264,11 +285,6 @@
     padding: 0.5rem;
   }
 
-  /* Prevent horizontal overflow */
-  html, body {
-    overflow-x: hidden;
-  }
-
   /* Full-width cards on mobile */
   .card-full-width-mobile {
     margin-left: -1rem;
@@ -279,6 +295,19 @@
   /* Stack form fields vertically on very small screens */
   .form-stack-xs {
     flex-direction: column;
+  }
+
+  /* Ensure main content area is scrollable on mobile */
+  main {
+    /* Prevent sticky headers from causing scroll issues */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Sticky elements should not interfere with body scroll */
+  header[style*="sticky"], nav[style*="sticky"] {
+    /* Prevent overscroll from propagating through sticky elements */
+    overscroll-behavior: contain;
   }
 }
 
