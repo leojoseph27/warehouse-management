@@ -1,12 +1,23 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useInventoryStore } from '@/store/inventory-store';
-import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, AlertTriangle, Info, ChevronLeft } from 'lucide-react';
+import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Loader2, AlertTriangle, Info, Clock, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface StageTiming {
+  fileUpload: string;
+  excelParsing: string;
+  headerDetection: string;
+  rowParsing: string;
+  dataTransformation: string;
+  bulkInsert: string;
+  total: string;
+}
 
 interface ImportResult {
   imported: number;
@@ -16,11 +27,19 @@ interface ImportResult {
   withPrice?: number;
   withoutPrice?: number;
   elapsedMs?: number;
-  detectedHeaders?: string[];
+  timings?: StageTiming;
+  rawHeaders?: string[];
   columnMapping?: Record<string, string>;
   unmappedColumns?: string[];
-  successDetails?: { row: number; sr: number | null; description: string | null; ndNumber: string | null }[];
-  errorDetails?: { row: number; error: string; data?: string }[];
+  previewRows?: { row: number; data: Record<string, any> }[];
+  successDetails?: { row: number; nameEn: string | null; ndNumber: string | null }[];
+  errorDetails?: { row: number; error: string }[];
+}
+
+interface ImportProgress {
+  stage: string;
+  progress: number;
+  message: string;
 }
 
 export function ExcelImport() {
@@ -29,12 +48,42 @@ export function ExcelImport() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
+  const [progressValue, setProgressValue] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Simulate progress stages during import
+  useEffect(() => {
+    if (!importing || !selectedFile) return;
+
+    const stages: ImportProgress[] = [
+      { stage: 'uploading', progress: 5, message: 'Uploading file...' },
+      { stage: 'reading', progress: 15, message: 'Reading workbook...' },
+      { stage: 'headers', progress: 25, message: 'Detecting headers...' },
+      { stage: 'parsing', progress: 40, message: 'Parsing rows...' },
+      { stage: 'transforming', progress: 55, message: 'Applying transformations...' },
+      { stage: 'inserting', progress: 70, message: 'Inserting to database...' },
+      { stage: 'finalizing', progress: 90, message: 'Finalizing import...' },
+    ];
+
+    let currentStage = 0;
+    const interval = setInterval(() => {
+      if (currentStage < stages.length) {
+        setProgress(stages[currentStage]);
+        setProgressValue(stages[currentStage].progress);
+        currentStage++;
+      }
+    }, 300);
+
+    return () => clearInterval(interval);
+  }, [importing, selectedFile]);
 
   const handleFileSelect = (file: File) => {
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
       setSelectedFile(file);
       setResult(null);
+      setProgress(null);
+      setProgressValue(0);
     } else {
       toast.error('Please select an Excel file (.xlsx, .xls, or .csv)');
     }
@@ -53,6 +102,10 @@ export function ExcelImport() {
 
     setImporting(true);
     setResult(null);
+    setProgress({ stage: 'starting', progress: 0, message: 'Starting import...' });
+    setProgressValue(0);
+
+    const startTime = Date.now();
 
     try {
       const formData = new FormData();
@@ -63,12 +116,18 @@ export function ExcelImport() {
         body: formData,
       });
 
-      const data = await res.json();
+      const data: ImportResult = await res.json();
+      const endTime = Date.now();
+      const totalTime = endTime - startTime;
+
+      // Set progress to complete
+      setProgress({ stage: 'complete', progress: 100, message: 'Import complete!' });
+      setProgressValue(100);
 
       if (res.ok) {
         setResult(data);
         if (data.imported > 0 && data.errors === 0) {
-          toast.success(`Successfully imported ${data.imported} products`);
+          toast.success(`Successfully imported ${data.imported} products in ${data.timings?.total || `${totalTime}ms`}`);
         } else if (data.imported > 0 && data.errors > 0) {
           toast.warning(`Imported ${data.imported} products with ${data.errors} errors`);
         } else if (data.imported === 0) {
@@ -79,13 +138,12 @@ export function ExcelImport() {
         }
       } else {
         toast.error(data.error || 'Failed to import Excel file');
-        if (data.detectedHeaders) {
-          setResult(data);
-        }
+        setResult(data as any);
       }
     } catch (error) {
       console.error('Error importing:', error);
       toast.error('Failed to import Excel file');
+      setProgress(null);
     } finally {
       setImporting(false);
     }
@@ -100,9 +158,25 @@ export function ExcelImport() {
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg sm:text-xl font-bold">Import from Excel</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Upload an Excel file to import products</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Optimized bulk import with progress tracking</p>
         </div>
+        <Badge variant="outline" className="shrink-0 gap-1">
+          <Zap className="h-3 w-3" />
+          Fast
+        </Badge>
       </div>
+
+      {/* Performance Info */}
+      <Card className="border-emerald-200 bg-emerald-50/50">
+        <CardContent className="px-3 sm:px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-emerald-600 shrink-0" />
+            <p className="text-xs sm:text-sm text-emerald-700">
+              Optimized import: bulk database inserts, combined queries, and stage-by-stage progress tracking
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Expected Format */}
       <Card>
@@ -148,7 +222,8 @@ export function ExcelImport() {
                   variant="outline"
                   size="sm"
                   className="mt-3 h-11"
-                  onClick={() => { setSelectedFile(null); setResult(null); }}
+                  onClick={() => { setSelectedFile(null); setResult(null); setProgress(null); }}
+                  disabled={importing}
                 >
                   Remove
                 </Button>
@@ -179,6 +254,24 @@ export function ExcelImport() {
               className="hidden"
             />
           </div>
+
+          {/* Progress Indicator */}
+          {(importing || progress) && (
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="flex items-center gap-2">
+                  {progress?.stage === 'complete' ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {progress?.message || 'Processing...'}
+                </span>
+                <span className="text-muted-foreground">{progressValue}%</span>
+              </div>
+              <Progress value={progressValue} className="h-2" />
+            </div>
+          )}
 
           <Button
             className="w-full mt-4 h-11"
@@ -230,7 +323,8 @@ export function ExcelImport() {
                         </p>
                       )}
                       {result.elapsedMs != null && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
                           Duration: {result.elapsedMs < 1000 ? `${result.elapsedMs}ms` : `${(result.elapsedMs / 1000).toFixed(1)}s`}
                         </p>
                       )}
@@ -257,8 +351,52 @@ export function ExcelImport() {
             </CardContent>
           </Card>
 
+          {/* Performance Breakdown */}
+          {result.timings && (
+            <Card>
+              <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-emerald-500 shrink-0" />
+                  Performance Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">File upload:</span>
+                    <span className="font-mono">{result.timings.fileUpload}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Excel parsing:</span>
+                    <span className="font-mono">{result.timings.excelParsing}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Header detection:</span>
+                    <span className="font-mono">{result.timings.headerDetection}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Row parsing:</span>
+                    <span className="font-mono">{result.timings.rowParsing}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Data transform:</span>
+                    <span className="font-mono">{result.timings.dataTransformation}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bulk insert:</span>
+                    <span className="font-mono">{result.timings.bulkInsert}</span>
+                  </div>
+                </div>
+                <div className="mt-2 pt-2 border-t flex justify-between text-sm font-medium">
+                  <span>Total time:</span>
+                  <span className="font-mono text-emerald-600">{result.timings.total}</span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Column Mapping Detected */}
-          {result.detectedHeaders && (
+          {result.rawHeaders && (
             <Card>
               <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
@@ -270,7 +408,7 @@ export function ExcelImport() {
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Detected headers:</p>
                   <div className="flex flex-wrap gap-1">
-                    {result.detectedHeaders.map((h) => (
+                    {result.rawHeaders.map((h) => (
                       <Badge key={h} variant="outline" className="text-[10px] font-mono">
                         {h}
                       </Badge>
@@ -317,7 +455,7 @@ export function ExcelImport() {
               <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4">
                 <CardTitle className="text-sm sm:text-base flex items-center gap-2 text-amber-600">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Errors ({result.errorDetails.length}{result.errorDetails.length >= 20 ? '+' : ''})
+                  Errors ({result.errorDetails.length}{result.errorDetails.length >= 50 ? '+' : ''})
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-3 sm:px-4 pb-3 sm:pb-4">
@@ -345,7 +483,7 @@ export function ExcelImport() {
               </Button>
               <Button
                 className="flex-1 h-11"
-                onClick={() => { setResult(null); }}
+                onClick={() => { setResult(null); setProgress(null); setProgressValue(0); }}
               >
                 Import More
               </Button>

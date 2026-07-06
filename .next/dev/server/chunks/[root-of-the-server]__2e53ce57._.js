@@ -45,6 +45,8 @@ module.exports = mod;
 "use strict";
 
 __turbopack_context__.s([
+    "bulkCreate",
+    ()=>bulkCreate,
     "db",
     ()=>db,
     "default",
@@ -53,11 +55,57 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__ = __turbopack_context__.i("[externals]/@prisma/client [external] (@prisma/client, cjs, [project]/node_modules/@prisma/client)");
 ;
 const globalForPrisma = globalThis;
-const db = globalForPrisma.prisma ?? new __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__["PrismaClient"]();
+// Configure Prisma with optimized connection pool for Neon PostgreSQL
+// Neon requires connection pooling for serverless/edge environments
+const prismaClientSingleton = ()=>{
+    return new __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__["PrismaClient"]({
+        log: ("TURBOPACK compile-time truthy", 1) ? [
+            'warn',
+            'error'
+        ] : "TURBOPACK unreachable"
+    });
+};
+const db = globalForPrisma.prisma ?? prismaClientSingleton();
 if ("TURBOPACK compile-time truthy", 1) {
     globalForPrisma.prisma = db;
 }
+// Graceful shutdown handling
+if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+;
 const __TURBOPACK__default__export__ = db;
+async function bulkCreate(model, data, batchSize = 100) {
+    const errors = [];
+    let created = 0;
+    for(let i = 0; i < data.length; i += batchSize){
+        const batch = data.slice(i, i + batchSize);
+        try {
+            await model.createMany({
+                data: batch,
+                skipDuplicates: true
+            });
+            created += batch.length;
+        } catch (err) {
+            // If batch fails, try individual inserts to identify problematic rows
+            for(let j = 0; j < batch.length; j++){
+                try {
+                    await model.create({
+                        data: batch[j]
+                    });
+                    created++;
+                } catch (singleErr) {
+                    errors.push({
+                        index: i + j,
+                        error: singleErr?.message || String(singleErr)
+                    });
+                }
+            }
+        }
+    }
+    return {
+        created,
+        errors
+    };
+}
 }),
 "[project]/src/lib/lookups.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -1868,220 +1916,282 @@ async function GET(request) {
                 totalGroups: groups.length
             });
         }
-        // ── Suggestions mode ──
+        // ── Suggestions mode ── (Optimized with single aggregation query)
         if (mode === 'suggestions') {
-            // Fetch unique values from DB for key fields
-            const [dbBrands, dbDepartments, dbCategories, dbSubcategories, dbProductFamilies, dbProductTypes, dbColors, dbMaterials, dbCountries, dbShapes, dbFinishes, dbValidationStatuses, dbUnits] = await Promise.all([
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        brand: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        brand: true
-                    },
-                    distinct: [
-                        'brand'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        department: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        department: true
-                    },
-                    distinct: [
-                        'department'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        category: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        category: true
-                    },
-                    distinct: [
-                        'category'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        subcategory: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        subcategory: true
-                    },
-                    distinct: [
-                        'subcategory'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        productFamily: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        productFamily: true
-                    },
-                    distinct: [
-                        'productFamily'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        productType: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        productType: true
-                    },
-                    distinct: [
-                        'productType'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        color: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        color: true
-                    },
-                    distinct: [
-                        'color'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        material: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        material: true
-                    },
-                    distinct: [
-                        'material'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        countryOfOrigin: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        countryOfOrigin: true
-                    },
-                    distinct: [
-                        'countryOfOrigin'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        shape: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        shape: true
-                    },
-                    distinct: [
-                        'shape'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        finish: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        finish: true
-                    },
-                    distinct: [
-                        'finish'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        validationStatus: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        validationStatus: true
-                    },
-                    distinct: [
-                        'validationStatus'
-                    ]
-                }),
-                __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
-                    where: {
-                        unit: {
-                            not: null
-                        }
-                    },
-                    select: {
-                        unit: true
-                    },
-                    distinct: [
-                        'unit'
-                    ]
-                })
-            ]);
-            // Merge DB values with lookup table values
-            const merge = (dbRows, key, lookupValues)=>{
-                const dbValues = dbRows.map((r)=>r[key]).filter((v)=>v !== null && v !== '');
-                const combined = new Set([
-                    ...lookupValues,
-                    ...dbValues
+            // Use a single raw query to get all distinct values at once
+            // This is MUCH faster than 13 separate findMany with distinct
+            try {
+                const suggestionsData = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].$queryRaw`
+          SELECT
+            ARRAY_AGG(DISTINCT brand) FILTER (WHERE brand IS NOT NULL) as brands,
+            ARRAY_AGG(DISTINCT department) FILTER (WHERE department IS NOT NULL) as departments,
+            ARRAY_AGG(DISTINCT category) FILTER (WHERE category IS NOT NULL) as categories,
+            ARRAY_AGG(DISTINCT subcategory) FILTER (WHERE subcategory IS NOT NULL) as subcategories,
+            ARRAY_AGG(DISTINCT product_family) FILTER (WHERE product_family IS NOT NULL) as product_families,
+            ARRAY_AGG(DISTINCT product_type) FILTER (WHERE product_type IS NOT NULL) as product_types,
+            ARRAY_AGG(DISTINCT color) FILTER (WHERE color IS NOT NULL) as colors,
+            ARRAY_AGG(DISTINCT material) FILTER (WHERE material IS NOT NULL) as materials,
+            ARRAY_AGG(DISTINCT country_of_origin) FILTER (WHERE country_of_origin IS NOT NULL) as countries,
+            ARRAY_AGG(DISTINCT shape) FILTER (WHERE shape IS NOT NULL) as shapes,
+            ARRAY_AGG(DISTINCT finish) FILTER (WHERE finish IS NOT NULL) as finishes,
+            ARRAY_AGG(DISTINCT validation_status) FILTER (WHERE validation_status IS NOT NULL) as validation_statuses,
+            ARRAY_AGG(DISTINCT unit) FILTER (WHERE unit IS NOT NULL) as units
+          FROM products
+        `;
+                const data = suggestionsData[0] || {};
+                // Merge DB values with lookup table values and sort
+                const mergeAndSort = (dbValues, lookupValues)=>{
+                    const combined = new Set([
+                        ...lookupValues,
+                        ...dbValues || []
+                    ]);
+                    return [
+                        ...combined
+                    ].sort((a, b)=>a.localeCompare(b, undefined, {
+                            sensitivity: 'base'
+                        }));
+                };
+                return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                    brands: mergeAndSort(data.brands, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["BRAND_OPTIONS"]),
+                    departments: mergeAndSort(data.departments, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["DEPARTMENTS"]),
+                    categories: mergeAndSort(data.categories, []),
+                    subcategories: mergeAndSort(data.subcategories, []),
+                    productFamilies: mergeAndSort(data.product_families, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["PRODUCT_FAMILIES"]
+                    ]),
+                    productTypes: mergeAndSort(data.product_types, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ALL_PRODUCT_TYPES"]),
+                    colors: mergeAndSort(data.colors, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COLOR_OPTIONS"]),
+                    materials: mergeAndSort(data.materials, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["MATERIAL_OPTIONS"]),
+                    countriesOfOrigin: mergeAndSort(data.countries, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COUNTRY_OPTIONS"]
+                    ]),
+                    shapes: mergeAndSort(data.shapes, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["SHAPE_OPTIONS"]
+                    ]),
+                    finishes: mergeAndSort(data.finishes, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["FINISH_OPTIONS"]
+                    ]),
+                    validationStatuses: mergeAndSort(data.validation_statuses, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["VALIDATION_STATUS_OPTIONS"]
+                    ]),
+                    units: mergeAndSort(data.units, [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["UNIT_OPTIONS"]
+                    ])
+                });
+            } catch (rawError) {
+                // Fallback to original method if raw query fails
+                console.error('Suggestions raw query failed, using fallback:', rawError);
+                const [dbBrands, dbDepartments, dbCategories, dbSubcategories, dbProductFamilies, dbProductTypes, dbColors, dbMaterials, dbCountries, dbShapes, dbFinishes, dbValidationStatuses, dbUnits] = await Promise.all([
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            brand: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            brand: true
+                        },
+                        distinct: [
+                            'brand'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            department: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            department: true
+                        },
+                        distinct: [
+                            'department'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            category: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            category: true
+                        },
+                        distinct: [
+                            'category'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            subcategory: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            subcategory: true
+                        },
+                        distinct: [
+                            'subcategory'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            productFamily: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            productFamily: true
+                        },
+                        distinct: [
+                            'productFamily'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            productType: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            productType: true
+                        },
+                        distinct: [
+                            'productType'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            color: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            color: true
+                        },
+                        distinct: [
+                            'color'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            material: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            material: true
+                        },
+                        distinct: [
+                            'material'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            countryOfOrigin: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            countryOfOrigin: true
+                        },
+                        distinct: [
+                            'countryOfOrigin'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            shape: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            shape: true
+                        },
+                        distinct: [
+                            'shape'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            finish: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            finish: true
+                        },
+                        distinct: [
+                            'finish'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            validationStatus: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            validationStatus: true
+                        },
+                        distinct: [
+                            'validationStatus'
+                        ]
+                    }),
+                    __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                        where: {
+                            unit: {
+                                not: null
+                            }
+                        },
+                        select: {
+                            unit: true
+                        },
+                        distinct: [
+                            'unit'
+                        ]
+                    })
                 ]);
-                return [
-                    ...combined
-                ].sort((a, b)=>a.localeCompare(b, undefined, {
-                        sensitivity: 'base'
-                    }));
-            };
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-                brands: merge(dbBrands, 'brand', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["BRAND_OPTIONS"]),
-                departments: merge(dbDepartments, 'department', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["DEPARTMENTS"]),
-                categories: merge(dbCategories, 'category', []),
-                subcategories: merge(dbSubcategories, 'subcategory', []),
-                productFamilies: merge(dbProductFamilies, 'productFamily', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["PRODUCT_FAMILIES"]
-                ]),
-                productTypes: merge(dbProductTypes, 'productType', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ALL_PRODUCT_TYPES"]),
-                colors: merge(dbColors, 'color', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COLOR_OPTIONS"]),
-                materials: merge(dbMaterials, 'material', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["MATERIAL_OPTIONS"]),
-                countriesOfOrigin: merge(dbCountries, 'countryOfOrigin', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COUNTRY_OPTIONS"]
-                ]),
-                shapes: merge(dbShapes, 'shape', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["SHAPE_OPTIONS"]
-                ]),
-                finishes: merge(dbFinishes, 'finish', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["FINISH_OPTIONS"]
-                ]),
-                validationStatuses: merge(dbValidationStatuses, 'validationStatus', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["VALIDATION_STATUS_OPTIONS"]
-                ]),
-                units: merge(dbUnits, 'unit', [
-                    ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["UNIT_OPTIONS"]
-                ])
-            });
+                const merge = (dbRows, key, lookupValues)=>{
+                    const dbValues = dbRows.map((r)=>r[key]).filter((v)=>v !== null && v !== '');
+                    const combined = new Set([
+                        ...lookupValues,
+                        ...dbValues
+                    ]);
+                    return [
+                        ...combined
+                    ].sort((a, b)=>a.localeCompare(b, undefined, {
+                            sensitivity: 'base'
+                        }));
+                };
+                return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                    brands: merge(dbBrands, 'brand', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["BRAND_OPTIONS"]),
+                    departments: merge(dbDepartments, 'department', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["DEPARTMENTS"]),
+                    categories: merge(dbCategories, 'category', []),
+                    subcategories: merge(dbSubcategories, 'subcategory', []),
+                    productFamilies: merge(dbProductFamilies, 'productFamily', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["PRODUCT_FAMILIES"]
+                    ]),
+                    productTypes: merge(dbProductTypes, 'productType', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ALL_PRODUCT_TYPES"]),
+                    colors: merge(dbColors, 'color', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COLOR_OPTIONS"]),
+                    materials: merge(dbMaterials, 'material', __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["MATERIAL_OPTIONS"]),
+                    countriesOfOrigin: merge(dbCountries, 'countryOfOrigin', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COUNTRY_OPTIONS"]
+                    ]),
+                    shapes: merge(dbShapes, 'shape', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["SHAPE_OPTIONS"]
+                    ]),
+                    finishes: merge(dbFinishes, 'finish', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["FINISH_OPTIONS"]
+                    ]),
+                    validationStatuses: merge(dbValidationStatuses, 'validationStatus', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["VALIDATION_STATUS_OPTIONS"]
+                    ]),
+                    units: merge(dbUnits, 'unit', [
+                        ...__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["UNIT_OPTIONS"]
+                    ])
+                });
+            }
         }
         // ── Normal product listing mode ──
         const search = searchParams.get('search') || '';

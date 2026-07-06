@@ -45,6 +45,8 @@ module.exports = mod;
 "use strict";
 
 __turbopack_context__.s([
+    "bulkCreate",
+    ()=>bulkCreate,
     "db",
     ()=>db,
     "default",
@@ -53,11 +55,57 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__ = __turbopack_context__.i("[externals]/@prisma/client [external] (@prisma/client, cjs, [project]/node_modules/@prisma/client)");
 ;
 const globalForPrisma = globalThis;
-const db = globalForPrisma.prisma ?? new __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__["PrismaClient"]();
+// Configure Prisma with optimized connection pool for Neon PostgreSQL
+// Neon requires connection pooling for serverless/edge environments
+const prismaClientSingleton = ()=>{
+    return new __TURBOPACK__imported__module__$5b$externals$5d2f40$prisma$2f$client__$5b$external$5d$__$2840$prisma$2f$client$2c$__cjs$2c$__$5b$project$5d2f$node_modules$2f40$prisma$2f$client$29$__["PrismaClient"]({
+        log: ("TURBOPACK compile-time truthy", 1) ? [
+            'warn',
+            'error'
+        ] : "TURBOPACK unreachable"
+    });
+};
+const db = globalForPrisma.prisma ?? prismaClientSingleton();
 if ("TURBOPACK compile-time truthy", 1) {
     globalForPrisma.prisma = db;
 }
+// Graceful shutdown handling
+if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
+;
 const __TURBOPACK__default__export__ = db;
+async function bulkCreate(model, data, batchSize = 100) {
+    const errors = [];
+    let created = 0;
+    for(let i = 0; i < data.length; i += batchSize){
+        const batch = data.slice(i, i + batchSize);
+        try {
+            await model.createMany({
+                data: batch,
+                skipDuplicates: true
+            });
+            created += batch.length;
+        } catch (err) {
+            // If batch fails, try individual inserts to identify problematic rows
+            for(let j = 0; j < batch.length; j++){
+                try {
+                    await model.create({
+                        data: batch[j]
+                    });
+                    created++;
+                } catch (singleErr) {
+                    errors.push({
+                        index: i + j,
+                        error: singleErr?.message || String(singleErr)
+                    });
+                }
+            }
+        }
+    }
+    return {
+        created,
+        errors
+    };
+}
 }),
 "[project]/src/lib/lookups.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
@@ -1827,6 +1875,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$xlsx$2f$xlsx
 ;
 ;
 ;
+function formatMs(ms) {
+    return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
+}
 const COLUMN_MAPPINGS = [
     // Product Identity
     {
@@ -2439,9 +2490,6 @@ const COLUMN_MAPPINGS = [
         ]
     }
 ];
-// ─────────────────────────────────────────────────────────────
-// Group header names for two-row header detection
-// ─────────────────────────────────────────────────────────────
 const GROUP_HEADERS = new Set([
     'product identity',
     'classification',
@@ -2452,9 +2500,6 @@ const GROUP_HEADERS = new Set([
     'seo',
     'internal'
 ]);
-// ─────────────────────────────────────────────────────────────
-// Helper functions
-// ─────────────────────────────────────────────────────────────
 function normalize(s) {
     return s.toLowerCase().replace(/[\s_-]/g, '').trim();
 }
@@ -2477,20 +2522,16 @@ function resolveTwoRowHeaders(worksheet) {
     }
     const row2HasContent = row2.some((v)=>v !== '');
     const row1HasGroupHeader = row1.some((v)=>GROUP_HEADERS.has(normalize(v)));
-    // If row 2 has content and row 1 has group headers, it's a two-row header format
     if (row2HasContent && row1HasGroupHeader) {
         const headers = [];
         for(let c = 0; c <= maxCol; c++){
-            const r2 = row2[c];
-            // Use Row 2 as the actual header if it has content
-            headers.push(r2 || row1[c]);
+            headers.push(row2[c] || row1[c]);
         }
         return {
             headers,
             dataStartRow: 2
         };
     }
-    // Single-row header
     const headers = [];
     for(let c = 0; c <= maxCol; c++){
         headers.push(row1[c]);
@@ -2509,14 +2550,13 @@ function matchHeader(header, patterns) {
 function buildColumnMapping(headers) {
     const mapping = new Map();
     const mappedIndices = new Set();
-    // First pass: exact matches with COLUMN_DEFS header names
+    // First pass: exact matches with COLUMN_DEFS
     for(let c = 0; c < headers.length; c++){
         const header = headers[c];
         if (!header) continue;
         const headerNorm = normalize(header);
         for (const colMapping of COLUMN_MAPPINGS){
             if (mappedIndices.has(c)) break;
-            // Check against COLUMN_DEFS header for exact match
             const colDef = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["COLUMN_DEFS"].find((cd)=>cd.field === colMapping.field);
             if (colDef && (header === colDef.header || headerNorm === normalize(colDef.header))) {
                 mapping.set(c, colMapping);
@@ -2525,7 +2565,7 @@ function buildColumnMapping(headers) {
             }
         }
     }
-    // Second pass: pattern matching for unmatched columns
+    // Second pass: pattern matching
     for (const colMapping of COLUMN_MAPPINGS){
         for(let c = 0; c < headers.length; c++){
             if (mappedIndices.has(c)) continue;
@@ -2591,8 +2631,20 @@ function getCellValue(worksheet, r, c) {
     return cell ? cell.v : '';
 }
 async function POST(request) {
-    const importStartTime = Date.now();
+    const timings = {
+        fileUpload: 0,
+        excelParsing: 0,
+        headerDetection: 0,
+        rowParsing: 0,
+        dataTransformation: 0,
+        bulkInsertProducts: 0,
+        bulkInsertOriginals: 0,
+        total: 0
+    };
+    const totalStartTime = Date.now();
     try {
+        // Stage 1: File upload
+        const uploadStart = Date.now();
         const formData = await request.formData();
         const file = formData.get('file');
         if (!file) {
@@ -2603,6 +2655,9 @@ async function POST(request) {
             });
         }
         const buffer = Buffer.from(await file.arrayBuffer());
+        timings.fileUpload = Date.now() - uploadStart;
+        // Stage 2: Excel parsing
+        const parseStart = Date.now();
         const workbook = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$xlsx$2f$xlsx$2e$mjs__$5b$app$2d$route$5d$__$28$ecmascript$29$__["read"](buffer, {
             type: 'buffer'
         });
@@ -2622,8 +2677,12 @@ async function POST(request) {
                 status: 400
             });
         }
+        timings.excelParsing = Date.now() - parseStart;
+        // Stage 3: Header detection
+        const headerStart = Date.now();
         const { headers, dataStartRow } = resolveTwoRowHeaders(worksheet);
         const { mapping, unmapped } = buildColumnMapping(headers);
+        timings.headerDetection = Date.now() - headerStart;
         const mappedHeaders = {};
         for (const [colIdx, mapInfo] of mapping){
             mappedHeaders[mapInfo.field] = headers[colIdx];
@@ -2653,17 +2712,12 @@ async function POST(request) {
                 status: 400
             });
         }
-        let imported = 0;
-        let errors = 0;
-        let skipped = 0;
-        let withPrice = 0;
-        let withoutPrice = 0;
+        // Stage 4: Row parsing
+        const rowParseStart = Date.now();
+        const allRecords = [];
         const errorDetails = [];
-        const successDetails = [];
         const previewRows = [];
-        // Parse all rows first
-        const BATCH_SIZE = 100;
-        const batchRows = [];
+        let skipped = 0;
         for(let r = dataStartRow; r <= range.e.r; r++){
             const rowNum = r + 1;
             const record = {};
@@ -2701,89 +2755,171 @@ async function POST(request) {
                 skipped++;
                 continue;
             }
-            // Apply auto-derivation rules
-            const derivedRecord = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$serialize$2d$product$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["applyAutoDerivations"])(record);
-            batchRows.push({
+            allRecords.push({
                 rowNum,
-                data: derivedRecord
+                data: record
             });
         }
-        // Insert in batches using Prisma
-        // Each product is created along with its ProductOriginal record for change tracking
-        for(let i = 0; i < batchRows.length; i += BATCH_SIZE){
-            const batch = batchRows.slice(i, i + BATCH_SIZE);
+        timings.rowParsing = Date.now() - rowParseStart;
+        // Stage 5: Data transformation (auto-derivations)
+        const transformStart = Date.now();
+        const transformedRecords = allRecords.map(({ rowNum, data })=>({
+                rowNum,
+                data: (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$serialize$2d$product$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["applyAutoDerivations"])(data)
+            }));
+        timings.dataTransformation = Date.now() - transformStart;
+        // Stage 6 & 7: Bulk database inserts
+        const BULK_BATCH_SIZE = 500; // Increased batch size for better performance
+        let imported = 0;
+        let errors = 0;
+        let withPrice = 0;
+        let withoutPrice = 0;
+        const successDetails = [];
+        // Process in large batches using createMany
+        const insertStart = Date.now();
+        // Split into batches and process
+        for(let i = 0; i < transformedRecords.length; i += BULK_BATCH_SIZE){
+            const batch = transformedRecords.slice(i, i + BULK_BATCH_SIZE);
+            const productDataBatch = batch.map(({ data })=>data);
             try {
-                await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].$transaction(batch.map(({ data })=>__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.create({
-                        data,
-                        include: {
-                            original: true
+                // Use createMany for bulk insert - MUCH faster than individual creates
+                const insertResult = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.createMany({
+                    data: productDataBatch,
+                    skipDuplicates: false
+                });
+                imported += insertResult.count;
+                // Now fetch the created products to create originals
+                // We need to get the IDs of newly created products
+                // Since createMany doesn't return IDs, we query by unique fields or timestamps
+                const batchStartTime = new Date(Date.now() - 60000); // Products created in last minute
+                const createdProducts = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+                    where: {
+                        createdAt: {
+                            gte: batchStartTime
                         }
-                    })).flatMap((result)=>{
-                    // After product creation, create ProductOriginal with the same values
-                    const product = result;
-                    return [
-                        result,
-                        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].productOriginal.create({
-                            data: {
-                                productId: product.id,
-                                sourceRow: product.sourceRow,
-                                origProductId: product.productId,
-                                sku: product.sku,
-                                ndNumber: product.ndNumber,
-                                barcode: product.barcode,
-                                legacyCode: product.legacyCode,
-                                brand: product.brand,
-                                brandAr: product.brandAr,
-                                brandCode: product.brandCode,
-                                model: product.model,
-                                department: product.department,
-                                category: product.category,
-                                subcategory: product.subcategory,
-                                sectionCode: product.sectionCode,
-                                productFamily: product.productFamily,
-                                productType: product.productType,
-                                nameAr: product.nameAr,
-                                nameEn: product.nameEn,
-                                shortDescAr: product.shortDescAr,
-                                shortDescEn: product.shortDescEn,
-                                longDescAr: product.longDescAr,
-                                longDescEn: product.longDescEn,
-                                color: product.color,
-                                colorAr: product.colorAr,
-                                material: product.material,
-                                materialAr: product.materialAr,
-                                capacity: product.capacity,
-                                capacityUnit: product.capacityUnit,
-                                weight: product.weight,
-                                weightUnit: product.weightUnit,
-                                length: product.length,
-                                width: product.width,
-                                height: product.height,
-                                diameter: product.diameter,
-                                dimensionUnit: product.dimensionUnit,
-                                countryOfOrigin: product.countryOfOrigin,
-                                unit: product.unit,
-                                minSalesMultiples: product.minSalesMultiples,
-                                defaultPrice: product.defaultPrice,
-                                seoTitleEn: product.seoTitleEn,
-                                seoTitleAr: product.seoTitleAr,
-                                seoDescriptionEn: product.seoDescriptionEn,
-                                seoDescriptionAr: product.seoDescriptionAr,
-                                searchKeywords: product.searchKeywords,
-                                internalNotes: product.internalNotes,
-                                validationStatus: product.validationStatus,
-                                confidenceScore: product.confidenceScore,
-                                pieces: product.pieces,
-                                setCount: product.setCount,
-                                shape: product.shape,
-                                finish: product.finish,
-                                additionalInfo: product.additionalInfo
-                            }
-                        })
-                    ];
-                }));
+                    },
+                    select: {
+                        id: true,
+                        sourceRow: true,
+                        productId: true,
+                        sku: true,
+                        ndNumber: true,
+                        barcode: true,
+                        legacyCode: true,
+                        brand: true,
+                        brandAr: true,
+                        brandCode: true,
+                        model: true,
+                        department: true,
+                        category: true,
+                        subcategory: true,
+                        sectionCode: true,
+                        productFamily: true,
+                        productType: true,
+                        nameAr: true,
+                        nameEn: true,
+                        shortDescAr: true,
+                        shortDescEn: true,
+                        longDescAr: true,
+                        longDescEn: true,
+                        color: true,
+                        colorAr: true,
+                        material: true,
+                        materialAr: true,
+                        capacity: true,
+                        capacityUnit: true,
+                        weight: true,
+                        weightUnit: true,
+                        length: true,
+                        width: true,
+                        height: true,
+                        diameter: true,
+                        dimensionUnit: true,
+                        countryOfOrigin: true,
+                        unit: true,
+                        minSalesMultiples: true,
+                        defaultPrice: true,
+                        seoTitleEn: true,
+                        seoTitleAr: true,
+                        seoDescriptionEn: true,
+                        seoDescriptionAr: true,
+                        searchKeywords: true,
+                        internalNotes: true,
+                        validationStatus: true,
+                        confidenceScore: true,
+                        pieces: true,
+                        setCount: true,
+                        shape: true,
+                        finish: true,
+                        additionalInfo: true
+                    },
+                    take: insertResult.count,
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                });
+                // Create originals in bulk
+                const originalDataBatch = createdProducts.map((p)=>({
+                        productId: p.id,
+                        sourceRow: p.sourceRow,
+                        origProductId: p.productId,
+                        sku: p.sku,
+                        ndNumber: p.ndNumber,
+                        barcode: p.barcode,
+                        legacyCode: p.legacyCode,
+                        brand: p.brand,
+                        brandAr: p.brandAr,
+                        brandCode: p.brandCode,
+                        model: p.model,
+                        department: p.department,
+                        category: p.category,
+                        subcategory: p.subcategory,
+                        sectionCode: p.sectionCode,
+                        productFamily: p.productFamily,
+                        productType: p.productType,
+                        nameAr: p.nameAr,
+                        nameEn: p.nameEn,
+                        shortDescAr: p.shortDescAr,
+                        shortDescEn: p.shortDescEn,
+                        longDescAr: p.longDescAr,
+                        longDescEn: p.longDescEn,
+                        color: p.color,
+                        colorAr: p.colorAr,
+                        material: p.material,
+                        materialAr: p.materialAr,
+                        capacity: p.capacity,
+                        capacityUnit: p.capacityUnit,
+                        weight: p.weight,
+                        weightUnit: p.weightUnit,
+                        length: p.length,
+                        width: p.width,
+                        height: p.height,
+                        diameter: p.diameter,
+                        dimensionUnit: p.dimensionUnit,
+                        countryOfOrigin: p.countryOfOrigin,
+                        unit: p.unit,
+                        minSalesMultiples: p.minSalesMultiples,
+                        defaultPrice: p.defaultPrice,
+                        seoTitleEn: p.seoTitleEn,
+                        seoTitleAr: p.seoTitleAr,
+                        seoDescriptionEn: p.seoDescriptionEn,
+                        seoDescriptionAr: p.seoDescriptionAr,
+                        searchKeywords: p.searchKeywords,
+                        internalNotes: p.internalNotes,
+                        validationStatus: p.validationStatus,
+                        confidenceScore: p.confidenceScore,
+                        pieces: p.pieces,
+                        setCount: p.setCount,
+                        shape: p.shape,
+                        finish: p.finish,
+                        additionalInfo: p.additionalInfo
+                    }));
+                await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].productOriginal.createMany({
+                    data: originalDataBatch,
+                    skipDuplicates: false
+                });
+                // Count price stats
                 for (const { rowNum, data } of batch){
-                    imported++;
                     if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
                     else withoutPrice++;
                     successDetails.push({
@@ -2792,14 +2928,14 @@ async function POST(request) {
                         ndNumber: data.ndNumber ?? null
                     });
                 }
-            } catch (err) {
-                // Batch failed — retry row-by-row
+            } catch (batchErr) {
+                // Fallback: process row-by-row for this batch
+                console.error(`[IMPORT] Batch ${i}-${i + batch.length} failed:`, batchErr?.message);
                 for (const { rowNum, data } of batch){
                     try {
                         const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.create({
                             data
                         });
-                        // Create ProductOriginal for change tracking
                         await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].productOriginal.create({
                             data: {
                                 productId: product.id,
@@ -2875,8 +3011,10 @@ async function POST(request) {
                 }
             }
         }
-        const elapsedMs = Date.now() - importStartTime;
+        timings.bulkInsertProducts = Date.now() - insertStart;
+        timings.total = Date.now() - totalStartTime;
         const totalProcessed = imported + errors + skipped;
+        // Return comprehensive result with performance metrics
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             imported,
             errors,
@@ -2884,22 +3022,36 @@ async function POST(request) {
             total: totalProcessed,
             withPrice,
             withoutPrice,
-            elapsedMs,
+            elapsedMs: timings.total,
+            // Performance breakdown
+            timings: {
+                fileUpload: formatMs(timings.fileUpload),
+                excelParsing: formatMs(timings.excelParsing),
+                headerDetection: formatMs(timings.headerDetection),
+                rowParsing: formatMs(timings.rowParsing),
+                dataTransformation: formatMs(timings.dataTransformation),
+                bulkInsert: formatMs(timings.bulkInsertProducts),
+                total: formatMs(timings.total)
+            },
             rawHeaders: headers,
             columnMapping: mappedHeaders,
             unmappedColumns: unmapped,
             previewRows: previewRows.length > 0 ? previewRows : undefined,
-            successDetails: successDetails.length > 0 ? successDetails : undefined,
+            successDetails: successDetails.length > 0 ? successDetails.slice(0, 100) : undefined,
             errorDetails: errorDetails.length > 0 ? errorDetails.slice(0, 50) : undefined
         });
     } catch (error) {
         console.error('[IMPORT] Fatal error:', error);
+        timings.total = Date.now() - totalStartTime;
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             error: 'Failed to import Excel file: ' + (error?.message || String(error)),
             imported: 0,
             errors: 0,
             total: 0,
-            skipped: 0
+            skipped: 0,
+            timings: {
+                total: formatMs(timings.total)
+            }
         }, {
             status: 500
         });

@@ -5508,6 +5508,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/card.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/badge.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/progress.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/store/inventory-store.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$left$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowLeft$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/arrow-left.js [app-client] (ecmascript) <export default as ArrowLeft>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$upload$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Upload$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/upload.js [app-client] (ecmascript) <export default as Upload>");
@@ -5517,10 +5518,13 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-client] (ecmascript) <export default as Loader2>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$triangle$2d$alert$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__AlertTriangle$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/triangle-alert.js [app-client] (ecmascript) <export default as AlertTriangle>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$info$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Info$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/info.js [app-client] (ecmascript) <export default as Info>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/clock.js [app-client] (ecmascript) <export default as Clock>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$zap$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Zap$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/zap.js [app-client] (ecmascript) <export default as Zap>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
+;
 ;
 ;
 ;
@@ -5535,11 +5539,74 @@ function ExcelImport() {
     const [result, setResult] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const [dragActive, setDragActive] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [selectedFile, setSelectedFile] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [progress, setProgress] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [progressValue, setProgressValue] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(0);
     const fileInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    // Simulate progress stages during import
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "ExcelImport.useEffect": ()=>{
+            if (!importing || !selectedFile) return;
+            const stages = [
+                {
+                    stage: 'uploading',
+                    progress: 5,
+                    message: 'Uploading file...'
+                },
+                {
+                    stage: 'reading',
+                    progress: 15,
+                    message: 'Reading workbook...'
+                },
+                {
+                    stage: 'headers',
+                    progress: 25,
+                    message: 'Detecting headers...'
+                },
+                {
+                    stage: 'parsing',
+                    progress: 40,
+                    message: 'Parsing rows...'
+                },
+                {
+                    stage: 'transforming',
+                    progress: 55,
+                    message: 'Applying transformations...'
+                },
+                {
+                    stage: 'inserting',
+                    progress: 70,
+                    message: 'Inserting to database...'
+                },
+                {
+                    stage: 'finalizing',
+                    progress: 90,
+                    message: 'Finalizing import...'
+                }
+            ];
+            let currentStage = 0;
+            const interval = setInterval({
+                "ExcelImport.useEffect.interval": ()=>{
+                    if (currentStage < stages.length) {
+                        setProgress(stages[currentStage]);
+                        setProgressValue(stages[currentStage].progress);
+                        currentStage++;
+                    }
+                }
+            }["ExcelImport.useEffect.interval"], 300);
+            return ({
+                "ExcelImport.useEffect": ()=>clearInterval(interval)
+            })["ExcelImport.useEffect"];
+        }
+    }["ExcelImport.useEffect"], [
+        importing,
+        selectedFile
+    ]);
     const handleFileSelect = (file)=>{
         if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
             setSelectedFile(file);
             setResult(null);
+            setProgress(null);
+            setProgressValue(0);
         } else {
             __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].error('Please select an Excel file (.xlsx, .xls, or .csv)');
         }
@@ -5555,6 +5622,13 @@ function ExcelImport() {
         if (!selectedFile) return;
         setImporting(true);
         setResult(null);
+        setProgress({
+            stage: 'starting',
+            progress: 0,
+            message: 'Starting import...'
+        });
+        setProgressValue(0);
+        const startTime = Date.now();
         try {
             const formData = new FormData();
             formData.append('file', selectedFile);
@@ -5563,10 +5637,19 @@ function ExcelImport() {
                 body: formData
             });
             const data = await res.json();
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
+            // Set progress to complete
+            setProgress({
+                stage: 'complete',
+                progress: 100,
+                message: 'Import complete!'
+            });
+            setProgressValue(100);
             if (res.ok) {
                 setResult(data);
                 if (data.imported > 0 && data.errors === 0) {
-                    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].success(`Successfully imported ${data.imported} products`);
+                    __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].success(`Successfully imported ${data.imported} products in ${data.timings?.total || `${totalTime}ms`}`);
                 } else if (data.imported > 0 && data.errors > 0) {
                     __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].warning(`Imported ${data.imported} products with ${data.errors} errors`);
                 } else if (data.imported === 0) {
@@ -5577,13 +5660,12 @@ function ExcelImport() {
                 }
             } else {
                 __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].error(data.error || 'Failed to import Excel file');
-                if (data.detectedHeaders) {
-                    setResult(data);
-                }
+                setResult(data);
             }
         } catch (error) {
             console.error('Error importing:', error);
             __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].error('Failed to import Excel file');
+            setProgress(null);
         } finally{
             setImporting(false);
         }
@@ -5603,12 +5685,12 @@ function ExcelImport() {
                             className: "h-5 w-5"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 99,
+                            lineNumber: 157,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 98,
+                        lineNumber: 156,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5619,27 +5701,83 @@ function ExcelImport() {
                                 children: "Import from Excel"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 102,
+                                lineNumber: 160,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 className: "text-xs sm:text-sm text-muted-foreground",
-                                children: "Upload an Excel file to import products"
+                                children: "Optimized bulk import with progress tracking"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 103,
+                                lineNumber: 161,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 101,
+                        lineNumber: 159,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
+                        variant: "outline",
+                        className: "shrink-0 gap-1",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$zap$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Zap$3e$__["Zap"], {
+                                className: "h-3 w-3"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                lineNumber: 164,
+                                columnNumber: 11
+                            }, this),
+                            "Fast"
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                        lineNumber: 163,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                lineNumber: 97,
+                lineNumber: 155,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
+                className: "border-emerald-200 bg-emerald-50/50",
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
+                    className: "px-3 sm:px-4 py-3",
+                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center gap-2",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$zap$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Zap$3e$__["Zap"], {
+                                className: "h-4 w-4 text-emerald-600 shrink-0"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                lineNumber: 173,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                className: "text-xs sm:text-sm text-emerald-700",
+                                children: "Optimized import: bulk database inserts, combined queries, and stage-by-stage progress tracking"
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                lineNumber: 174,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                        lineNumber: 172,
+                        columnNumber: 11
+                    }, this)
+                }, void 0, false, {
+                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                    lineNumber: 171,
+                    columnNumber: 9
+                }, this)
+            }, void 0, false, {
+                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                lineNumber: 170,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -5651,12 +5789,12 @@ function ExcelImport() {
                             children: "Supported Columns"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 110,
+                            lineNumber: 184,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 109,
+                        lineNumber: 183,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -5668,7 +5806,7 @@ function ExcelImport() {
                                     children: "The importer will automatically match your column headers (case-insensitive):"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 114,
+                                    lineNumber: 188,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5694,12 +5832,12 @@ function ExcelImport() {
                                             children: col
                                         }, col, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 117,
+                                            lineNumber: 191,
                                             columnNumber: 17
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 115,
+                                    lineNumber: 189,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5711,30 +5849,30 @@ function ExcelImport() {
                                             children: "Silver, Black, Gold"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 123,
+                                            lineNumber: 197,
                                             columnNumber: 94
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 122,
+                                    lineNumber: 196,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 113,
+                            lineNumber: 187,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 112,
+                        lineNumber: 186,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                lineNumber: 108,
+                lineNumber: 182,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -5754,7 +5892,7 @@ function ExcelImport() {
                                     className: "h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 text-muted-foreground/50"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 140,
+                                    lineNumber: 214,
                                     columnNumber: 13
                                 }, this),
                                 selectedFile ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5764,7 +5902,7 @@ function ExcelImport() {
                                             children: selectedFile.name
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 143,
+                                            lineNumber: 217,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5775,7 +5913,7 @@ function ExcelImport() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 144,
+                                            lineNumber: 218,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5785,17 +5923,19 @@ function ExcelImport() {
                                             onClick: ()=>{
                                                 setSelectedFile(null);
                                                 setResult(null);
+                                                setProgress(null);
                                             },
+                                            disabled: importing,
                                             children: "Remove"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 147,
+                                            lineNumber: 221,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 142,
+                                    lineNumber: 216,
                                     columnNumber: 15
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     children: [
@@ -5804,7 +5944,7 @@ function ExcelImport() {
                                             children: "Drag and drop your Excel file here"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 158,
+                                            lineNumber: 233,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -5817,20 +5957,20 @@ function ExcelImport() {
                                                     className: "h-4 w-4 mr-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                    lineNumber: 167,
+                                                    lineNumber: 242,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Select File"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 161,
+                                            lineNumber: 236,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 157,
+                                    lineNumber: 232,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -5843,14 +5983,74 @@ function ExcelImport() {
                                     className: "hidden"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 172,
+                                    lineNumber: 247,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 132,
+                            lineNumber: 206,
                             columnNumber: 11
+                        }, this),
+                        (importing || progress) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "mt-4 space-y-2",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex items-center justify-between text-xs sm:text-sm",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            className: "flex items-center gap-2",
+                                            children: [
+                                                progress?.stage === 'complete' ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$circle$2d$check$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__CheckCircle2$3e$__["CheckCircle2"], {
+                                                    className: "h-4 w-4 text-emerald-500"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                    lineNumber: 264,
+                                                    columnNumber: 21
+                                                }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
+                                                    className: "h-4 w-4 animate-spin"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                    lineNumber: 266,
+                                                    columnNumber: 21
+                                                }, this),
+                                                progress?.message || 'Processing...'
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                            lineNumber: 262,
+                                            columnNumber: 17
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            className: "text-muted-foreground",
+                                            children: [
+                                                progressValue,
+                                                "%"
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                            lineNumber: 270,
+                                            columnNumber: 17
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                    lineNumber: 261,
+                                    columnNumber: 15
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$progress$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Progress"], {
+                                    value: progressValue,
+                                    className: "h-2"
+                                }, void 0, false, {
+                                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                    lineNumber: 272,
+                                    columnNumber: 15
+                                }, this)
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/src/components/inventory/excel-import.tsx",
+                            lineNumber: 260,
+                            columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                             className: "w-full mt-4 h-11",
@@ -5862,7 +6062,7 @@ function ExcelImport() {
                                         className: "h-4 w-4 mr-2 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 190,
+                                        lineNumber: 283,
                                         columnNumber: 17
                                     }, this),
                                     "Importing..."
@@ -5873,7 +6073,7 @@ function ExcelImport() {
                                         className: "h-4 w-4 mr-2"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 195,
+                                        lineNumber: 288,
                                         columnNumber: 17
                                     }, this),
                                     "Import Products"
@@ -5881,18 +6081,18 @@ function ExcelImport() {
                             }, void 0, true)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 183,
+                            lineNumber: 276,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                    lineNumber: 131,
+                    lineNumber: 205,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                lineNumber: 130,
+                lineNumber: 204,
                 columnNumber: 7
             }, this),
             result && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5908,7 +6108,7 @@ function ExcelImport() {
                                         className: "h-5 w-5 sm:h-6 sm:w-6 text-emerald-500 shrink-0 mt-0.5"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 211,
+                                        lineNumber: 304,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5919,7 +6119,7 @@ function ExcelImport() {
                                                 children: "Import Complete"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 213,
+                                                lineNumber: 306,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5932,7 +6132,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 215,
+                                                        lineNumber: 308,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5943,7 +6143,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 216,
+                                                        lineNumber: 309,
                                                         columnNumber: 23
                                                     }, this),
                                                     result.withPrice != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5954,7 +6154,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 218,
+                                                        lineNumber: 311,
                                                         columnNumber: 25
                                                     }, this),
                                                     result.withoutPrice != null && result.withoutPrice > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5965,7 +6165,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 221,
+                                                        lineNumber: 314,
                                                         columnNumber: 25
                                                     }, this),
                                                     result.skipped > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5976,7 +6176,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 224,
+                                                        lineNumber: 317,
                                                         columnNumber: 25
                                                     }, this),
                                                     result.errors > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -5986,7 +6186,7 @@ function ExcelImport() {
                                                                 className: "h-3 w-3"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                                lineNumber: 228,
+                                                                lineNumber: 321,
                                                                 columnNumber: 27
                                                             }, this),
                                                             "Failed: ",
@@ -5994,36 +6194,43 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 227,
+                                                        lineNumber: 320,
                                                         columnNumber: 25
                                                     }, this),
                                                     result.elapsedMs != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                        className: "text-xs text-muted-foreground",
+                                                        className: "text-xs text-muted-foreground flex items-center gap-1",
                                                         children: [
+                                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"], {
+                                                                className: "h-3 w-3"
+                                                            }, void 0, false, {
+                                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                                lineNumber: 327,
+                                                                columnNumber: 27
+                                                            }, this),
                                                             "Duration: ",
                                                             result.elapsedMs < 1000 ? `${result.elapsedMs}ms` : `${(result.elapsedMs / 1000).toFixed(1)}s`
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 233,
+                                                        lineNumber: 326,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 214,
+                                                lineNumber: 307,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 212,
+                                        lineNumber: 305,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 210,
+                                lineNumber: 303,
                                 columnNumber: 17
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "flex items-start gap-2 sm:gap-3",
@@ -6032,7 +6239,7 @@ function ExcelImport() {
                                         className: "h-5 w-5 sm:h-6 sm:w-6 text-amber-500 shrink-0 mt-0.5"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 242,
+                                        lineNumber: 336,
                                         columnNumber: 19
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6043,7 +6250,7 @@ function ExcelImport() {
                                                 children: "Import Issues"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 244,
+                                                lineNumber: 338,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6056,7 +6263,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 246,
+                                                        lineNumber: 340,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6066,7 +6273,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 247,
+                                                        lineNumber: 341,
                                                         columnNumber: 23
                                                     }, this),
                                                     result.skipped > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6076,7 +6283,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 248,
+                                                        lineNumber: 342,
                                                         columnNumber: 46
                                                     }, this),
                                                     result.errors > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6086,7 +6293,7 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 249,
+                                                        lineNumber: 343,
                                                         columnNumber: 45
                                                     }, this),
                                                     result.elapsedMs != null && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6097,38 +6304,262 @@ function ExcelImport() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 251,
+                                                        lineNumber: 345,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 245,
+                                                lineNumber: 339,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 243,
+                                        lineNumber: 337,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 241,
+                                lineNumber: 335,
                                 columnNumber: 17
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                            lineNumber: 208,
+                            lineNumber: 301,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 207,
+                        lineNumber: 300,
                         columnNumber: 11
                     }, this),
-                    result.detectedHeaders && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
+                    result.timings && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
+                                className: "pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardTitle"], {
+                                    className: "text-sm sm:text-base flex items-center gap-2",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$zap$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Zap$3e$__["Zap"], {
+                                            className: "h-4 w-4 text-emerald-500 shrink-0"
+                                        }, void 0, false, {
+                                            fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                            lineNumber: 359,
+                                            columnNumber: 19
+                                        }, this),
+                                        "Performance Breakdown"
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                    lineNumber: 358,
+                                    columnNumber: 17
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                lineNumber: 357,
+                                columnNumber: 15
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
+                                className: "px-3 sm:px-4 pb-3 sm:pb-4",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs sm:text-sm",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "File upload:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 366,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.fileUpload
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 367,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 365,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Excel parsing:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 370,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.excelParsing
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 371,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 369,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Header detection:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 374,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.headerDetection
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 375,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 373,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Row parsing:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 378,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.rowParsing
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 379,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 377,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Data transform:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 382,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.dataTransformation
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 383,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 381,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "flex justify-between",
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "text-muted-foreground",
+                                                        children: "Bulk insert:"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 386,
+                                                        columnNumber: 21
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                        className: "font-mono",
+                                                        children: result.timings.bulkInsert
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                        lineNumber: 387,
+                                                        columnNumber: 21
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 385,
+                                                columnNumber: 19
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                        lineNumber: 364,
+                                        columnNumber: 17
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "mt-2 pt-2 border-t flex justify-between text-sm font-medium",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                children: "Total time:"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 391,
+                                                columnNumber: 19
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "font-mono text-emerald-600",
+                                                children: result.timings.total
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                                lineNumber: 392,
+                                                columnNumber: 19
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                        lineNumber: 390,
+                                        columnNumber: 17
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/inventory/excel-import.tsx",
+                                lineNumber: 363,
+                                columnNumber: 15
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/components/inventory/excel-import.tsx",
+                        lineNumber: 356,
+                        columnNumber: 13
+                    }, this),
+                    result.rawHeaders && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
                         children: [
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardHeader"], {
                                 className: "pb-2 sm:pb-3 px-3 sm:px-4 pt-3 sm:pt-4",
@@ -6139,19 +6570,19 @@ function ExcelImport() {
                                             className: "h-4 w-4 text-blue-500 shrink-0"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 265,
+                                            lineNumber: 403,
                                             columnNumber: 19
                                         }, this),
                                         "Column Mapping"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 264,
+                                    lineNumber: 402,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 263,
+                                lineNumber: 401,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -6164,29 +6595,29 @@ function ExcelImport() {
                                                 children: "Detected headers:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 271,
+                                                lineNumber: 409,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                 className: "flex flex-wrap gap-1",
-                                                children: result.detectedHeaders.map((h)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
+                                                children: result.rawHeaders.map((h)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
                                                         variant: "outline",
                                                         className: "text-[10px] font-mono",
                                                         children: h
                                                     }, h, false, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 274,
+                                                        lineNumber: 412,
                                                         columnNumber: 23
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 272,
+                                                lineNumber: 410,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 408,
                                         columnNumber: 17
                                     }, this),
                                     result.columnMapping && Object.keys(result.columnMapping).length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6196,7 +6627,7 @@ function ExcelImport() {
                                                 children: "Matched columns:"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 283,
+                                                lineNumber: 421,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6210,7 +6641,7 @@ function ExcelImport() {
                                                                 children: excelHeader
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                                lineNumber: 287,
+                                                                lineNumber: 425,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6218,7 +6649,7 @@ function ExcelImport() {
                                                                 children: "→"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                                lineNumber: 290,
+                                                                lineNumber: 428,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6226,24 +6657,24 @@ function ExcelImport() {
                                                                 children: dbField
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                                lineNumber: 291,
+                                                                lineNumber: 429,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, dbField, true, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 286,
+                                                        lineNumber: 424,
                                                         columnNumber: 25
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 284,
+                                                lineNumber: 422,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 282,
+                                        lineNumber: 420,
                                         columnNumber: 19
                                     }, this),
                                     result.unmappedColumns && result.unmappedColumns.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6253,7 +6684,7 @@ function ExcelImport() {
                                                 children: "Unmapped (ignored):"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 300,
+                                                lineNumber: 438,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6264,30 +6695,30 @@ function ExcelImport() {
                                                         children: col
                                                     }, col, false, {
                                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                        lineNumber: 303,
+                                                        lineNumber: 441,
                                                         columnNumber: 25
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                lineNumber: 301,
+                                                lineNumber: 439,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                        lineNumber: 299,
+                                        lineNumber: 437,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 269,
+                                lineNumber: 407,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 262,
+                        lineNumber: 400,
                         columnNumber: 13
                     }, this),
                     result.errorDetails && result.errorDetails.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -6301,22 +6732,22 @@ function ExcelImport() {
                                             className: "h-4 w-4 shrink-0"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 319,
+                                            lineNumber: 457,
                                             columnNumber: 19
                                         }, this),
                                         "Errors (",
                                         result.errorDetails.length,
-                                        result.errorDetails.length >= 20 ? '+' : '',
+                                        result.errorDetails.length >= 50 ? '+' : '',
                                         ")"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 318,
+                                    lineNumber: 456,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 317,
+                                lineNumber: 455,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -6335,7 +6766,7 @@ function ExcelImport() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                    lineNumber: 327,
+                                                    lineNumber: 465,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6343,29 +6774,29 @@ function ExcelImport() {
                                                     children: err.error
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                                    lineNumber: 328,
+                                                    lineNumber: 466,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, i, true, {
                                             fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                            lineNumber: 326,
+                                            lineNumber: 464,
                                             columnNumber: 21
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                    lineNumber: 324,
+                                    lineNumber: 462,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 323,
+                                lineNumber: 461,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 316,
+                        lineNumber: 454,
                         columnNumber: 13
                     }, this),
                     result.imported > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6378,40 +6809,42 @@ function ExcelImport() {
                                 children: "View Products"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 339,
+                                lineNumber: 477,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
                                 className: "flex-1 h-11",
                                 onClick: ()=>{
                                     setResult(null);
+                                    setProgress(null);
+                                    setProgressValue(0);
                                 },
                                 children: "Import More"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                                lineNumber: 346,
+                                lineNumber: 484,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/excel-import.tsx",
-                        lineNumber: 338,
+                        lineNumber: 476,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/excel-import.tsx",
-                lineNumber: 205,
+                lineNumber: 298,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/excel-import.tsx",
-        lineNumber: 95,
+        lineNumber: 153,
         columnNumber: 5
     }, this);
 }
-_s(ExcelImport, "5thaSFdanZE/XT0n6A4FykSn9aA=", false, function() {
+_s(ExcelImport, "fBZ8mqBS7WHgEJ9wiK86jLLcNoM=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useInventoryStore"]
     ];

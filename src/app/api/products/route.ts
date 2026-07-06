@@ -53,47 +53,108 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ groups, totalGroups: groups.length });
     }
 
-    // ── Suggestions mode ──
+    // ── Suggestions mode ── (Optimized with single aggregation query)
     if (mode === 'suggestions') {
-      // Fetch unique values from DB for key fields
-      const [dbBrands, dbDepartments, dbCategories, dbSubcategories, dbProductFamilies, dbProductTypes, dbColors, dbMaterials, dbCountries, dbShapes, dbFinishes, dbValidationStatuses, dbUnits] = await Promise.all([
-        db.product.findMany({ where: { brand: { not: null } }, select: { brand: true }, distinct: ['brand'] }),
-        db.product.findMany({ where: { department: { not: null } }, select: { department: true }, distinct: ['department'] }),
-        db.product.findMany({ where: { category: { not: null } }, select: { category: true }, distinct: ['category'] }),
-        db.product.findMany({ where: { subcategory: { not: null } }, select: { subcategory: true }, distinct: ['subcategory'] }),
-        db.product.findMany({ where: { productFamily: { not: null } }, select: { productFamily: true }, distinct: ['productFamily'] }),
-        db.product.findMany({ where: { productType: { not: null } }, select: { productType: true }, distinct: ['productType'] }),
-        db.product.findMany({ where: { color: { not: null } }, select: { color: true }, distinct: ['color'] }),
-        db.product.findMany({ where: { material: { not: null } }, select: { material: true }, distinct: ['material'] }),
-        db.product.findMany({ where: { countryOfOrigin: { not: null } }, select: { countryOfOrigin: true }, distinct: ['countryOfOrigin'] }),
-        db.product.findMany({ where: { shape: { not: null } }, select: { shape: true }, distinct: ['shape'] }),
-        db.product.findMany({ where: { finish: { not: null } }, select: { finish: true }, distinct: ['finish'] }),
-        db.product.findMany({ where: { validationStatus: { not: null } }, select: { validationStatus: true }, distinct: ['validationStatus'] }),
-        db.product.findMany({ where: { unit: { not: null } }, select: { unit: true }, distinct: ['unit'] }),
-      ]);
+      // Use a single raw query to get all distinct values at once
+      // This is MUCH faster than 13 separate findMany with distinct
+      try {
+        const suggestionsData = await db.$queryRaw<{
+          brands: string[];
+          departments: string[];
+          categories: string[];
+          subcategories: string[];
+          product_families: string[];
+          product_types: string[];
+          colors: string[];
+          materials: string[];
+          countries: string[];
+          shapes: string[];
+          finishes: string[];
+          validation_statuses: string[];
+          units: string[];
+        }[]>`
+          SELECT
+            ARRAY_AGG(DISTINCT brand) FILTER (WHERE brand IS NOT NULL) as brands,
+            ARRAY_AGG(DISTINCT department) FILTER (WHERE department IS NOT NULL) as departments,
+            ARRAY_AGG(DISTINCT category) FILTER (WHERE category IS NOT NULL) as categories,
+            ARRAY_AGG(DISTINCT subcategory) FILTER (WHERE subcategory IS NOT NULL) as subcategories,
+            ARRAY_AGG(DISTINCT product_family) FILTER (WHERE product_family IS NOT NULL) as product_families,
+            ARRAY_AGG(DISTINCT product_type) FILTER (WHERE product_type IS NOT NULL) as product_types,
+            ARRAY_AGG(DISTINCT color) FILTER (WHERE color IS NOT NULL) as colors,
+            ARRAY_AGG(DISTINCT material) FILTER (WHERE material IS NOT NULL) as materials,
+            ARRAY_AGG(DISTINCT country_of_origin) FILTER (WHERE country_of_origin IS NOT NULL) as countries,
+            ARRAY_AGG(DISTINCT shape) FILTER (WHERE shape IS NOT NULL) as shapes,
+            ARRAY_AGG(DISTINCT finish) FILTER (WHERE finish IS NOT NULL) as finishes,
+            ARRAY_AGG(DISTINCT validation_status) FILTER (WHERE validation_status IS NOT NULL) as validation_statuses,
+            ARRAY_AGG(DISTINCT unit) FILTER (WHERE unit IS NOT NULL) as units
+          FROM products
+        `;
 
-      // Merge DB values with lookup table values
-      const merge = (dbRows: { [key: string]: string | null }[], key: string, lookupValues: string[]): string[] => {
-        const dbValues = dbRows.map(r => r[key]).filter((v): v is string => v !== null && v !== '');
-        const combined = new Set([...lookupValues, ...dbValues]);
-        return [...combined].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-      };
+        const data = suggestionsData[0] || {};
 
-      return NextResponse.json({
-        brands: merge(dbBrands, 'brand', BRAND_OPTIONS),
-        departments: merge(dbDepartments, 'department', DEPARTMENTS),
-        categories: merge(dbCategories, 'category', []),
-        subcategories: merge(dbSubcategories, 'subcategory', []),
-        productFamilies: merge(dbProductFamilies, 'productFamily', [...PRODUCT_FAMILIES]),
-        productTypes: merge(dbProductTypes, 'productType', ALL_PRODUCT_TYPES),
-        colors: merge(dbColors, 'color', COLOR_OPTIONS),
-        materials: merge(dbMaterials, 'material', MATERIAL_OPTIONS),
-        countriesOfOrigin: merge(dbCountries, 'countryOfOrigin', [...COUNTRY_OPTIONS]),
-        shapes: merge(dbShapes, 'shape', [...SHAPE_OPTIONS]),
-        finishes: merge(dbFinishes, 'finish', [...FINISH_OPTIONS]),
-        validationStatuses: merge(dbValidationStatuses, 'validationStatus', [...VALIDATION_STATUS_OPTIONS]),
-        units: merge(dbUnits, 'unit', [...UNIT_OPTIONS]),
-      });
+        // Merge DB values with lookup table values and sort
+        const mergeAndSort = (dbValues: string[] | null, lookupValues: string[]): string[] => {
+          const combined = new Set([...lookupValues, ...(dbValues || [])]);
+          return [...combined].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        };
+
+        return NextResponse.json({
+          brands: mergeAndSort(data.brands, BRAND_OPTIONS),
+          departments: mergeAndSort(data.departments, DEPARTMENTS),
+          categories: mergeAndSort(data.categories, []),
+          subcategories: mergeAndSort(data.subcategories, []),
+          productFamilies: mergeAndSort(data.product_families, [...PRODUCT_FAMILIES]),
+          productTypes: mergeAndSort(data.product_types, ALL_PRODUCT_TYPES),
+          colors: mergeAndSort(data.colors, COLOR_OPTIONS),
+          materials: mergeAndSort(data.materials, MATERIAL_OPTIONS),
+          countriesOfOrigin: mergeAndSort(data.countries, [...COUNTRY_OPTIONS]),
+          shapes: mergeAndSort(data.shapes, [...SHAPE_OPTIONS]),
+          finishes: mergeAndSort(data.finishes, [...FINISH_OPTIONS]),
+          validationStatuses: mergeAndSort(data.validation_statuses, [...VALIDATION_STATUS_OPTIONS]),
+          units: mergeAndSort(data.units, [...UNIT_OPTIONS]),
+        });
+      } catch (rawError) {
+        // Fallback to original method if raw query fails
+        console.error('Suggestions raw query failed, using fallback:', rawError);
+
+        const [dbBrands, dbDepartments, dbCategories, dbSubcategories, dbProductFamilies, dbProductTypes, dbColors, dbMaterials, dbCountries, dbShapes, dbFinishes, dbValidationStatuses, dbUnits] = await Promise.all([
+          db.product.findMany({ where: { brand: { not: null } }, select: { brand: true }, distinct: ['brand'] }),
+          db.product.findMany({ where: { department: { not: null } }, select: { department: true }, distinct: ['department'] }),
+          db.product.findMany({ where: { category: { not: null } }, select: { category: true }, distinct: ['category'] }),
+          db.product.findMany({ where: { subcategory: { not: null } }, select: { subcategory: true }, distinct: ['subcategory'] }),
+          db.product.findMany({ where: { productFamily: { not: null } }, select: { productFamily: true }, distinct: ['productFamily'] }),
+          db.product.findMany({ where: { productType: { not: null } }, select: { productType: true }, distinct: ['productType'] }),
+          db.product.findMany({ where: { color: { not: null } }, select: { color: true }, distinct: ['color'] }),
+          db.product.findMany({ where: { material: { not: null } }, select: { material: true }, distinct: ['material'] }),
+          db.product.findMany({ where: { countryOfOrigin: { not: null } }, select: { countryOfOrigin: true }, distinct: ['countryOfOrigin'] }),
+          db.product.findMany({ where: { shape: { not: null } }, select: { shape: true }, distinct: ['shape'] }),
+          db.product.findMany({ where: { finish: { not: null } }, select: { finish: true }, distinct: ['finish'] }),
+          db.product.findMany({ where: { validationStatus: { not: null } }, select: { validationStatus: true }, distinct: ['validationStatus'] }),
+          db.product.findMany({ where: { unit: { not: null } }, select: { unit: true }, distinct: ['unit'] }),
+        ]);
+
+        const merge = (dbRows: { [key: string]: string | null }[], key: string, lookupValues: string[]): string[] => {
+          const dbValues = dbRows.map(r => r[key]).filter((v): v is string => v !== null && v !== '');
+          const combined = new Set([...lookupValues, ...dbValues]);
+          return [...combined].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        };
+
+        return NextResponse.json({
+          brands: merge(dbBrands, 'brand', BRAND_OPTIONS),
+          departments: merge(dbDepartments, 'department', DEPARTMENTS),
+          categories: merge(dbCategories, 'category', []),
+          subcategories: merge(dbSubcategories, 'subcategory', []),
+          productFamilies: merge(dbProductFamilies, 'productFamily', [...PRODUCT_FAMILIES]),
+          productTypes: merge(dbProductTypes, 'productType', ALL_PRODUCT_TYPES),
+          colors: merge(dbColors, 'color', COLOR_OPTIONS),
+          materials: merge(dbMaterials, 'material', MATERIAL_OPTIONS),
+          countriesOfOrigin: merge(dbCountries, 'countryOfOrigin', [...COUNTRY_OPTIONS]),
+          shapes: merge(dbShapes, 'shape', [...SHAPE_OPTIONS]),
+          finishes: merge(dbFinishes, 'finish', [...FINISH_OPTIONS]),
+          validationStatuses: merge(dbValidationStatuses, 'validationStatus', [...VALIDATION_STATUS_OPTIONS]),
+          units: merge(dbUnits, 'unit', [...UNIT_OPTIONS]),
+        });
+      }
     }
 
     // ── Normal product listing mode ──

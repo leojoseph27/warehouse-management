@@ -106,6 +106,19 @@ model Product {
   original            ProductOriginal?
   variantMemberships  VariantMember[]
 
+  // ── Indexes for common queries ──
+  @@index([ndNumber])
+  @@index([barcode])
+  @@index([brand])
+  @@index([department])
+  @@index([category])
+  @@index([productFamily])
+  @@index([productType])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([defaultPrice])
+  @@index([validationStatus])
+
   @@map("products")
 }
 
@@ -251,4 +264,33 @@ model VariantMember {
   @@index([productId])
   @@unique([variantGroupId, productId])  // Prevent duplicate membership
   @@map("variant_members")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// IMPORT JOB QUEUE
+// Background processing for large Excel imports
+// ─────────────────────────────────────────────────────────────────
+
+model ImportJob {
+  id              String   @id @default(cuid())
+  status          String   @default("pending")  // pending, processing, completed, failed, cancelled
+  fileName        String
+  fileSize        Int?
+  totalRows       Int      @default(0)
+  processedRows   Int      @default(0)
+  importedRows    Int      @default(0)
+  errorRows       Int      @default(0)
+  skippedRows     Int      @default(0)
+  progress        Int      @default(0)  // 0-100 percentage
+  startedAt       DateTime?
+  completedAt     DateTime?
+  errorMessage    String?   // Text field for error messages
+  errorDetails    String?   // JSON stringified array of {row, error}
+  resultData      String?   // JSON stringified full result
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("import_jobs")
 }
