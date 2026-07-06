@@ -123,10 +123,13 @@
     -webkit-overflow-scrolling: touch;
     /* Prevent iOS Safari address bar from causing layout shifts */
     height: 100%;
+    /* Prevent rubber-banding by locking overflow */
+    overflow: hidden;
   }
   body {
     @apply bg-background text-foreground;
     /* Use dynamic viewport height that accounts for mobile browser UI */
+    height: 100%;
     min-height: 100dvh;
     /* Support browsers without dvh */
     min-height: -webkit-fill-available;
@@ -134,7 +137,7 @@
     overscroll-behavior: none;
     /* Enable smooth touch scrolling */
     -webkit-overflow-scrolling: touch;
-    /* Ensure body is scrollable */
+    /* Body handles the scrolling */
     overflow-y: auto;
     overflow-x: hidden;
     /* Prevent touch-action issues */
