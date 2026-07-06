@@ -33,3 +33,28 @@ Stage Summary:
 - All API endpoints tested and working
 - Auth still uses env vars (ADMIN_EMAIL/ADMIN_PASSWORD)
 - Image storage changed from Supabase Storage to base64 in DB
+
+---
+Task ID: 2
+Agent: Main
+Task: Remove all Supabase references and fix sandbox inactive error
+
+Work Log:
+- Removed @supabase/ssr and @supabase/supabase-js from package.json
+- Deleted src/utils/supabase/ directory entirely
+- Deleted supabase-setup.sql
+- Cleaned up Supabase comments in next.config.ts (removed Supabase image remote patterns)
+- Cleaned up Supabase references in code comments
+- Removed @supabase from node_modules
+- Deleted old my-inventory/ clone directory and SQLite db/
+- Fixed sandbox inactive error with double-fork daemon pattern
+- Updated .zscripts/dev.sh with watchdog loop and forced DATABASE_URL for Neon
+- Created .env.local with Neon DATABASE_URL to override system env var
+- Verified all 6 endpoints work across bash sessions (server stays alive)
+
+Stage Summary:
+- Zero Supabase references remain in the codebase
+- Server stays alive between bash sessions using double-fork daemon
+- All API endpoints working: products CRUD, stats, setup, auth, cleanup
+- Database: Neon PostgreSQL via Prisma ORM
+- Auth: admin@company.com / admin123

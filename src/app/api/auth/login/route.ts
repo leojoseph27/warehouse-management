@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * POST /api/auth/login
  * Simple hardcoded authentication using environment variables.
- * No database lookup, no user registration, no Supabase Auth.
  * Single administrator only — credentials defined in ADMIN_EMAIL / ADMIN_PASSWORD env vars.
  */
 export async function POST(request: NextRequest) {

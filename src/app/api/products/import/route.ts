@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 
 /**
  * Excel Import Route — Two-Row Header Support
- * Rewritten to use Prisma with Neon PostgreSQL instead of Supabase.
+ * Uses Prisma ORM with Neon PostgreSQL.
  */
 
 const COLUMN_MAPPINGS: {

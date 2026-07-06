@@ -5,20 +5,14 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // output: "standalone", // Disabled: standalone mode doesn't include @supabase packages
+  // output: "standalone",
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
     },
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "nqhzvhnhphpljnuerqfh.supabase.co",
-        pathname: "/storage/v1/object/public/product-images/**",
-      },
-    ],
+    remotePatterns: [],
   },
 };
 
