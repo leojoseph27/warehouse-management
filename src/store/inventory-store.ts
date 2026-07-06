@@ -90,6 +90,20 @@ export interface VariantMember {
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+  // Optional product data when included from API
+  product?: {
+    id: string;
+    sourceRow: number | null;
+    ndNumber: string | null;
+    barcode: string | null;
+    nameEn: string | null;
+    nameAr: string | null;
+    color: string | null;
+    colorAr: string | null;
+    productType: string | null;
+    brand: string | null;
+    images?: { id: string; imageUrl: string; isPrimary: boolean }[];
+  };
 }
 
 export interface FieldChange {

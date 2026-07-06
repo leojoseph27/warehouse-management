@@ -17,19 +17,7 @@ import { Plus, Link2, Unlink2, Trash2, Camera, Loader2, Layers, ChevronDown, Che
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// Extended variant member type with included product data
-interface VariantMemberWithProduct extends VariantMember {
-  product?: {
-    id: string;
-    sourceRow: number | null;
-    ndNumber: string | null;
-    barcode: string | null;
-    nameEn: string | null;
-    color: string | null;
-    colorAr: string | null;
-    images?: { id: string; imageUrl: string; isPrimary: boolean }[];
-  };
-}
+// VariantMember now includes optional product data from API
 
 interface VariantManagerProps {
   product: Product;
@@ -51,7 +39,7 @@ interface ProductSearchResult {
  * images and properties like color overrides.
  */
 export function VariantManager({ product, onVariantChange }: VariantManagerProps) {
-  const [variantGroup, setVariantGroup] = useState<(VariantGroup & { members: VariantMemberWithProduct[] }) | null>(null);
+  const [variantGroup, setVariantGroup] = useState<(VariantGroup & { members: VariantMember[] }) | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);

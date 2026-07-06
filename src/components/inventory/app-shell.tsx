@@ -34,6 +34,7 @@ export function AppShell() {
 
   // Close mobile menu on view change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowMobileMenu(false);
   }, [currentView]);
 

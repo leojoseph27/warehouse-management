@@ -40,11 +40,15 @@ export const MultiValueInput = forwardRef<MultiValueInputHandle, MultiValueInput
     const [inputValue, setInputValue] = useState('');
 
     // Keep refs in sync so the flush() method always has the latest values
+    // This pattern is intentional: refs must track latest values for imperative handle
     const valuesRef = useRef(values);
+    // eslint-disable-next-line react-hooks/refs
     valuesRef.current = values;
     const inputValueRef = useRef(inputValue);
+    // eslint-disable-next-line react-hooks/refs
     inputValueRef.current = inputValue;
     const onChangeRef = useRef(onChange);
+    // eslint-disable-next-line react-hooks/refs
     onChangeRef.current = onChange;
 
     const addValue = useCallback(() => {

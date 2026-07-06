@@ -24,6 +24,7 @@ interface ImportResult {
   errors: number;
   skipped: number;
   total: number;
+  error?: string;  // Error message from API
   withPrice?: number;
   withoutPrice?: number;
   elapsedMs?: number;

@@ -170,6 +170,7 @@ export function SearchableSingleSelect({
 
   // Reset input when closing
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!open) setInputValue('');
   }, [open]);
 
@@ -185,6 +186,8 @@ export function SearchableSingleSelect({
               type="button"
               role="combobox"
               aria-expanded={open}
+              aria-controls="single-select-listbox"
+              aria-haspopup="listbox"
               aria-label={label}
               className={cn(
                 'flex h-11 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm',

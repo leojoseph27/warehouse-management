@@ -1,2 +1,90 @@
-skills/
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Next.js build output
+.next/
+out/
+
+# Production build
+build/
+dist/
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep example env file
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+server.log
+
+# Tool results and work logs
+tool-results/
+worklog.md
+worklog-new.md
+
+# Development helper scripts (keep minimal production scripts)
+watchdog-nextjs.sh
+daemon-nextjs.sh
+keep-nextjs-alive.sh
+start-daemon.sh
+run-server.sh
+start-nextjs.sh
+start-server.sh
+start.sh
+Caddyfile
+
+# Uploaded files (user content)
+upload/
+
+# Test files
+test-*.js
+test-*.xlsx
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Database files (SQLite local dev)
+db/
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Misc
+.sass-cache/
+coverage/
+
+# Skills directory (internal, not part of application)
+skills/
+
+# Examples directory (experimental, not production)
+examples/

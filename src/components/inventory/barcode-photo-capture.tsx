@@ -4,6 +4,13 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Flashlight, FlashlightOff, Camera, RotateCcw, Loader2, Check, AlertCircle } from 'lucide-react';
 
+// Extended MediaTrackCapabilities for torch/focus mode support
+// These are real browser capabilities but not in TypeScript definitions
+interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
+  torch?: boolean;
+  focusMode?: ('none' | 'manual' | 'continuous' | 'auto')[];
+}
+
 interface BarcodePhotoCaptureProps {
   onScan: (barcode: string) => void;
   onClose: () => void;
@@ -175,7 +182,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
 
         // Check torch support
         try {
-          const capabilities = videoTrack.getCapabilities?.();
+          const capabilities = videoTrack.getCapabilities?.() as ExtendedMediaTrackCapabilities | undefined;
           if (capabilities?.torch) {
             setTorchSupported(true);
           }
@@ -185,7 +192,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
 
         // Try to apply continuous autofocus if supported
         try {
-          const capabilities = videoTrack.getCapabilities?.();
+          const capabilities = videoTrack.getCapabilities?.() as ExtendedMediaTrackCapabilities | undefined;
           if (capabilities?.focusMode?.includes('continuous')) {
             await videoTrack.applyConstraints({
               advanced: [{ focusMode: 'continuous' } as any],
@@ -233,7 +240,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
   const toggleTorch = useCallback(async () => {
     if (!trackRef.current) return;
     try {
-      const capabilities = trackRef.current.getCapabilities?.();
+      const capabilities = trackRef.current.getCapabilities?.() as ExtendedMediaTrackCapabilities | undefined;
       if (capabilities?.torch) {
         const newState = !torchOn;
         await trackRef.current.applyConstraints({
@@ -294,7 +301,8 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
       // Configure for digit-heavy recognition
       await worker.setParameters({
         tessedit_char_whitelist: '0123456789 -',
-        tessedit_pageseg_mode: '7', // Treat as single uniform block of text
+        // PSM 7 = Treat as single uniform block of text
+        tessedit_pageseg_mode: '7' as any, // Type assertion for compatibility
       });
 
       const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
