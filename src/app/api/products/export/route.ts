@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { COLUMN_DEFS, COLUMN_GROUPS } from '@/lib/lookups';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 /**
  * Excel Export Route — Al-Nassim Master Catalog 52-Column Schema
+ * 
+ * Features:
+ *   - Two-row header format (group headers + column headers)
+ *   - Red font highlighting for manually modified fields (change tracking)
+ *   - Original imported values compared against current values
+ *   - Variant Groups worksheet for variant relationships
  *
  * Export format:
  *   Row 1: Group headers (merged cells spanning their column ranges)
@@ -40,6 +46,54 @@ const COL_WIDTHS = [
   24, 16, 14, 8, 10, 14, 14, 22,
 ];
 
+// Fields that should be compared for change detection
+const TRACKED_FIELDS = new Set([
+  'productId', 'sku', 'ndNumber', 'barcode', 'legacyCode', 'brand', 'model',
+  'department', 'category', 'subcategory', 'productFamily', 'productType',
+  'nameAr', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn',
+  'color', 'material', 'capacity', 'capacityUnit', 'weight', 'weightUnit',
+  'length', 'width', 'height', 'diameter', 'dimensionUnit',
+  'countryOfOrigin', 'unit', 'minSalesMultiples', 'defaultPrice',
+  'seoTitleEn', 'seoTitleAr', 'seoDescriptionEn', 'seoDescriptionAr', 'searchKeywords',
+  'internalNotes', 'validationStatus', 'confidenceScore', 'pieces', 'setCount', 'shape', 'finish', 'additionalInfo',
+]);
+
+/**
+ * Check if a field value has been modified from its original imported value
+ */
+function isFieldModified(product: any, field: string): boolean {
+  if (!product.original || !TRACKED_FIELDS.has(field)) return false;
+  
+  const currentValue = product[field];
+  // For productId field, compare against origProductId in the original record
+  const originalValue = field === 'productId' ? product.original.origProductId : product.original[field];
+  
+  // Normalize values for comparison
+  const currentStr = currentValue == null ? '' : String(currentValue).trim();
+  const originalStr = originalValue == null ? '' : String(originalValue).trim();
+  
+  return currentStr !== originalStr;
+}
+
+/**
+ * Create styled cell - red font for modified values
+ */
+function createStyledCell(value: any, isModified: boolean): XLSX.CellObject {
+  const cellValue = value === null || value === undefined || value === '' ? '' : value;
+  
+  const cell: XLSX.CellObject = {
+    t: typeof cellValue === 'number' ? 'n' : 's',
+    v: cellValue,
+    s: isModified ? {
+      font: {
+        color: { rgb: 'FF0000' },  // Red font for modified cells
+      },
+    } : undefined,
+  };
+  
+  return cell;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -59,13 +113,20 @@ export async function GET(request: NextRequest) {
       where.sourceRow = { gte: from, lte: to };
     }
 
+    // Include original values for change tracking comparison
     const data = await db.product.findMany({
       where,
-      include: { images: { orderBy: { displayOrder: 'asc' } } },
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: { include: { variantGroup: true } },
+      },
       orderBy: { sourceRow: 'asc' },
     });
 
     const workbook = XLSX.utils.book_new();
+    
+    // ── MASTER CATALOG SHEET ──
     const worksheet: XLSX.WorkSheet = {};
     const totalCols = COLUMN_DEFS.length; // 52
     const totalRows = data.length;
@@ -78,7 +139,7 @@ export async function GET(request: NextRequest) {
       const span = group.fields.length;
       // Write group name in first column of the span
       const cellRef = XLSX.utils.encode_cell({ r: 0, c: colOffset });
-      worksheet[cellRef] = { t: 's', v: group.name };
+      worksheet[cellRef] = { t: 's', v: group.name, s: { font: { bold: true } } };
 
       if (span > 1) {
         merges.push({
@@ -93,25 +154,20 @@ export async function GET(request: NextRequest) {
     for (let c = 0; c < totalCols; c++) {
       const colDef = COLUMN_DEFS[c];
       const cellRef = XLSX.utils.encode_cell({ r: 1, c });
-      worksheet[cellRef] = { t: 's', v: colDef.header };
+      worksheet[cellRef] = { t: 's', v: colDef.header, s: { font: { bold: true } } };
     }
 
-    // ── Row 3+: Data rows ──
+    // ── Row 3+: Data rows (with red highlighting for modified cells) ──
     for (let r = 0; r < totalRows; r++) {
       const product = data[r] as any;
       for (let c = 0; c < totalCols; c++) {
         const colDef = COLUMN_DEFS[c];
         const cellRef = XLSX.utils.encode_cell({ r: r + 2, c });
 
-        const value = product[colDef.field] ?? '';
+        const value = product[colDef.field];
+        const isModified = isFieldModified(product, colDef.field);
 
-        if (value === '' || value === null || value === undefined) {
-          worksheet[cellRef] = { t: 's', v: '' };
-        } else if (typeof value === 'number') {
-          worksheet[cellRef] = { t: 'n', v: value };
-        } else {
-          worksheet[cellRef] = { t: 's', v: String(value) };
-        }
+        worksheet[cellRef] = createStyledCell(value, isModified);
       }
     }
 
@@ -128,6 +184,41 @@ export async function GET(request: NextRequest) {
     worksheet['!cols'] = COL_WIDTHS.map(w => ({ wch: w }));
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Master Catalog');
+
+    // ── VARIANT GROUPS SHEET ──
+    // Create a worksheet for variant relationships if any exist
+    const variantData: any[] = [];
+    for (const product of data) {
+      if (product.variantMemberships && product.variantMemberships.length > 0) {
+        for (const membership of product.variantMemberships) {
+          variantData.push({
+            'Variant Group ID': membership.variantGroupId,
+            'Primary Product ID': membership.variantGroup.primaryProductId,
+            'Variant Product ID': product.productId,
+            'Variant Color': membership.color || '',
+            'Variant Color AR': membership.colorAr || '',
+            'Variant Image': membership.variantImage || '',
+            'Variant Notes': membership.variantNotes || '',
+          });
+        }
+      }
+    }
+
+    if (variantData.length > 0) {
+      const variantWorksheet = XLSX.utils.json_to_sheet(variantData, { header: [
+        'Variant Group ID', 'Primary Product ID', 'Variant Product ID',
+        'Variant Color', 'Variant Color AR', 'Variant Image', 'Variant Notes'
+      ]});
+      
+      // Set column widths for variant sheet
+      variantWorksheet['!cols'] = [
+        { wch: 20 }, { wch: 18 }, { wch: 18 },
+        { wch: 14 }, { wch: 14 }, { wch: 30 }, { wch: 24 }
+      ];
+      
+      XLSX.utils.book_append_sheet(workbook, variantWorksheet, 'Variant Groups');
+    }
+
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     return new NextResponse(excelBuffer, {

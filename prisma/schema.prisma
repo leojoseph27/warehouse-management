@@ -100,10 +100,106 @@ model Product {
   // ── System fields ──
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+
+  // ── Relations ──
   images              ProductImage[]
+  original            ProductOriginal?
+  variantMemberships  VariantMember[]
 
   @@map("products")
 }
+
+// ─────────────────────────────────────────────────────────────────
+// CHANGE TRACKING: Original Imported Values
+// Stores the baseline values from ERP import for comparison
+// ─────────────────────────────────────────────────────────────────
+
+model ProductOriginal {
+  id                  String   @id @default(cuid())
+  productId           String   @unique
+
+  // ── Product Identity Group ──
+  sourceRow           Int?
+  origProductId       String?         // Original Product ID from ERP
+  sku                 String?
+  ndNumber            String?
+  barcode             String?
+  legacyCode          String?
+  brand               String?
+  brandAr             String?
+  brandCode           String?
+  model               String?
+
+  // ── Classification Group ──
+  department          String?
+  category            String?
+  subcategory         String?
+  sectionCode         String?
+  productFamily       String?
+  productType         String?
+
+  // ── Product Information Group ──
+  nameAr              String?
+  nameEn              String?
+  shortDescAr         String?
+  shortDescEn         String?
+  longDescAr          String?
+  longDescEn          String?
+
+  // ── Attributes Group ──
+  color               String?
+  colorAr             String?
+  material            String?
+  materialAr          String?
+  capacity            Float?
+  capacityUnit        String?
+  weight              Float?
+  weightUnit          String?
+  length              Float?
+  width               Float?
+  height              Float?
+  diameter            Float?
+  dimensionUnit       String?
+
+  // ── Logistics Group ──
+  countryOfOrigin     String?
+  unit                String?
+  minSalesMultiples   String?
+
+  // ── Commercial Group ──
+  defaultPrice        Float?
+
+  // ── SEO Group ──
+  seoTitleEn          String?
+  seoTitleAr          String?
+  seoDescriptionEn    String?
+  seoDescriptionAr    String?
+  searchKeywords      String?
+
+  // ── Internal Group ──
+  internalNotes       String?
+  validationStatus    String?
+  confidenceScore     Int?
+  pieces              Int?
+  setCount            Int?
+  shape               String?
+  finish              String?
+  additionalInfo      String?
+
+  // ── System fields ──
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // ── Relation ──
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_originals")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT IMAGES
+// ─────────────────────────────────────────────────────────────────
 
 model ProductImage {
   id           String   @id @default(cuid())
@@ -116,4 +212,43 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_images")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PRODUCT VARIANTS SYSTEM
+// Manual variant groups for products with multiple colors/options
+// ─────────────────────────────────────────────────────────────────
+
+model VariantGroup {
+  id              String   @id @default(cuid())
+  name            String?              // Optional name for the variant group
+  primaryProductId String              // The main/primary product of this group
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  members         VariantMember[]
+
+  @@index([primaryProductId])
+  @@map("variant_groups")
+}
+
+model VariantMember {
+  id              String   @id @default(cuid())
+  variantGroupId  String
+  productId       String              // The product that is a variant
+  color           String?             // Variant-specific: Color EN
+  colorAr         String?             // Variant-specific: Color AR
+  variantImage    String?             // Variant-specific image URL
+  variantNotes    String?             // Notes for this specific variant
+  displayOrder    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  variantGroup    VariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+  product         Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([variantGroupId])
+  @@index([productId])
+  @@unique([variantGroupId, productId])  // Prevent duplicate membership
+  @@map("variant_members")
 }

@@ -3,11 +3,98 @@
 "use strict";
 
 __turbopack_context__.s([
+    "countModifiedFields",
+    ()=>countModifiedFields,
+    "getFieldChanges",
+    ()=>getFieldChanges,
+    "hasModifications",
+    ()=>hasModifications,
+    "isFieldModified",
+    ()=>isFieldModified,
     "useInventoryStore",
     ()=>useInventoryStore
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/zustand/esm/react.mjs [app-client] (ecmascript)");
 ;
+// Fields that should be compared for change detection (excluding auto-derived and system fields)
+const TRACKED_FIELDS = [
+    'productId',
+    'sku',
+    'ndNumber',
+    'barcode',
+    'legacyCode',
+    'brand',
+    'model',
+    'department',
+    'category',
+    'subcategory',
+    'productFamily',
+    'productType',
+    'nameAr',
+    'nameEn',
+    'shortDescAr',
+    'shortDescEn',
+    'longDescAr',
+    'longDescEn',
+    'color',
+    'material',
+    'capacity',
+    'capacityUnit',
+    'weight',
+    'weightUnit',
+    'length',
+    'width',
+    'height',
+    'diameter',
+    'dimensionUnit',
+    'countryOfOrigin',
+    'unit',
+    'minSalesMultiples',
+    'defaultPrice',
+    'seoTitleEn',
+    'seoTitleAr',
+    'seoDescriptionEn',
+    'seoDescriptionAr',
+    'searchKeywords',
+    'internalNotes',
+    'validationStatus',
+    'confidenceScore',
+    'pieces',
+    'setCount',
+    'shape',
+    'finish',
+    'additionalInfo'
+];
+function getFieldChanges(product) {
+    const changes = [];
+    const original = product.original;
+    if (!original) return changes;
+    for (const field of TRACKED_FIELDS){
+        const currentValue = product[field];
+        const originalValue = field === 'productId' ? original.origProductId : original[field];
+        // Normalize values for comparison
+        const currentStr = currentValue == null ? '' : String(currentValue).trim();
+        const originalStr = originalValue == null ? '' : String(originalValue).trim();
+        if (currentStr !== originalStr) {
+            changes.push({
+                field: String(field),
+                original: originalStr || null,
+                current: currentStr || null
+            });
+        }
+    }
+    return changes;
+}
+function isFieldModified(product, field) {
+    const changes = getFieldChanges(product);
+    return changes.some((c)=>c.field === field);
+}
+function countModifiedFields(product) {
+    return getFieldChanges(product).length;
+}
+function hasModifications(product) {
+    return countModifiedFields(product) > 0;
+}
 const useInventoryStore = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zustand$2f$esm$2f$react$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["create"])((set, get)=>({
         // Auth
         isAuthenticated: false,

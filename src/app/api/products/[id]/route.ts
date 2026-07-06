@@ -53,7 +53,11 @@ export async function GET(
 
     const product = await db.product.findUnique({
       where: { id },
-      include: { images: { orderBy: { displayOrder: 'asc' } } },
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: true,
+      },
     });
 
     if (!product) {
@@ -93,7 +97,11 @@ export async function PUT(
     const product = await db.product.update({
       where: { id },
       data,
-      include: { images: { orderBy: { displayOrder: 'asc' } } },
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: true,
+      },
     });
 
     return NextResponse.json(serializeProduct(product));

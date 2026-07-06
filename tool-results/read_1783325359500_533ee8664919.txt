@@ -1,0 +1,515 @@
+     1→/**
+     2→ * Al-Nassim Master Catalog — Centralized Lookup Data
+     3→ * 
+     4→ * All controlled vocabularies, taxonomy hierarchies, and lookup tables
+     5→ * are defined here. UI components and API routes must reference this
+     6→ * single source of truth so that future updates require minimal code changes.
+     7→ * 
+     8→ * Source: Al-Nassim Master Catalog Data Dictionary & Schema Documentation V1.0
+     9→ * Workbook Version: V8 (FINAL)
+    10→ */
+    11→
+    12→// ─────────────────────────────────────────────────────────────
+    13→// 1. BRAND LOOKUP (with Arabic + Code)
+    14→// ─────────────────────────────────────────────────────────────
+    15→export interface BrandEntry {
+    16→  brand: string;
+    17→  brandAr: string;
+    18→  brandCode: string;
+    19→}
+    20→
+    21→export const BRAND_LOOKUP: BrandEntry[] = [
+    22→  { brand: "Al-Nassim China", brandAr: "نيصلا ميسنلا", brandCode: "017" },
+    23→  { brand: "Local Companies", brandAr: "ةيلحم تاكرش", brandCode: "006" },
+    24→];
+    25→
+    26→export const BRAND_OPTIONS = BRAND_LOOKUP.map((b) => b.brand);
+    27→
+    28→/** Auto-fill Brand AR and Brand Code from Brand selection */
+    29→export function getBrandDerivatives(brand: string | null): { brandAr: string; brandCode: string } {
+    30→  const entry = BRAND_LOOKUP.find((b) => b.brand === brand);
+    31→  return {
+    32→    brandAr: entry?.brandAr ?? "",
+    33→    brandCode: entry?.brandCode ?? "",
+    34→  };
+    35→}
+    36→
+    37→// ─────────────────────────────────────────────────────────────
+    38→// 2. TAXONOMY HIERARCHY (Department → Category → Subcategory)
+    39→// ─────────────────────────────────────────────────────────────
+    40→export interface TaxonomyEntry {
+    41→  department: string;
+    42→  category: string;
+    43→  subcategory: string | null; // null = no subcategory for this category
+    44→}
+    45→
+    46→export const TAXONOMY: TaxonomyEntry[] = [
+    47→  // Houseware
+    48→  { department: "Houseware", category: "Cleaning Tools", subcategory: "Surface Cleaning" },
+    49→  { department: "Houseware", category: "Cleaning Tools", subcategory: "Toilet & Drain" },
+    50→  { department: "Houseware", category: "Home & Outdoor", subcategory: "Laundry Essentials" },
+    51→  { department: "Houseware", category: "Home & Outdoor", subcategory: "Picnic Collection" },
+    52→  { department: "Houseware", category: "Home & Outdoor", subcategory: "Storage & Packaging" },
+    53→  { department: "Houseware", category: "Kitchenware", subcategory: "Cooking & Utensils" },
+    54→  { department: "Houseware", category: "Kitchenware", subcategory: "Cutlery & Cleaver" },
+    55→  { department: "Houseware", category: "Kitchenware", subcategory: "Drinkware" },
+    56→  // Supermarket Equipment
+    57→  { department: "Supermarket Equipment", category: "Accessories", subcategory: null },
+    58→  { department: "Supermarket Equipment", category: "Checkout Solutions", subcategory: null },
+    59→  { department: "Supermarket Equipment", category: "Cooling Appliances", subcategory: "Coolers & Chillers" },
+    60→  { department: "Supermarket Equipment", category: "Cooling Appliances", subcategory: "Freezers" },
+    61→  { department: "Supermarket Equipment", category: "Shelves & Stands", subcategory: "Shelves" },
+    62→  { department: "Supermarket Equipment", category: "Shelves & Stands", subcategory: "Stands" },
+    63→  { department: "Supermarket Equipment", category: "Trolleys & Baskets", subcategory: "Baskets" },
+    64→  { department: "Supermarket Equipment", category: "Trolleys & Baskets", subcategory: "Trolleys" },
+    65→  // Warehouse Equipment
+    66→  { department: "Warehouse Equipment", category: "Forklifts & Pallets", subcategory: "Forklifts" },
+    67→  { department: "Warehouse Equipment", category: "Forklifts & Pallets", subcategory: "Pallets" },
+    68→  { department: "Warehouse Equipment", category: "Heavy Duty Racking", subcategory: null },
+    69→  { department: "Warehouse Equipment", category: "Trolleys & Baskets", subcategory: "Baskets" },
+    70→  { department: "Warehouse Equipment", category: "Trolleys & Baskets", subcategory: "Trolleys" },
+    71→];
+    72→
+    73→export const DEPARTMENTS = [...new Set(TAXONOMY.map((t) => t.department))];
+    74→
+    75→export function getCategoriesForDepartment(department: string | null): string[] {
+    76→  if (!department) return [];
+    77→  return [...new Set(TAXONOMY.filter((t) => t.department === department).map((t) => t.category))];
+    78→}
+    79→
+    80→export function getSubcategoriesForCategory(department: string | null, category: string | null): string[] {
+    81→  if (!department || !category) return [];
+    82→  const subs = TAXONOMY.filter((t) => t.department === department && t.category === category).map((t) => t.subcategory);
+    83→  // Filter out nulls and return; if all are null, return empty array
+    84→  return subs.filter((s): s is string => s !== null);
+    85→}
+    86→
+    87→export function categoryHasSubcategories(department: string | null, category: string | null): boolean {
+    88→  if (!department || !category) return false;
+    89→  return TAXONOMY.some((t) => t.department === department && t.category === category && t.subcategory !== null);
+    90→}
+    91→
+    92→// ─────────────────────────────────────────────────────────────
+    93→// 3. SECTION CODE (auto-derived from Department)
+    94→// ─────────────────────────────────────────────────────────────
+    95→export const SECTION_CODE_LOOKUP: Record<string, string> = {
+    96→  Houseware: "102",
+    97→  "Supermarket Equipment": "103",
+    98→  "Warehouse Equipment": "104", // future
+    99→};
+   100→
+   101→export function getSectionCodeForDepartment(department: string | null): string {
+   102→  if (!department) return "";
+   103→  return SECTION_CODE_LOOKUP[department] ?? "";
+   104→}
+   105→
+   106→// ─────────────────────────────────────────────────────────────
+   107→// 4. PRODUCT FAMILY → PRODUCT TYPE MAPPING
+   108→// ─────────────────────────────────────────────────────────────
+   109→
+   110→// Mapping: Subcategory → valid Product Families
+   111→export const SUBCATEGORY_TO_FAMILIES: Record<string, string[]> = {
+   112→  "Cooking & Utensils": ["Cookware", "Kitchen Tools", "Food Storage"],
+   113→  "Cutlery & Cleaver": ["Cutlery", "Kitchen Tools"],
+   114→  "Drinkware": ["Drinkware"],
+   115→  "Surface Cleaning": ["Cleaning"],
+   116→  "Toilet & Drain": ["Cleaning"],
+   117→  "Laundry Essentials": ["Cleaning", "Linens"],
+   118→  "Picnic Collection": ["Outdoor Cooking", "Sets"],
+   119→  "Storage & Packaging": ["Storage", "Buckets", "Food Storage"],
+   120→  "Coolers & Chillers": ["Buckets"],
+   121→  "Freezers": ["Buckets"],
+   122→  Shelves: ["Storage"],
+   123→  Stands: ["Storage"],
+   124→  Baskets: ["Buckets", "Storage"],
+   125→  Trolleys: ["Sets"],
+   126→  Forklifts: ["Sets"],
+   127→  Pallets: ["Storage"],
+   128→};
+   129→
+   130→// All 14 Product Families
+   131→export const PRODUCT_FAMILIES = [
+   132→  "Kitchen Tools",
+   133→  "Cookware",
+   134→  "Cutlery",
+   135→  "Cleaning",
+   136→  "Food Storage",
+   137→  "Storage",
+   138→  "Tableware",
+   139→  "Outdoor Cooking",
+   140→  "Drinkware",
+   141→  "Sets",
+   142→  "Buckets",
+   143→  "Linens",
+   144→  "Paper Goods",
+   145→  "Uncategorized",
+   146→] as const;
+   147→
+   148→export function getFamiliesForSubcategory(subcategory: string | null): string[] {
+   149→  if (!subcategory) return [...PRODUCT_FAMILIES];
+   150→  return SUBCATEGORY_TO_FAMILIES[subcategory] ?? [...PRODUCT_FAMILIES];
+   151→}
+   152→
+   153→// Product Family → Product Types mapping (from Appendix B)
+   154→export const FAMILY_TO_TYPES: Record<string, string[]> = {
+   155→  "Kitchen Tools": [
+   156→    "Wooden Tool", "Scale", "Vegetable Slicer", "Power Strip", "Sprayer", "Gas Stove",
+   157→    "Food Storage Container", "Cutter", "Cutting Board", "Box", "Clothesline", "Rack",
+   158→    "Coffee Pot", "Slippers", "Adhesive Tape", "Slotted Spoon", "Whisk", "Gloves",
+   159→    "Insecticide", "Mortar", "Masher", "Dining Spoon", "Toothpick", "Floor Mop", "Bowl",
+   160→    "Potato Peeler", "Cup", "Ashtray", "Juicer", "Lint Roller", "Sharpening Steel",
+   161→    "Hanger", "Pricing Label Gun", "Ladle", "Insect Catcher", "Dining Cover Curtain",
+   162→    "Rolling Pin", "Tray", "Dishwashing Wire", "Bath Loofah", "Household Ladder",
+   163→    "Clothes Peg", "Packing Tape", "Flower Pen", "Knife", "Charging Cable",
+   164→    "Mouse Glue Trap", "Ice Cream Mold", "Ice Cream Scoop", "Cream Decoration Bag",
+   165→    "Tea Bag", "Pastry Punch", "Vegetable Chopper", "Hand Duster", "Gas Hose",
+   166→    "Container", "Gas Burner Stove", "Flame Diffuser", "Drinking Glass Set",
+   167→    "Ice Tongs", "Tea Spoon", "Cleaning Brush", "Insect Sticky Trap", "Fan",
+   168→    "Strainer", "Cake Decoration Bag", "Cotton Swab", "Set", "Double-Sided Foam Tape",
+   169→    "Brush", "Broom", "Window Squeegee", "Bathroom Mat", "Fruit Juicer", "Roll",
+   170→    "Pricing Ink Roller", "Grain Grinder", "Water Filter", "Shaving Machine",
+   171→    "Washing Machine Cover", "Gas Cover", "Machine", "Fire Insulator", "Binding Thread",
+   172→    "Pasta Spoon", "Turner", "Liquid Dropper", "Meat Injector", "Garbage Bag",
+   173→    "Silicone Spoon", "Holder", "Shoe Polish Sponge", "Clothes Hanger", "Funnel",
+   174→    "Shoe Cover", "Incense", "Zucchini Corer", "Display Screen", "Salt Shaker",
+   175→  ],
+   176→  Cookware: [
+   177→    "Strainer", "Pan", "Cooking Pot", "Flask", "Frying Pan", "Set", "Tray", "Casserole",
+   178→    "Soup Ladle", "Food Cover", "Slotted Spoon", "Serving Bowl", "Salt Shaker",
+   179→    "Griddle", "Cutter", "Wooden Tool", "Juicer", "Funnel", "Vegetable Chopper",
+   180→    "Bowl", "Buffet Warmer",
+   181→  ],
+   182→  Cutlery: [
+   183→    "Knife", "Cutter", "Scissors", "Fork", "Wooden Tool", "Peeler", "Sharpening Steel",
+   184→    "Kitchen Cleaver", "Dining Spoon", "Dining Fork", "Bottle", "Set", "Cleaver",
+   185→    "Vegetable Slicer", "Portable Stove Oven",
+   186→  ],
+   187→  Cleaning: [
+   188→    "Broom", "Brush", "Floor Mop", "Cutter", "Dishwashing Wire", "Trolley",
+   189→    "Vacuum Cleaner", "Dishwashing Sponge", "Drain Piston Cleaner", "Mop", "Juicer",
+   190→    "Mosquito Repellent", "Drain Cleaner", "Sticky Fly Trap", "Mouse Trap", "Garbage Bag",
+   191→  ],
+   192→  "Food Storage": ["Container"],
+   193→  Storage: [
+   194→    "Wooden Tool", "Potato Peeler", "Basket", "Cutter", "Meat Tenderizer", "Set",
+   195→    "Container", "Juicer", "Whisk", "Slotted Spoon", "Vegetable Peeler", "Fire Insulator",
+   196→    "Ladle", "Garlic Press", "Almond Cracker", "Peeler", "Fish Scaler", "Drum", "Brush",
+   197→    "Fork", "Ice Cream Scoop",
+   198→  ],
+   199→  Tableware: ["Tray", "Plate", "Serving Bowl", "Plate Rack"],
+   200→  "Outdoor Cooking": [
+   201→    "Grill", "Ice Tongs", "Tool", "Gas Heater", "Plastic Hobby Box", "Fish Scaler",
+   202→    "Gas Burner Stove",
+   203→  ],
+   204→  Drinkware: ["Cup", "Bottle", "Flask", "Pitcher"],
+   205→  Sets: ["Bag", "Chair", "Set", "Table", "Dustpan", "Shelf"],
+   206→  Buckets: [
+   207→    "Bucket", "Basket", "Box", "Strainer", "Cutter", "Serving Bowl", "Mug",
+   208→    "Juice Straw", "Water Dispenser", "Juicer", "Fruit Juicer", "Tray", "Plastic Spoon",
+   209→    "Food Storage Cover", "Sprayer", "Household Ladder", "Coffee Spoon", "Measuring Cup",
+   210→    "Grinder", "Holder", "Ice Tongs", "Masher",
+   211→  ],
+   212→  Linens: ["Towel"],
+   213→  "Paper Goods": ["Tissue"],
+   214→  Uncategorized: [
+   215→    "Cooking Pot", "Pressure Cooker", "Food Storage Bag", "Gloves", "Arabic Coffee Pot",
+   216→    "Hamburger Press", "Food Storage Cover", "Bowl", "Baking Tray", "Falafel Maker Mold",
+   217→    "Floor Adhesive",
+   218→  ],
+   219→};
+   220→
+   221→export function getTypesForFamily(family: string | null): string[] {
+   222→  if (!family) return [];
+   223→  return FAMILY_TO_TYPES[family] ?? [];
+   224→}
+   225→
+   226→// All Product Types (flattened, unique, sorted)
+   227→export const ALL_PRODUCT_TYPES = [...new Set(Object.values(FAMILY_TO_TYPES).flat())].sort();
+   228→
+   229→// ─────────────────────────────────────────────────────────────
+   230→// 5. COLOR LOOKUP (with Arabic)
+   231→// ─────────────────────────────────────────────────────────────
+   232→export interface ColorEntry {
+   233→  color: string;
+   234→  colorAr: string;
+   235→}
+   236→
+   237→export const COLOR_LOOKUP: ColorEntry[] = [
+   238→  { color: "Black", colorAr: "دوسأ" },
+   239→  { color: "White", colorAr: "ضيبأ" },
+   240→  { color: "Clear", colorAr: "فافش" },
+   241→  { color: "Silver", colorAr: "يضف" },
+   242→  { color: "Gold", colorAr: "يبهذ" },
+   243→  { color: "Red", colorAr: "رمحأ" },
+   244→  { color: "Yellow", colorAr: "رفصأ" },
+   245→  { color: "Green", colorAr: "رضخأ" },
+   246→  { color: "Blue", colorAr: "قرزأ" },
+   247→  { color: "Gray", colorAr: "يامر" },
+   248→  { color: "Orange", colorAr: "يلاقترب" },
+   249→  { color: "Brown", colorAr: "ينب" },
+   250→  { color: "Beige", colorAr: "جيب" },
+   251→  { color: "Purple", colorAr: "يجسفنب" },
+   252→  { color: "Pink", colorAr: "يدرو" },
+   253→];
+   254→
+   255→export const COLOR_OPTIONS = COLOR_LOOKUP.map((c) => c.color);
+   256→
+   257→/** Auto-fill Color AR from Color selection */
+   258→export function getColorAr(color: string | null): string {
+   259→  if (!color) return "";
+   260→  return COLOR_LOOKUP.find((c) => c.color === color)?.colorAr ?? "";
+   261→}
+   262→
+   263→// ─────────────────────────────────────────────────────────────
+   264→// 6. MATERIAL LOOKUP (with Arabic)
+   265→// ─────────────────────────────────────────────────────────────
+   266→export interface MaterialEntry {
+   267→  material: string;
+   268→  materialAr: string;
+   269→}
+   270→
+   271→export const MATERIAL_LOOKUP: MaterialEntry[] = [
+   272→  { material: "Plastic", materialAr: "كيتسلاب" },
+   273→  { material: "Stainless Steel", materialAr: "ليتس سلناتس" },
+   274→  { material: "Wooden", materialAr: "بشخ" },
+   275→  { material: "Granite", materialAr: "تينارج" },
+   276→  { material: "Glass", materialAr: "جاجز" },
+   277→  { material: "Steel", materialAr: "ديدح" },
+   278→  { material: "Aluminum", materialAr: "موينملأ" },
+   279→  { material: "Paper", materialAr: "قرو" },
+   280→  { material: "Cotton", materialAr: "نطق" },
+   281→  { material: "Silicone", materialAr: "نوكيليس" },
+   282→  { material: "Microfiber", materialAr: "ربايروفوركيم" },
+   283→  { material: "Melamine", materialAr: "نيملايم" },
+   284→  { material: "Chrome", materialAr: "مورك" },
+   285→  { material: "Porcelain", materialAr: "نلاسروب" },
+   286→  { material: "Ceramic", materialAr: "كيماريس" },
+   287→];
+   288→
+   289→export const MATERIAL_OPTIONS = MATERIAL_LOOKUP.map((m) => m.material);
+   290→
+   291→/** Auto-fill Material AR from Material selection */
+   292→export function getMaterialAr(material: string | null): string {
+   293→  if (!material) return "";
+   294→  return MATERIAL_LOOKUP.find((m) => m.material === material)?.materialAr ?? "";
+   295→}
+   296→
+   297→// ─────────────────────────────────────────────────────────────
+   298→// 7. UNIT LISTS
+   299→// ─────────────────────────────────────────────────────────────
+   300→export const UNIT_OPTIONS = ["PCS", "PKT", "CTN", "ROLL", "BUNDLE"] as const;
+   301→
+   302→export const CAPACITY_UNIT_OPTIONS = ["L", "ml", "kg", "g"] as const;
+   303→
+   304→export const WEIGHT_UNIT_OPTIONS = ["kg", "g"] as const;
+   305→
+   306→export const DIMENSION_UNIT_OPTIONS = ["cm", "mm", "inch"] as const;
+   307→
+   308→// ─────────────────────────────────────────────────────────────
+   309→// 8. SHAPE, FINISH, ADDITIONAL INFORMATION
+   310→// ─────────────────────────────────────────────────────────────
+   311→export const SHAPE_OPTIONS = ["Square", "Round", "Rectangular", "Oval", "Circular"] as const;
+   312→
+   313→export const FINISH_OPTIONS = ["Coated", "Chrome", "Black Chrome", "Polished", "Matte", "Powder-coated"] as const;
+   314→
+   315→export const ADDITIONAL_INFO_OPTIONS = [
+   316→  "with Lid", "Glass Lid", "with Wheels", "Foldable", "with Handle",
+   317→] as const;
+   318→
+   319→// ─────────────────────────────────────────────────────────────
+   320→// 9. VALIDATION STATUS & COUNTRY
+   321→// ─────────────────────────────────────────────────────────────
+   322→export const VALIDATION_STATUS_OPTIONS = ["Validated", "Pending Review", "Draft", "Rejected"] as const;
+   323→
+   324→export const MIN_SALES_MULTIPLES_OPTIONS = ["No", "Yes"] as const;
+   325→
+   326→// Country list (ISO 3166 - common trading partners for Kuwait/GCC)
+   327→export const COUNTRY_OPTIONS = [
+   328→  "China", "India", "Turkey", "UAE", "Germany", "Italy", "Vietnam",
+   329→  "South Korea", "Japan", "Thailand", "Indonesia", "Malaysia",
+   330→  "Brazil", "United States", "United Kingdom", "France", "Spain",
+   331→  "Netherlands", "Poland", "Hungary", "Slovakia", "Ukraine",
+   332→  "Saudi Arabia", "Kuwait", "Bahrain", "Qatar", "Oman", "Egypt",
+   333→  "Jordan", "Lebanon", "Morocco", "Tunisia", "Pakistan", "Bangladesh",
+   334→  "Philippines", "Sri Lanka", "Taiwan", "Hong Kong",
+   335→] as const;
+   336→
+   337→// ─────────────────────────────────────────────────────────────
+   338→// 10. AUTO-DERIVATION HELPERS
+   339→// ─────────────────────────────────────────────────────────────
+   340→
+   341→/** Generate default Short Desc AR from Name AR */
+   342→export function deriveShortDescAr(nameAr: string | null): string {
+   343→  return nameAr ?? "";
+   344→}
+   345→
+   346→/** Generate default Short Desc EN from Name EN */
+   347→export function deriveShortDescEn(nameEn: string | null): string {
+   348→  return nameEn ?? "";
+   349→}
+   350→
+   351→/** Generate default Long Desc EN from Brand + Name EN */
+   352→export function deriveLongDescEn(brand: string | null, nameEn: string | null): string {
+   353→  if (!brand && !nameEn) return "";
+   354→  const parts = [brand, nameEn].filter(Boolean);
+   355→  return parts.join(". ") + ".";
+   356→}
+   357→
+   358→/** Generate default SEO Title AR from Name AR */
+   359→export function deriveSeoTitleAr(nameAr: string | null): string {
+   360→  return nameAr ?? "";
+   361→}
+   362→
+   363→/** Generate default SEO Description EN from Brand + Product Type */
+   364→export function deriveSeoDescEn(brand: string | null, productType: string | null): string {
+   365→  const parts = [brand, productType].filter(Boolean);
+   366→  if (parts.length === 0) return "";
+   367→  return parts.join(" ") + ". Available in Kuwait.";
+   368→}
+   369→
+   370→/** Generate default SEO Description AR from Brand AR + Product Type */
+   371→export function deriveSeoDescAr(brandAr: string | null, productType: string | null): string {
+   372→  const parts = [brandAr, productType].filter(Boolean);
+   373→  if (parts.length === 0) return "";
+   374→  return parts.join("، ");
+   375→}
+   376→
+   377→/** Generate default Search Keywords from Brand + Product Family + Product Type */
+   378→export function deriveSearchKeywords(brand: string | null, productFamily: string | null, productType: string | null): string {
+   379→  const parts = [brand, productFamily, productType].filter(Boolean);
+   380→  return parts.join(" | ");
+   381→}
+   382→
+   383→// ─────────────────────────────────────────────────────────────
+   384→// 11. COLUMN DEFINITIONS (for import/export)
+   385→// ─────────────────────────────────────────────────────────────
+   386→
+   387→export interface ColumnDef {
+   388→  /** Prisma field name */
+   389→  field: string;
+   390→  /** Excel column header */
+   391→  header: string;
+   392→  /** Second-row sub-header (for grouped headers) */
+   393→  subHeader?: string;
+   394→  /** Logical group name */
+   395→  group: string;
+   396→  /** Column group span (for merged header row) */
+   397→  groupSpan?: number;
+   398→  /** Data type for parsing */
+   399→  type: "string" | "number" | "integer" | "decimal" | "boolean";
+   400→  /** Whether the field is mandatory */
+   401→  mandatory: boolean;
+   402→  /** Whether the field is auto-derived (read-only in forms) */
+   403→  autoDerived: boolean;
+   404→  /** Whether the field is auto-generated (read-only, never user-edited) */
+   405→  autoGenerated: boolean;
+   406→  /** Field kind determines the UI component */
+   407→  kind: "free-text" | "dropdown" | "dependent-dropdown" | "auto-derived" | "auto-generated" | "numeric" | "arabic-text" | "pipe-separated";
+   408→  /** Lookup name for dropdown fields */
+   409→  lookupName?: string;
+   410→  /** Parent field for dependent dropdowns */
+   411→  dependsOn?: string;
+   412→  /** Validation regex pattern */
+   413→  pattern?: string;
+   414→}
+   415→
+   416→export const COLUMN_DEFS: ColumnDef[] = [
+   417→  // Product Identity Group (10 cols)
+   418→  { field: "sourceRow", header: "Source Row", group: "Product Identity", type: "integer", mandatory: true, autoDerived: false, autoGenerated: true, kind: "auto-generated" },
+   419→  { field: "productId", header: "Product ID", group: "Product Identity", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   420→  { field: "sku", header: "SKU", group: "Product Identity", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   421→  { field: "ndNumber", header: "ND Number", group: "Product Identity", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "free-text", pattern: "^ND-\\d{4}(-[A-Z0-9-]+)?$" },
+   422→  { field: "barcode", header: "Barcode", group: "Product Identity", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   423→  { field: "legacyCode", header: "Legacy Code", group: "Product Identity", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   424→  { field: "brand", header: "Brand", group: "Product Identity", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "brand" },
+   425→  { field: "brandAr", header: "Brand AR", group: "Product Identity", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "auto-derived", dependsOn: "brand" },
+   426→  { field: "brandCode", header: "Brand Code", group: "Product Identity", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "auto-derived", dependsOn: "brand" },
+   427→  { field: "model", header: "Model", group: "Product Identity", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   428→  // Classification Group (6 cols)
+   429→  { field: "department", header: "Department", group: "Classification", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "department" },
+   430→  { field: "category", header: "Category", group: "Classification", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dependent-dropdown", lookupName: "category", dependsOn: "department" },
+   431→  { field: "subcategory", header: "Subcategory", group: "Classification", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dependent-dropdown", lookupName: "subcategory", dependsOn: "category" },
+   432→  { field: "sectionCode", header: "Section Code", group: "Classification", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "auto-derived", dependsOn: "department" },
+   433→  { field: "productFamily", header: "Product Family", group: "Classification", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dependent-dropdown", lookupName: "productFamily", dependsOn: "subcategory" },
+   434→  { field: "productType", header: "Product Type", group: "Classification", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dependent-dropdown", lookupName: "productType", dependsOn: "productFamily" },
+   435→  // Product Information Group (6 cols)
+   436→  { field: "nameAr", header: "Name AR", group: "Product Information", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "arabic-text" },
+   437→  { field: "nameEn", header: "Name EN", group: "Product Information", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   438→  { field: "shortDescAr", header: "Short Desc AR", group: "Product Information", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "arabic-text", dependsOn: "nameAr" },
+   439→  { field: "shortDescEn", header: "Short Desc EN", group: "Product Information", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "free-text", dependsOn: "nameEn" },
+   440→  { field: "longDescAr", header: "Long Desc AR", group: "Product Information", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "arabic-text" },
+   441→  { field: "longDescEn", header: "Long Desc EN", group: "Product Information", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "free-text" },
+   442→  // Attributes Group (13 cols)
+   443→  { field: "color", header: "Color", group: "Attributes", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "color" },
+   444→  { field: "colorAr", header: "Color AR", group: "Attributes", type: "string", mandatory: false, autoDerived: true, autoGenerated: false, kind: "auto-derived", dependsOn: "color" },
+   445→  { field: "material", header: "Material", group: "Attributes", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "material" },
+   446→  { field: "materialAr", header: "Material AR", group: "Attributes", type: "string", mandatory: false, autoDerived: true, autoGenerated: false, kind: "auto-derived", dependsOn: "material" },
+   447→  { field: "capacity", header: "Capacity", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   448→  { field: "capacityUnit", header: "Capacity Unit", group: "Attributes", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "capacityUnit" },
+   449→  { field: "weight", header: "Weight", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   450→  { field: "weightUnit", header: "Weight Unit", group: "Attributes", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "weightUnit" },
+   451→  { field: "length", header: "Length", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   452→  { field: "width", header: "Width", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   453→  { field: "height", header: "Height", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   454→  { field: "diameter", header: "Diameter", group: "Attributes", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   455→  { field: "dimensionUnit", header: "Dimension Unit", group: "Attributes", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "dimensionUnit" },
+   456→  // Logistics Group (3 cols)
+   457→  { field: "countryOfOrigin", header: "Country of Origin", group: "Logistics", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "country" },
+   458→  { field: "unit", header: "Unit", group: "Logistics", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "unit" },
+   459→  { field: "minSalesMultiples", header: "Min Sales Multiples", group: "Logistics", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "minSalesMultiples" },
+   460→  // Commercial Group (1 col)
+   461→  { field: "defaultPrice", header: "Default Price", group: "Commercial", type: "decimal", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   462→  // SEO Group (5 cols)
+   463→  { field: "seoTitleEn", header: "SEO Title EN", group: "SEO", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   464→  { field: "seoTitleAr", header: "SEO Title AR", group: "SEO", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "arabic-text", dependsOn: "nameAr" },
+   465→  { field: "seoDescriptionEn", header: "SEO Description EN", group: "SEO", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "free-text" },
+   466→  { field: "seoDescriptionAr", header: "SEO Description AR", group: "SEO", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "arabic-text" },
+   467→  { field: "searchKeywords", header: "Search Keywords", group: "SEO", type: "string", mandatory: true, autoDerived: true, autoGenerated: false, kind: "pipe-separated" },
+   468→  // Internal Group (8 cols)
+   469→  { field: "internalNotes", header: "Internal Notes", group: "Internal", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "free-text" },
+   470→  { field: "validationStatus", header: "Validation Status", group: "Internal", type: "string", mandatory: true, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "validationStatus" },
+   471→  { field: "confidenceScore", header: "Confidence Score", group: "Internal", type: "integer", mandatory: true, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   472→  { field: "pieces", header: "Pieces", group: "Internal", type: "integer", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   473→  { field: "setCount", header: "Set Count", group: "Internal", type: "integer", mandatory: false, autoDerived: false, autoGenerated: false, kind: "numeric" },
+   474→  { field: "shape", header: "Shape", group: "Internal", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "shape" },
+   475→  { field: "finish", header: "Finish", group: "Internal", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "finish" },
+   476→  { field: "additionalInfo", header: "Additional Information", group: "Internal", type: "string", mandatory: false, autoDerived: false, autoGenerated: false, kind: "dropdown", lookupName: "additionalInfo" },
+   477→];
+   478→
+   479→/** Column groups for UI section headers */
+   480→export const COLUMN_GROUPS = [
+   481→  { name: "Product Identity", fields: COLUMN_DEFS.filter((c) => c.group === "Product Identity") },
+   482→  { name: "Classification", fields: COLUMN_DEFS.filter((c) => c.group === "Classification") },
+   483→  { name: "Product Information", fields: COLUMN_DEFS.filter((c) => c.group === "Product Information") },
+   484→  { name: "Attributes", fields: COLUMN_DEFS.filter((c) => c.group === "Attributes") },
+   485→  { name: "Logistics", fields: COLUMN_DEFS.filter((c) => c.group === "Logistics") },
+   486→  { name: "Commercial", fields: COLUMN_DEFS.filter((c) => c.group === "Commercial") },
+   487→  { name: "SEO", fields: COLUMN_DEFS.filter((c) => c.group === "SEO") },
+   488→  { name: "Internal", fields: COLUMN_DEFS.filter((c) => c.group === "Internal") },
+   489→];
+   490→
+   491→/** Get dropdown options for a given lookup name */
+   492→export function getLookupOptions(lookupName: string): string[] {
+   493→  switch (lookupName) {
+   494→    case "brand": return BRAND_OPTIONS;
+   495→    case "department": return DEPARTMENTS;
+   496→    case "category": return []; // dynamic - depends on department
+   497→    case "subcategory": return []; // dynamic - depends on category
+   498→    case "productFamily": return [...PRODUCT_FAMILIES];
+   499→    case "productType": return []; // dynamic - depends on productFamily
+   500→    case "color": return COLOR_OPTIONS;
+   501→    case "material": return MATERIAL_OPTIONS;
+   502→    case "capacityUnit": return [...CAPACITY_UNIT_OPTIONS];
+   503→    case "weightUnit": return [...WEIGHT_UNIT_OPTIONS];
+   504→    case "dimensionUnit": return [...DIMENSION_UNIT_OPTIONS];
+   505→    case "country": return [...COUNTRY_OPTIONS];
+   506→    case "unit": return [...UNIT_OPTIONS];
+   507→    case "minSalesMultiples": return [...MIN_SALES_MULTIPLES_OPTIONS];
+   508→    case "validationStatus": return [...VALIDATION_STATUS_OPTIONS];
+   509→    case "shape": return [...SHAPE_OPTIONS];
+   510→    case "finish": return [...FINISH_OPTIONS];
+   511→    case "additionalInfo": return [...ADDITIONAL_INFO_OPTIONS];
+   512→    default: return [];
+   513→  }
+   514→}
+   515→

@@ -7728,6 +7728,8 @@ function ProductForm({ mode }) {
     const [formData, setFormData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])({
         ...EMPTY_FORM
     });
+    // ── Track whether form has been initialized (to prevent reset on image upload) ──
+    const formInitializedRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(false);
     // ── Section collapse state ─────────────────────────────────
     const [expandedSections, setExpandedSections] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(new Set([
         'Product Identity',
@@ -7953,9 +7955,12 @@ function ProductForm({ mode }) {
         priceDinar,
         updateField
     ]);
-    // ── Load form data from currentProduct in edit mode ────────
+    // ── Load form data from currentProduct in edit mode (ONE-TIME initialization) ──
+    // This useEffect should only run ONCE when entering edit mode, not on every currentProduct change
+    // Image uploads update currentProduct.images but should NOT reset the form
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        if (mode === 'edit' && currentProduct) {
+        if (mode === 'edit' && currentProduct && !formInitializedRef.current) {
+            formInitializedRef.current = true;
             const p = currentProduct;
             setFormData({
                 sourceRow: p.sourceRow?.toString() || '',
@@ -8015,10 +8020,14 @@ function ProductForm({ mode }) {
             setPriceDinar(dinar);
             setPriceFils(fils);
         }
+        // Reset initialization flag when switching to add mode or different product
+        if (mode === 'add') {
+            formInitializedRef.current = false;
+        }
     }, [
         mode,
-        currentProduct
-    ]);
+        currentProduct?.id
+    ]); // Only watch mode and product ID, not the whole currentProduct object
     // ── Dependent dropdown option lists ────────────────────────
     const categoryOptions = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useMemo"])(()=>(0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$lookups$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getCategoriesForDepartment"])(formData.department || null), [
         formData.department
@@ -8256,7 +8265,7 @@ function ProductForm({ mode }) {
             children: children
         }, void 0, false, {
             fileName: "[project]/src/components/inventory/product-form.tsx",
-            lineNumber: 843,
+            lineNumber: 854,
             columnNumber: 5
         }, this);
     const Grid3 = ({ children })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8264,7 +8273,7 @@ function ProductForm({ mode }) {
             children: children
         }, void 0, false, {
             fileName: "[project]/src/components/inventory/product-form.tsx",
-            lineNumber: 847,
+            lineNumber: 858,
             columnNumber: 5
         }, this);
     // ── Error message helper ───────────────────────────────────
@@ -8275,7 +8284,7 @@ function ProductForm({ mode }) {
             children: validationErrors[field]
         }, void 0, false, {
             fileName: "[project]/src/components/inventory/product-form.tsx",
-            lineNumber: 853,
+            lineNumber: 864,
             columnNumber: 12
         }, this);
     };
@@ -8297,12 +8306,12 @@ function ProductForm({ mode }) {
                             className: "h-5 w-5"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 865,
+                            lineNumber: 876,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 864,
+                        lineNumber: 875,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8312,12 +8321,12 @@ function ProductForm({ mode }) {
                             children: mode === 'add' ? 'Add New Product' : 'Edit Product'
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 868,
+                            lineNumber: 879,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 867,
+                        lineNumber: 878,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -8329,26 +8338,26 @@ function ProductForm({ mode }) {
                                 className: "h-4 w-4 mr-2 animate-spin"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 871,
+                                lineNumber: 882,
                                 columnNumber: 23
                             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$save$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Save$3e$__["Save"], {
                                 className: "h-4 w-4 mr-2"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 871,
+                                lineNumber: 882,
                                 columnNumber: 75
                             }, this),
                             mode === 'add' ? 'Create' : 'Save'
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 870,
+                        lineNumber: 881,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 863,
+                lineNumber: 874,
                 columnNumber: 7
             }, this),
             hasDuplicates && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -8358,7 +8367,7 @@ function ProductForm({ mode }) {
                         className: "h-4 w-4"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 879,
+                        lineNumber: 890,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
@@ -8373,7 +8382,7 @@ function ProductForm({ mode }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 882,
+                                lineNumber: 893,
                                 columnNumber: 15
                             }, this),
                             duplicates.barcode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8385,7 +8394,7 @@ function ProductForm({ mode }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 885,
+                                lineNumber: 896,
                                 columnNumber: 15
                             }, this),
                             duplicates.productId && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8397,7 +8406,7 @@ function ProductForm({ mode }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 888,
+                                lineNumber: 899,
                                 columnNumber: 15
                             }, this),
                             duplicates.sku && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8409,19 +8418,19 @@ function ProductForm({ mode }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 891,
+                                lineNumber: 902,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 880,
+                        lineNumber: 891,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 878,
+                lineNumber: 889,
                 columnNumber: 9
             }, this),
             mode === 'edit' && currentProduct && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -8435,17 +8444,17 @@ function ProductForm({ mode }) {
                         onSetPrimary: handleSetPrimary
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 901,
+                        lineNumber: 912,
                         columnNumber: 13
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 900,
+                    lineNumber: 911,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 899,
+                lineNumber: 910,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -8466,18 +8475,18 @@ function ProductForm({ mode }) {
                                             children: "Source Row"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 925,
+                                            lineNumber: 936,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 926,
+                                            lineNumber: 937,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 924,
+                                    lineNumber: 935,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -8485,13 +8494,13 @@ function ProductForm({ mode }) {
                                     placeholder: "Auto-generated"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 928,
+                                    lineNumber: 939,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 923,
+                            lineNumber: 934,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8503,7 +8512,7 @@ function ProductForm({ mode }) {
                                     children: "Product ID"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 933,
+                                    lineNumber: 944,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -8514,20 +8523,20 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 934,
+                                    lineNumber: 945,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "productId"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 941,
+                                    lineNumber: 952,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 932,
+                            lineNumber: 943,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8539,7 +8548,7 @@ function ProductForm({ mode }) {
                                     children: "SKU"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 946,
+                                    lineNumber: 957,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -8550,20 +8559,20 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 947,
+                                    lineNumber: 958,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "sku"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 954,
+                                    lineNumber: 965,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 945,
+                            lineNumber: 956,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8574,7 +8583,7 @@ function ProductForm({ mode }) {
                                     children: "ND Number"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 959,
+                                    lineNumber: 970,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -8585,20 +8594,20 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 960,
+                                    lineNumber: 971,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "ndNumber"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 967,
+                                    lineNumber: 978,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 958,
+                            lineNumber: 969,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8609,7 +8618,7 @@ function ProductForm({ mode }) {
                                     children: "Barcode"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 972,
+                                    lineNumber: 983,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8622,33 +8631,33 @@ function ProductForm({ mode }) {
                                             className: "h-11 flex-1"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 974,
+                                            lineNumber: 985,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$barcode$2d$scanner$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["BarcodeScanner"], {
                                             onScan: (barcode)=>updateField('barcode', barcode)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 980,
+                                            lineNumber: 991,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 973,
+                                    lineNumber: 984,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "barcode"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 982,
+                                    lineNumber: 993,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 971,
+                            lineNumber: 982,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8659,7 +8668,7 @@ function ProductForm({ mode }) {
                                     children: "Legacy Code"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 987,
+                                    lineNumber: 998,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -8670,13 +8679,13 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 988,
+                                    lineNumber: 999,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 986,
+                            lineNumber: 997,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8687,7 +8696,7 @@ function ProductForm({ mode }) {
                                     children: "Brand"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 999,
+                                    lineNumber: 1010,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -8700,20 +8709,20 @@ function ProductForm({ mode }) {
                                     allowAddNew: true
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1000,
+                                    lineNumber: 1011,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "brand"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1009,
+                                    lineNumber: 1020,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 998,
+                            lineNumber: 1009,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8726,18 +8735,18 @@ function ProductForm({ mode }) {
                                             children: "Brand AR"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1015,
+                                            lineNumber: 1026,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1016,
+                                            lineNumber: 1027,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1014,
+                                    lineNumber: 1025,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -8746,13 +8755,13 @@ function ProductForm({ mode }) {
                                     dir: "rtl"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1018,
+                                    lineNumber: 1029,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1013,
+                            lineNumber: 1024,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8765,18 +8774,18 @@ function ProductForm({ mode }) {
                                             children: "Brand Code"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1024,
+                                            lineNumber: 1035,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1025,
+                                            lineNumber: 1036,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1023,
+                                    lineNumber: 1034,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -8784,13 +8793,13 @@ function ProductForm({ mode }) {
                                     placeholder: "Auto-filled from Brand"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1027,
+                                    lineNumber: 1038,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1022,
+                            lineNumber: 1033,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8801,7 +8810,7 @@ function ProductForm({ mode }) {
                                     children: "Model"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1032,
+                                    lineNumber: 1043,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -8812,24 +8821,24 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1033,
+                                    lineNumber: 1044,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1031,
+                            lineNumber: 1042,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 921,
+                    lineNumber: 932,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 915,
+                lineNumber: 926,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -8847,7 +8856,7 @@ function ProductForm({ mode }) {
                                     children: "Department"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1056,
+                                    lineNumber: 1067,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -8859,20 +8868,20 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No department found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1057,
+                                    lineNumber: 1068,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "department"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1065,
+                                    lineNumber: 1076,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1055,
+                            lineNumber: 1066,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8883,7 +8892,7 @@ function ProductForm({ mode }) {
                                     children: "Category"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1070,
+                                    lineNumber: 1081,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -8895,20 +8904,20 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No categories found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1071,
+                                    lineNumber: 1082,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "category"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1079,
+                                    lineNumber: 1090,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1069,
+                            lineNumber: 1080,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8918,7 +8927,7 @@ function ProductForm({ mode }) {
                                     children: "Subcategory"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1084,
+                                    lineNumber: 1095,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -8930,13 +8939,13 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No subcategories found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1085,
+                                    lineNumber: 1096,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1083,
+                            lineNumber: 1094,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8949,18 +8958,18 @@ function ProductForm({ mode }) {
                                             children: "Section Code"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1106,
+                                            lineNumber: 1117,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1107,
+                                            lineNumber: 1118,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1105,
+                                    lineNumber: 1116,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -8968,13 +8977,13 @@ function ProductForm({ mode }) {
                                     placeholder: "Auto-filled from Department"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1109,
+                                    lineNumber: 1120,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1104,
+                            lineNumber: 1115,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -8985,7 +8994,7 @@ function ProductForm({ mode }) {
                                     children: "Product Family"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1114,
+                                    lineNumber: 1125,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -8997,20 +9006,20 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No product families found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1115,
+                                    lineNumber: 1126,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "productFamily"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1123,
+                                    lineNumber: 1134,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1113,
+                            lineNumber: 1124,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9021,7 +9030,7 @@ function ProductForm({ mode }) {
                                     children: "Product Type"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1128,
+                                    lineNumber: 1139,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9033,31 +9042,31 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No product types found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1129,
+                                    lineNumber: 1140,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "productType"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1137,
+                                    lineNumber: 1148,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1127,
+                            lineNumber: 1138,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 1053,
+                    lineNumber: 1064,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1047,
+                lineNumber: 1058,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -9077,7 +9086,7 @@ function ProductForm({ mode }) {
                                         children: "Name AR"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1154,
+                                        lineNumber: 1165,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9089,20 +9098,20 @@ function ProductForm({ mode }) {
                                         dir: "rtl"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1155,
+                                        lineNumber: 1166,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                         field: "nameAr"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1163,
+                                        lineNumber: 1174,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1153,
+                                lineNumber: 1164,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9114,7 +9123,7 @@ function ProductForm({ mode }) {
                                         children: "Name EN"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1168,
+                                        lineNumber: 1179,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9125,26 +9134,26 @@ function ProductForm({ mode }) {
                                         className: "h-11"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1169,
+                                        lineNumber: 1180,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                         field: "nameEn"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1176,
+                                        lineNumber: 1187,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1167,
+                                lineNumber: 1178,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1151,
+                        lineNumber: 1162,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(Grid2, {
@@ -9161,18 +9170,18 @@ function ProductForm({ mode }) {
                                                 children: "Short Desc AR"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1184,
+                                                lineNumber: 1195,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1185,
+                                                lineNumber: 1196,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1183,
+                                        lineNumber: 1194,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9184,13 +9193,13 @@ function ProductForm({ mode }) {
                                         dir: "rtl"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1187,
+                                        lineNumber: 1198,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1182,
+                                lineNumber: 1193,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9205,18 +9214,18 @@ function ProductForm({ mode }) {
                                                 children: "Short Desc EN"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1200,
+                                                lineNumber: 1211,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1201,
+                                                lineNumber: 1212,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1199,
+                                        lineNumber: 1210,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9227,19 +9236,19 @@ function ProductForm({ mode }) {
                                         className: "h-11"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1203,
+                                        lineNumber: 1214,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1198,
+                                lineNumber: 1209,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1180,
+                        lineNumber: 1191,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9250,7 +9259,7 @@ function ProductForm({ mode }) {
                                 children: "Long Desc AR"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1215,
+                                lineNumber: 1226,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -9262,13 +9271,13 @@ function ProductForm({ mode }) {
                                 rows: 3
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1216,
+                                lineNumber: 1227,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1214,
+                        lineNumber: 1225,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9283,18 +9292,18 @@ function ProductForm({ mode }) {
                                         children: "Long Desc EN"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1229,
+                                        lineNumber: 1240,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1230,
+                                        lineNumber: 1241,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1228,
+                                lineNumber: 1239,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -9305,19 +9314,19 @@ function ProductForm({ mode }) {
                                 rows: 3
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1232,
+                                lineNumber: 1243,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1227,
+                        lineNumber: 1238,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1145,
+                lineNumber: 1156,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -9335,7 +9344,7 @@ function ProductForm({ mode }) {
                                         children: "Color"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1254,
+                                        lineNumber: 1265,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9347,13 +9356,13 @@ function ProductForm({ mode }) {
                                         emptyMessage: "No color found."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1255,
+                                        lineNumber: 1266,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1253,
+                                lineNumber: 1264,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9366,18 +9375,18 @@ function ProductForm({ mode }) {
                                                 children: "Color AR"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1268,
+                                                lineNumber: 1279,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1269,
+                                                lineNumber: 1280,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1267,
+                                        lineNumber: 1278,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -9386,13 +9395,13 @@ function ProductForm({ mode }) {
                                         dir: "rtl"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1271,
+                                        lineNumber: 1282,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1266,
+                                lineNumber: 1277,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9402,7 +9411,7 @@ function ProductForm({ mode }) {
                                         children: "Material"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1276,
+                                        lineNumber: 1287,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9414,13 +9423,13 @@ function ProductForm({ mode }) {
                                         emptyMessage: "No material found."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1277,
+                                        lineNumber: 1288,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1275,
+                                lineNumber: 1286,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9433,18 +9442,18 @@ function ProductForm({ mode }) {
                                                 children: "Material AR"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1290,
+                                                lineNumber: 1301,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1291,
+                                                lineNumber: 1302,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1289,
+                                        lineNumber: 1300,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(ReadOnlyInput, {
@@ -9453,19 +9462,19 @@ function ProductForm({ mode }) {
                                         dir: "rtl"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1293,
+                                        lineNumber: 1304,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1288,
+                                lineNumber: 1299,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1251,
+                        lineNumber: 1262,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9479,7 +9488,7 @@ function ProductForm({ mode }) {
                                         children: "Capacity"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1300,
+                                        lineNumber: 1311,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9492,13 +9501,13 @@ function ProductForm({ mode }) {
                                         className: "h-11"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1301,
+                                        lineNumber: 1312,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1299,
+                                lineNumber: 1310,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9508,7 +9517,7 @@ function ProductForm({ mode }) {
                                         children: "Capacity Unit"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1312,
+                                        lineNumber: 1323,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9522,19 +9531,19 @@ function ProductForm({ mode }) {
                                         emptyMessage: "No unit found."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1313,
+                                        lineNumber: 1324,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1311,
+                                lineNumber: 1322,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1298,
+                        lineNumber: 1309,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9548,7 +9557,7 @@ function ProductForm({ mode }) {
                                         children: "Weight"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1327,
+                                        lineNumber: 1338,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9561,13 +9570,13 @@ function ProductForm({ mode }) {
                                         className: "h-11"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1328,
+                                        lineNumber: 1339,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1326,
+                                lineNumber: 1337,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9577,7 +9586,7 @@ function ProductForm({ mode }) {
                                         children: "Weight Unit"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1339,
+                                        lineNumber: 1350,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9591,19 +9600,19 @@ function ProductForm({ mode }) {
                                         emptyMessage: "No unit found."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1340,
+                                        lineNumber: 1351,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1338,
+                                lineNumber: 1349,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1325,
+                        lineNumber: 1336,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9613,7 +9622,7 @@ function ProductForm({ mode }) {
                                 children: "Dimensions"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1353,
+                                lineNumber: 1364,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9626,7 +9635,7 @@ function ProductForm({ mode }) {
                                                 children: "Length"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1356,
+                                                lineNumber: 1367,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9634,34 +9643,6 @@ function ProductForm({ mode }) {
                                                 step: "0.01",
                                                 value: formData.length,
                                                 onChange: (e)=>updateField('length', e.target.value),
-                                                placeholder: "0",
-                                                className: "h-11"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1357,
-                                                columnNumber: 15
-                                            }, this)
-                                        ]
-                                    }, void 0, true, {
-                                        fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1355,
-                                        columnNumber: 13
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        children: [
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                className: "text-[10px] text-muted-foreground pl-1",
-                                                children: "Width"
-                                            }, void 0, false, {
-                                                fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1367,
-                                                columnNumber: 15
-                                            }, this),
-                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
-                                                type: "number",
-                                                step: "0.01",
-                                                value: formData.width,
-                                                onChange: (e)=>updateField('width', e.target.value),
                                                 placeholder: "0",
                                                 className: "h-11"
                                             }, void 0, false, {
@@ -9679,7 +9660,7 @@ function ProductForm({ mode }) {
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                 className: "text-[10px] text-muted-foreground pl-1",
-                                                children: "Height"
+                                                children: "Width"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
                                                 lineNumber: 1378,
@@ -9688,8 +9669,8 @@ function ProductForm({ mode }) {
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                 type: "number",
                                                 step: "0.01",
-                                                value: formData.height,
-                                                onChange: (e)=>updateField('height', e.target.value),
+                                                value: formData.width,
+                                                onChange: (e)=>updateField('width', e.target.value),
                                                 placeholder: "0",
                                                 className: "h-11"
                                             }, void 0, false, {
@@ -9707,7 +9688,7 @@ function ProductForm({ mode }) {
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                 className: "text-[10px] text-muted-foreground pl-1",
-                                                children: "Diameter"
+                                                children: "Height"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
                                                 lineNumber: 1389,
@@ -9716,8 +9697,8 @@ function ProductForm({ mode }) {
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
                                                 type: "number",
                                                 step: "0.01",
-                                                value: formData.diameter,
-                                                onChange: (e)=>updateField('diameter', e.target.value),
+                                                value: formData.height,
+                                                onChange: (e)=>updateField('height', e.target.value),
                                                 placeholder: "0",
                                                 className: "h-11"
                                             }, void 0, false, {
@@ -9735,10 +9716,38 @@ function ProductForm({ mode }) {
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                 className: "text-[10px] text-muted-foreground pl-1",
-                                                children: "Unit"
+                                                children: "Diameter"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
                                                 lineNumber: 1400,
+                                                columnNumber: 15
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
+                                                type: "number",
+                                                step: "0.01",
+                                                value: formData.diameter,
+                                                onChange: (e)=>updateField('diameter', e.target.value),
+                                                placeholder: "0",
+                                                className: "h-11"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-form.tsx",
+                                                lineNumber: 1401,
+                                                columnNumber: 15
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/components/inventory/product-form.tsx",
+                                        lineNumber: 1399,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "text-[10px] text-muted-foreground pl-1",
+                                                children: "Unit"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/product-form.tsx",
+                                                lineNumber: 1411,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9752,19 +9761,19 @@ function ProductForm({ mode }) {
                                                 emptyMessage: "No unit found."
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1401,
+                                                lineNumber: 1412,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1399,
+                                        lineNumber: 1410,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1354,
+                                lineNumber: 1365,
                                 columnNumber: 11
                             }, this),
                             formData.dimensionUnit && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9775,19 +9784,19 @@ function ProductForm({ mode }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1412,
+                                lineNumber: 1423,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1352,
+                        lineNumber: 1363,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1245,
+                lineNumber: 1256,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -9804,7 +9813,7 @@ function ProductForm({ mode }) {
                                     children: "Country of Origin"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1429,
+                                    lineNumber: 1440,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9819,13 +9828,13 @@ function ProductForm({ mode }) {
                                     allowAddNew: true
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1430,
+                                    lineNumber: 1441,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1428,
+                            lineNumber: 1439,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9836,7 +9845,7 @@ function ProductForm({ mode }) {
                                     children: "Unit"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1443,
+                                    lineNumber: 1454,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9850,20 +9859,20 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No unit found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1444,
+                                    lineNumber: 1455,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "unit"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1452,
+                                    lineNumber: 1463,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1442,
+                            lineNumber: 1453,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9874,7 +9883,7 @@ function ProductForm({ mode }) {
                                     children: "Min Sales Multiples"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1457,
+                                    lineNumber: 1468,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -9888,31 +9897,31 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No option found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1458,
+                                    lineNumber: 1469,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "minSalesMultiples"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1466,
+                                    lineNumber: 1477,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1456,
+                            lineNumber: 1467,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 1426,
+                    lineNumber: 1437,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1420,
+                lineNumber: 1431,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -9927,7 +9936,7 @@ function ProductForm({ mode }) {
                             children: "Default Price (KWD)"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1481,
+                            lineNumber: 1492,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9941,7 +9950,7 @@ function ProductForm({ mode }) {
                                             children: "Dinar"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1484,
+                                            lineNumber: 1495,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9954,13 +9963,13 @@ function ProductForm({ mode }) {
                                             "aria-label": "Dinar"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1485,
+                                            lineNumber: 1496,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1483,
+                                    lineNumber: 1494,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9971,7 +9980,7 @@ function ProductForm({ mode }) {
                                             children: "Fils"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1496,
+                                            lineNumber: 1507,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9982,7 +9991,7 @@ function ProductForm({ mode }) {
                                                     children: "."
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                    lineNumber: 1498,
+                                                    lineNumber: 1509,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9996,25 +10005,25 @@ function ProductForm({ mode }) {
                                                     "aria-label": "Fils"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                    lineNumber: 1501,
+                                                    lineNumber: 1512,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                                            lineNumber: 1497,
+                                            lineNumber: 1508,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1495,
+                                    lineNumber: 1506,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1482,
+                            lineNumber: 1493,
                             columnNumber: 11
                         }, this),
                         combinedPrice && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -10025,18 +10034,18 @@ function ProductForm({ mode }) {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1515,
+                            lineNumber: 1526,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 1480,
+                    lineNumber: 1491,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1474,
+                lineNumber: 1485,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -10055,7 +10064,7 @@ function ProductForm({ mode }) {
                                         children: "SEO Title EN"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1534,
+                                        lineNumber: 1545,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10067,7 +10076,7 @@ function ProductForm({ mode }) {
                                         maxLength: 60
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1535,
+                                        lineNumber: 1546,
                                         columnNumber: 13
                                     }, this),
                                     formData.seoTitleEn && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -10078,13 +10087,13 @@ function ProductForm({ mode }) {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1544,
+                                        lineNumber: 1555,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1533,
+                                lineNumber: 1544,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10099,18 +10108,18 @@ function ProductForm({ mode }) {
                                                 children: "SEO Title AR"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1551,
+                                                lineNumber: 1562,
                                                 columnNumber: 15
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                                lineNumber: 1552,
+                                                lineNumber: 1563,
                                                 columnNumber: 15
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1550,
+                                        lineNumber: 1561,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10122,19 +10131,19 @@ function ProductForm({ mode }) {
                                         dir: "rtl"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1554,
+                                        lineNumber: 1565,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1549,
+                                lineNumber: 1560,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1531,
+                        lineNumber: 1542,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10149,18 +10158,18 @@ function ProductForm({ mode }) {
                                         children: "SEO Description EN"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1568,
+                                        lineNumber: 1579,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1569,
+                                        lineNumber: 1580,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1567,
+                                lineNumber: 1578,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -10171,13 +10180,13 @@ function ProductForm({ mode }) {
                                 rows: 2
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1571,
+                                lineNumber: 1582,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1566,
+                        lineNumber: 1577,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10192,18 +10201,18 @@ function ProductForm({ mode }) {
                                         children: "SEO Description AR"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1583,
+                                        lineNumber: 1594,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1584,
+                                        lineNumber: 1595,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1582,
+                                lineNumber: 1593,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -10215,13 +10224,13 @@ function ProductForm({ mode }) {
                                 rows: 2
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1586,
+                                lineNumber: 1597,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1581,
+                        lineNumber: 1592,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10236,18 +10245,18 @@ function ProductForm({ mode }) {
                                         children: "Search Keywords"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1599,
+                                        lineNumber: 1610,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AutoBadge, {}, void 0, false, {
                                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                                        lineNumber: 1600,
+                                        lineNumber: 1611,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1598,
+                                lineNumber: 1609,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -10258,7 +10267,7 @@ function ProductForm({ mode }) {
                                 rows: 2
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1602,
+                                lineNumber: 1613,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -10266,19 +10275,19 @@ function ProductForm({ mode }) {
                                 children: "Pipe-separated keywords for search indexing"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                                lineNumber: 1609,
+                                lineNumber: 1620,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/product-form.tsx",
-                        lineNumber: 1597,
+                        lineNumber: 1608,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1525,
+                lineNumber: 1536,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(SectionCard, {
@@ -10296,7 +10305,7 @@ function ProductForm({ mode }) {
                                     children: "Internal Notes"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1625,
+                                    lineNumber: 1636,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$textarea$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Textarea"], {
@@ -10307,13 +10316,13 @@ function ProductForm({ mode }) {
                                     rows: 2
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1626,
+                                    lineNumber: 1637,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1624,
+                            lineNumber: 1635,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10324,7 +10333,7 @@ function ProductForm({ mode }) {
                                     children: "Validation Status"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1637,
+                                    lineNumber: 1648,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -10338,20 +10347,20 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No status found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1638,
+                                    lineNumber: 1649,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "validationStatus"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1646,
+                                    lineNumber: 1657,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1636,
+                            lineNumber: 1647,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10363,7 +10372,7 @@ function ProductForm({ mode }) {
                                     children: "Confidence Score"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1651,
+                                    lineNumber: 1662,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10378,20 +10387,20 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1652,
+                                    lineNumber: 1663,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(FieldError, {
                                     field: "confidenceScore"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1663,
+                                    lineNumber: 1674,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1650,
+                            lineNumber: 1661,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10402,7 +10411,7 @@ function ProductForm({ mode }) {
                                     children: "Pieces"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1668,
+                                    lineNumber: 1679,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10416,13 +10425,13 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1669,
+                                    lineNumber: 1680,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1667,
+                            lineNumber: 1678,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10433,7 +10442,7 @@ function ProductForm({ mode }) {
                                     children: "Set Count"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1683,
+                                    lineNumber: 1694,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -10447,13 +10456,13 @@ function ProductForm({ mode }) {
                                     className: "h-11"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1684,
+                                    lineNumber: 1695,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1682,
+                            lineNumber: 1693,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10463,7 +10472,7 @@ function ProductForm({ mode }) {
                                     children: "Shape"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1698,
+                                    lineNumber: 1709,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -10477,13 +10486,13 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No shape found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1699,
+                                    lineNumber: 1710,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1697,
+                            lineNumber: 1708,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10493,7 +10502,7 @@ function ProductForm({ mode }) {
                                     children: "Finish"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1711,
+                                    lineNumber: 1722,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -10507,13 +10516,13 @@ function ProductForm({ mode }) {
                                     emptyMessage: "No finish found."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1712,
+                                    lineNumber: 1723,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1710,
+                            lineNumber: 1721,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10523,7 +10532,7 @@ function ProductForm({ mode }) {
                                     children: "Additional Information"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1724,
+                                    lineNumber: 1735,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$searchable$2d$single$2d$select$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["SearchableSingleSelect"], {
@@ -10538,30 +10547,30 @@ function ProductForm({ mode }) {
                                     allowAddNew: true
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                                    lineNumber: 1725,
+                                    lineNumber: 1736,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/product-form.tsx",
-                            lineNumber: 1723,
+                            lineNumber: 1734,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/product-form.tsx",
-                    lineNumber: 1622,
+                    lineNumber: 1633,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/product-form.tsx",
-                lineNumber: 1616,
+                lineNumber: 1627,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/product-form.tsx",
-        lineNumber: 861,
+        lineNumber: 872,
         columnNumber: 5
     }, this);
 }

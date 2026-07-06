@@ -343,14 +343,81 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert in batches using Prisma
+    // Each product is created along with its ProductOriginal record for change tracking
     for (let i = 0; i < batchRows.length; i += BATCH_SIZE) {
       const batch = batchRows.slice(i, i + BATCH_SIZE);
 
       try {
         await db.$transaction(
           batch.map(({ data }) =>
-            db.product.create({ data })
-          )
+            db.product.create({
+              data,
+              include: { original: true }
+            })
+          ).flatMap(result => {
+            // After product creation, create ProductOriginal with the same values
+            const product = result;
+            return [
+              result,
+              db.productOriginal.create({
+                data: {
+                  productId: product.id,
+                  sourceRow: product.sourceRow,
+                  origProductId: product.productId,
+                  sku: product.sku,
+                  ndNumber: product.ndNumber,
+                  barcode: product.barcode,
+                  legacyCode: product.legacyCode,
+                  brand: product.brand,
+                  brandAr: product.brandAr,
+                  brandCode: product.brandCode,
+                  model: product.model,
+                  department: product.department,
+                  category: product.category,
+                  subcategory: product.subcategory,
+                  sectionCode: product.sectionCode,
+                  productFamily: product.productFamily,
+                  productType: product.productType,
+                  nameAr: product.nameAr,
+                  nameEn: product.nameEn,
+                  shortDescAr: product.shortDescAr,
+                  shortDescEn: product.shortDescEn,
+                  longDescAr: product.longDescAr,
+                  longDescEn: product.longDescEn,
+                  color: product.color,
+                  colorAr: product.colorAr,
+                  material: product.material,
+                  materialAr: product.materialAr,
+                  capacity: product.capacity,
+                  capacityUnit: product.capacityUnit,
+                  weight: product.weight,
+                  weightUnit: product.weightUnit,
+                  length: product.length,
+                  width: product.width,
+                  height: product.height,
+                  diameter: product.diameter,
+                  dimensionUnit: product.dimensionUnit,
+                  countryOfOrigin: product.countryOfOrigin,
+                  unit: product.unit,
+                  minSalesMultiples: product.minSalesMultiples,
+                  defaultPrice: product.defaultPrice,
+                  seoTitleEn: product.seoTitleEn,
+                  seoTitleAr: product.seoTitleAr,
+                  seoDescriptionEn: product.seoDescriptionEn,
+                  seoDescriptionAr: product.seoDescriptionAr,
+                  searchKeywords: product.searchKeywords,
+                  internalNotes: product.internalNotes,
+                  validationStatus: product.validationStatus,
+                  confidenceScore: product.confidenceScore,
+                  pieces: product.pieces,
+                  setCount: product.setCount,
+                  shape: product.shape,
+                  finish: product.finish,
+                  additionalInfo: product.additionalInfo,
+                }
+              })
+            ];
+          })
         );
 
         for (const { rowNum, data } of batch) {
@@ -367,7 +434,65 @@ export async function POST(request: NextRequest) {
         // Batch failed — retry row-by-row
         for (const { rowNum, data } of batch) {
           try {
-            await db.product.create({ data });
+            const product = await db.product.create({ data });
+            // Create ProductOriginal for change tracking
+            await db.productOriginal.create({
+              data: {
+                productId: product.id,
+                sourceRow: product.sourceRow,
+                origProductId: product.productId,
+                sku: product.sku,
+                ndNumber: product.ndNumber,
+                barcode: product.barcode,
+                legacyCode: product.legacyCode,
+                brand: product.brand,
+                brandAr: product.brandAr,
+                brandCode: product.brandCode,
+                model: product.model,
+                department: product.department,
+                category: product.category,
+                subcategory: product.subcategory,
+                sectionCode: product.sectionCode,
+                productFamily: product.productFamily,
+                productType: product.productType,
+                nameAr: product.nameAr,
+                nameEn: product.nameEn,
+                shortDescAr: product.shortDescAr,
+                shortDescEn: product.shortDescEn,
+                longDescAr: product.longDescAr,
+                longDescEn: product.longDescEn,
+                color: product.color,
+                colorAr: product.colorAr,
+                material: product.material,
+                materialAr: product.materialAr,
+                capacity: product.capacity,
+                capacityUnit: product.capacityUnit,
+                weight: product.weight,
+                weightUnit: product.weightUnit,
+                length: product.length,
+                width: product.width,
+                height: product.height,
+                diameter: product.diameter,
+                dimensionUnit: product.dimensionUnit,
+                countryOfOrigin: product.countryOfOrigin,
+                unit: product.unit,
+                minSalesMultiples: product.minSalesMultiples,
+                defaultPrice: product.defaultPrice,
+                seoTitleEn: product.seoTitleEn,
+                seoTitleAr: product.seoTitleAr,
+                seoDescriptionEn: product.seoDescriptionEn,
+                seoDescriptionAr: product.seoDescriptionAr,
+                searchKeywords: product.searchKeywords,
+                internalNotes: product.internalNotes,
+                validationStatus: product.validationStatus,
+                confidenceScore: product.confidenceScore,
+                pieces: product.pieces,
+                setCount: product.setCount,
+                shape: product.shape,
+                finish: product.finish,
+                additionalInfo: product.additionalInfo,
+              }
+            });
             imported++;
             if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
             else withoutPrice++;

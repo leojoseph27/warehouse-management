@@ -1,0 +1,1740 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useState, useEffect, useCallback, useMemo } from 'react';
+     4→     4→import { Button } from '@/components/ui/button';
+     5→     5→import { Input } from '@/components/ui/input';
+     6→     6→import { Label } from '@/components/ui/label';
+     7→     7→import { Textarea } from '@/components/ui/textarea';
+     8→     8→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+     9→     9→import { Alert, AlertDescription } from '@/components/ui/alert';
+    10→    10→import { Badge } from '@/components/ui/badge';
+    11→    11→import { SearchableSingleSelect } from './searchable-single-select';
+    12→    12→import { ImageGallery } from './image-gallery';
+    13→    13→import { BarcodeScanner } from './barcode-scanner';
+    14→    14→import { useInventoryStore, Product, DuplicateCheck } from '@/store/inventory-store';
+    15→    15→import {
+    16→    16→  ArrowLeft,
+    17→    17→  Save,
+    18→    18→  AlertTriangle,
+    19→    19→  Loader2,
+    20→    20→  ChevronDown,
+    21→    21→  ChevronRight,
+    22→    22→  Lock,
+    23→    23→  Sparkles,
+    24→    24→} from 'lucide-react';
+    25→    25→import { toast } from 'sonner';
+    26→    26→import {
+    27→    27→  BRAND_OPTIONS,
+    28→    28→  getBrandDerivatives,
+    29→    29→  DEPARTMENTS,
+    30→    30→  getCategoriesForDepartment,
+    31→    31→  getSubcategoriesForCategory,
+    32→    32→  categoryHasSubcategories,
+    33→    33→  PRODUCT_FAMILIES,
+    34→    34→  getFamiliesForSubcategory,
+    35→    35→  getTypesForFamily,
+    36→    36→  ALL_PRODUCT_TYPES,
+    37→    37→  COLOR_OPTIONS,
+    38→    38→  getColorAr,
+    39→    39→  MATERIAL_OPTIONS,
+    40→    40→  getMaterialAr,
+    41→    41→  UNIT_OPTIONS,
+    42→    42→  CAPACITY_UNIT_OPTIONS,
+    43→    43→  WEIGHT_UNIT_OPTIONS,
+    44→    44→  DIMENSION_UNIT_OPTIONS,
+    45→    45→  SHAPE_OPTIONS,
+    46→    46→  FINISH_OPTIONS,
+    47→    47→  ADDITIONAL_INFO_OPTIONS,
+    48→    48→  VALIDATION_STATUS_OPTIONS,
+    49→    49→  MIN_SALES_MULTIPLES_OPTIONS,
+    50→    50→  COUNTRY_OPTIONS,
+    51→    51→  getSectionCodeForDepartment,
+    52→    52→  deriveShortDescAr,
+    53→    53→  deriveShortDescEn,
+    54→    54→  deriveLongDescEn,
+    55→    55→  deriveSeoTitleAr,
+    56→    56→  deriveSeoDescEn,
+    57→    57→  deriveSeoDescAr,
+    58→    58→  deriveSearchKeywords,
+    59→    59→} from '@/lib/lookups';
+    60→    60→
+    61→    61→// ─────────────────────────────────────────────────────────────
+    62→    62→// Types
+    63→    63→// ─────────────────────────────────────────────────────────────
+    64→    64→
+    65→    65→interface ProductFormProps {
+    66→    66→  mode: 'add' | 'edit';
+    67→    67→}
+    68→    68→
+    69→    69→/** All form fields stored as strings for controlled-input handling */
+    70→    70→interface FormData {
+    71→    71→  sourceRow: string;
+    72→    72→  productId: string;
+    73→    73→  sku: string;
+    74→    74→  ndNumber: string;
+    75→    75→  barcode: string;
+    76→    76→  legacyCode: string;
+    77→    77→  brand: string;
+    78→    78→  brandAr: string;
+    79→    79→  brandCode: string;
+    80→    80→  model: string;
+    81→    81→  department: string;
+    82→    82→  category: string;
+    83→    83→  subcategory: string;
+    84→    84→  sectionCode: string;
+    85→    85→  productFamily: string;
+    86→    86→  productType: string;
+    87→    87→  nameAr: string;
+    88→    88→  nameEn: string;
+    89→    89→  shortDescAr: string;
+    90→    90→  shortDescEn: string;
+    91→    91→  longDescAr: string;
+    92→    92→  longDescEn: string;
+    93→    93→  color: string;
+    94→    94→  colorAr: string;
+    95→    95→  material: string;
+    96→    96→  materialAr: string;
+    97→    97→  capacity: string;
+    98→    98→  capacityUnit: string;
+    99→    99→  weight: string;
+   100→   100→  weightUnit: string;
+   101→   101→  length: string;
+   102→   102→  width: string;
+   103→   103→  height: string;
+   104→   104→  diameter: string;
+   105→   105→  dimensionUnit: string;
+   106→   106→  countryOfOrigin: string;
+   107→   107→  unit: string;
+   108→   108→  minSalesMultiples: string;
+   109→   109→  defaultPrice: string;
+   110→   110→  seoTitleEn: string;
+   111→   111→  seoTitleAr: string;
+   112→   112→  seoDescriptionEn: string;
+   113→   113→  seoDescriptionAr: string;
+   114→   114→  searchKeywords: string;
+   115→   115→  internalNotes: string;
+   116→   116→  validationStatus: string;
+   117→   117→  confidenceScore: string;
+   118→   118→  pieces: string;
+   119→   119→  setCount: string;
+   120→   120→  shape: string;
+   121→   121→  finish: string;
+   122→   122→  additionalInfo: string;
+   123→   123→}
+   124→   124→
+   125→   125→const EMPTY_FORM: FormData = {
+   126→   126→  sourceRow: '',
+   127→   127→  productId: '',
+   128→   128→  sku: '',
+   129→   129→  ndNumber: '',
+   130→   130→  barcode: '',
+   131→   131→  legacyCode: '',
+   132→   132→  brand: '',
+   133→   133→  brandAr: '',
+   134→   134→  brandCode: '',
+   135→   135→  model: '',
+   136→   136→  department: '',
+   137→   137→  category: '',
+   138→   138→  subcategory: '',
+   139→   139→  sectionCode: '',
+   140→   140→  productFamily: '',
+   141→   141→  productType: '',
+   142→   142→  nameAr: '',
+   143→   143→  nameEn: '',
+   144→   144→  shortDescAr: '',
+   145→   145→  shortDescEn: '',
+   146→   146→  longDescAr: '',
+   147→   147→  longDescEn: '',
+   148→   148→  color: '',
+   149→   149→  colorAr: '',
+   150→   150→  material: '',
+   151→   151→  materialAr: '',
+   152→   152→  capacity: '',
+   153→   153→  capacityUnit: '',
+   154→   154→  weight: '',
+   155→   155→  weightUnit: '',
+   156→   156→  length: '',
+   157→   157→  width: '',
+   158→   158→  height: '',
+   159→   159→  diameter: '',
+   160→   160→  dimensionUnit: '',
+   161→   161→  countryOfOrigin: '',
+   162→   162→  unit: '',
+   163→   163→  minSalesMultiples: '',
+   164→   164→  defaultPrice: '',
+   165→   165→  seoTitleEn: '',
+   166→   166→  seoTitleAr: '',
+   167→   167→  seoDescriptionEn: '',
+   168→   168→  seoDescriptionAr: '',
+   169→   169→  searchKeywords: '',
+   170→   170→  internalNotes: '',
+   171→   171→  validationStatus: '',
+   172→   172→  confidenceScore: '',
+   173→   173→  pieces: '',
+   174→   174→  setCount: '',
+   175→   175→  shape: '',
+   176→   176→  finish: '',
+   177→   177→  additionalInfo: '',
+   178→   178→};
+   179→   179→
+   180→   180→// Section names matching COLUMN_GROUPS order
+   181→   181→const SECTION_ORDER = [
+   182→   182→  'Product Identity',
+   183→   183→  'Classification',
+   184→   184→  'Product Information',
+   185→   185→  'Attributes',
+   186→   186→  'Logistics',
+   187→   187→  'Commercial',
+   188→   188→  'SEO',
+   189→   189→  'Internal',
+   190→   190→] as const;
+   191→   191→
+   192→   192→type SectionName = (typeof SECTION_ORDER)[number];
+   193→   193→
+   194→   194→// ─────────────────────────────────────────────────────────────
+   195→   195→// Helper: Label with optional mandatory asterisk
+   196→   196→// ─────────────────────────────────────────────────────────────
+   197→   197→
+   198→   198→function FieldLabel({
+   199→   199→  htmlFor,
+   200→   200→  mandatory = false,
+   201→   201→  children,
+   202→   202→}: {
+   203→   203→  htmlFor?: string;
+   204→   204→  mandatory?: boolean;
+   205→   205→  children: React.ReactNode;
+   206→   206→}) {
+   207→   207→  return (
+   208→   208→    <Label htmlFor={htmlFor} className="text-sm font-medium text-foreground flex items-center gap-1">
+   209→   209→      {children}
+   210→   210→      {mandatory && <span className="text-red-500 text-base leading-none">*</span>}
+   211→   211→    </Label>
+   212→   212→  );
+   213→   213→}
+   214→   214→
+   215→   215→// ─────────────────────────────────────────────────────────────
+   216→   216→// Helper: Auto-derived badge
+   217→   217→// ─────────────────────────────────────────────────────────────
+   218→   218→
+   219→   219→function AutoBadge() {
+   220→   220→  return (
+   221→   221→    <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 h-5 gap-0.5 font-normal text-muted-foreground bg-muted">
+   222→   222→      <Sparkles className="h-2.5 w-2.5" />
+   223→   223→      auto
+   224→   224→    </Badge>
+   225→   225→  );
+   226→   226→}
+   227→   227→
+   228→   228→// ─────────────────────────────────────────────────────────────
+   229→   229→// Helper: ReadOnly input with lock icon
+   230→   230→// ─────────────────────────────────────────────────────────────
+   231→   231→
+   232→   232→function ReadOnlyInput({
+   233→   233→  value,
+   234→   234→  placeholder,
+   235→   235→  dir,
+   236→   236→  className = '',
+   237→   237→}: {
+   238→   238→  value: string;
+   239→   239→  placeholder?: string;
+   240→   240→  dir?: string;
+   241→   241→  className?: string;
+   242→   242→}) {
+   243→   243→  return (
+   244→   244→    <div className="relative">
+   245→   245→      <Input
+   246→   246→        value={value}
+   247→   247→        readOnly
+   248→   248→        placeholder={placeholder}
+   249→   249→        dir={dir}
+   250→   250→        className={`h-11 bg-muted/60 border-muted cursor-default pr-9 ${className}`}
+   251→   251→      />
+   252→   252→      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+   253→   253→    </div>
+   254→   254→  );
+   255→   255→}
+   256→   256→
+   257→   257→// ─────────────────────────────────────────────────────────────
+   258→   258→// Helper: Collapsible Section Card
+   259→   259→// ─────────────────────────────────────────────────────────────
+   260→   260→
+   261→   261→function SectionCard({
+   262→   262→  title,
+   263→   263→  fieldCount,
+   264→   264→  open,
+   265→   265→  onToggle,
+   266→   266→  children,
+   267→   267→}: {
+   268→   268→  title: string;
+   269→   269→  fieldCount: number;
+   270→   270→  open: boolean;
+   271→   271→  onToggle: () => void;
+   272→   272→  children: React.ReactNode;
+   273→   273→}) {
+   274→   274→  return (
+   275→   275→    <Card>
+   276→   276→      <CardHeader
+   277→   277→        className="pb-0 cursor-pointer select-none hover:bg-accent/30 transition-colors rounded-t-lg"
+   278→   278→        onClick={onToggle}
+   279→   279→      >
+   280→   280→        <div className="flex items-center justify-between py-1">
+   281→   281→          <div className="flex items-center gap-2">
+   282→   282→            {open ? (
+   283→   283→              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+   284→   284→            ) : (
+   285→   285→              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+   286→   286→            )}
+   287→   287→            <CardTitle className="text-base">{title}</CardTitle>
+   288→   288→            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal text-muted-foreground">
+   289→   289→              {fieldCount} fields
+   290→   290→            </Badge>
+   291→   291→          </div>
+   292→   292→        </div>
+   293→   293→      </CardHeader>
+   294→   294→      {open && <CardContent className="pt-4 space-y-4">{children}</CardContent>}
+   295→   295→    </Card>
+   296→   296→  );
+   297→   297→}
+   298→   298→
+   299→   299→// ─────────────────────────────────────────────────────────────
+   300→   300→// Main Component
+   301→   301→// ─────────────────────────────────────────────────────────────
+   302→   302→
+   303→   303→export function ProductForm({ mode }: ProductFormProps) {
+   304→   304→  const {
+   305→   305→    currentProduct,
+   306→   306→    setView,
+   307→   307→    goBack,
+   308→   308→    isSaving,
+   309→   309→    setSaving,
+   310→   310→    duplicates,
+   311→   311→    setDuplicates,
+   312→   312→    setCurrentProduct,
+   313→   313→  } = useInventoryStore();
+   314→   314→
+   315→   315→  // ── Form data ──────────────────────────────────────────────
+   316→   316→  const [formData, setFormData] = useState<FormData>({ ...EMPTY_FORM });
+   317→   317→
+   318→   318→  // ── Section collapse state ─────────────────────────────────
+   319→   319→  const [expandedSections, setExpandedSections] = useState<Set<SectionName>>(
+   320→   320→    new Set(['Product Identity', 'Classification'])
+   321→   321→  );
+   322→   322→
+   323→   323→  const toggleSection = useCallback((section: SectionName) => {
+   324→   324→    setExpandedSections((prev) => {
+   325→   325→      const next = new Set(prev);
+   326→   326→      if (next.has(section)) next.delete(section);
+   327→   327→      else next.add(section);
+   328→   328→      return next;
+   329→   329→    });
+   330→   330→  }, []);
+   331→   331→
+   332→   332→  // ── Dinar / Fils split for Price (KWD, 3 decimal places) ──
+   333→   333→  const [priceDinar, setPriceDinar] = useState('');
+   334→   334→  const [priceFils, setPriceFils] = useState('');
+   335→   335→
+   336→   336→  // ── Validation errors ──────────────────────────────────────
+   337→   337→  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+   338→   338→
+   339→   339→  // ── Duplicate check ────────────────────────────────────────
+   340→   340→  const checkDuplicates = useCallback(
+   341→   341→    async (fields: { ndNumber?: string; barcode?: string; productId?: string; sku?: string }) => {
+   342→   342→      const { ndNumber, barcode, productId, sku } = fields;
+   343→   343→      if (!ndNumber && !barcode && !productId && !sku) {
+   344→   344→        setDuplicates(null);
+   345→   345→        return;
+   346→   346→      }
+   347→   347→      try {
+   348→   348→        const params = new URLSearchParams();
+   349→   349→        if (ndNumber) params.set('ndNumber', ndNumber);
+   350→   350→        if (barcode) params.set('barcode', barcode);
+   351→   351→        if (productId) params.set('productId', productId);
+   352→   352→        if (sku) params.set('sku', sku);
+   353→   353→        if (mode === 'edit' && currentProduct) params.set('excludeId', currentProduct.id);
+   354→   354→
+   355→   355→        const res = await fetch(`/api/products/check-duplicate?${params}`);
+   356→   356→        if (res.ok) {
+   357→   357→          const data = await res.json();
+   358→   358→          setDuplicates(data.duplicates);
+   359→   359→        }
+   360→   360→      } catch (error) {
+   361→   361→        console.error('Error checking duplicates:', error);
+   362→   362→      }
+   363→   363→    },
+   364→   364→    [mode, currentProduct, setDuplicates]
+   365→   365→  );
+   366→   366→
+   367→   367→  // ── Generic field updater with auto-derivations ────────────
+   368→   368→  const updateField = useCallback(
+   369→   369→    (field: keyof FormData, value: string) => {
+   370→   370→      setFormData((prev) => {
+   371→   371→        const next = { ...prev, [field]: value };
+   372→   372→
+   373→   373→        // ── Brand → auto-fill Brand AR, Brand Code ──
+   374→   374→        if (field === 'brand') {
+   375→   375→          const deriv = getBrandDerivatives(value || null);
+   376→   376→          next.brandAr = deriv.brandAr;
+   377→   377→          next.brandCode = deriv.brandCode;
+   378→   378→          // Re-derive SEO & long desc
+   379→   379→          next.longDescEn = deriveLongDescEn(value || null, prev.nameEn || null);
+   380→   380→          next.seoDescriptionEn = deriveSeoDescEn(value || null, prev.productType || null);
+   381→   381→          next.seoDescriptionAr = deriveSeoDescAr(deriv.brandAr || null, prev.productType || null);
+   382→   382→          next.searchKeywords = deriveSearchKeywords(value || null, prev.productFamily || null, prev.productType || null);
+   383→   383→        }
+   384→   384→
+   385→   385→        // ── Color → auto-fill Color AR ──
+   386→   386→        if (field === 'color') {
+   387→   387→          next.colorAr = getColorAr(value || null);
+   388→   388→        }
+   389→   389→
+   390→   390→        // ── Material → auto-fill Material AR ──
+   391→   391→        if (field === 'material') {
+   392→   392→          next.materialAr = getMaterialAr(value || null);
+   393→   393→        }
+   394→   394→
+   395→   395→        // ── Department → auto-fill Section Code + reset Category chain ──
+   396→   396→        if (field === 'department') {
+   397→   397→          next.sectionCode = getSectionCodeForDepartment(value || null);
+   398→   398→          next.category = '';
+   399→   399→          next.subcategory = '';
+   400→   400→          next.productFamily = '';
+   401→   401→          next.productType = '';
+   402→   402→        }
+   403→   403→
+   404→   404→        // ── Category → reset Subcategory chain ──
+   405→   405→        if (field === 'category') {
+   406→   406→          next.subcategory = '';
+   407→   407→          next.productFamily = '';
+   408→   408→          next.productType = '';
+   409→   409→        }
+   410→   410→
+   411→   411→        // ── Subcategory → reset Product Family chain ──
+   412→   412→        if (field === 'subcategory') {
+   413→   413→          next.productFamily = '';
+   414→   414→          next.productType = '';
+   415→   415→        }
+   416→   416→
+   417→   417→        // ── Product Family → reset Product Type ──
+   418→   418→        if (field === 'productFamily') {
+   419→   419→          next.productType = '';
+   420→   420→          next.searchKeywords = deriveSearchKeywords(prev.brand || null, value || null, prev.productType || null);
+   421→   421→        }
+   422→   422→
+   423→   423→        // ── Product Type → re-derive SEO ──
+   424→   424→        if (field === 'productType') {
+   425→   425→          next.seoDescriptionEn = deriveSeoDescEn(prev.brand || null, value || null);
+   426→   426→          const brandAr = prev.brandAr || getBrandDerivatives(prev.brand || null).brandAr;
+   427→   427→          next.seoDescriptionAr = deriveSeoDescAr(brandAr || null, value || null);
+   428→   428→          next.searchKeywords = deriveSearchKeywords(prev.brand || null, prev.productFamily || null, value || null);
+   429→   429→        }
+   430→   430→
+   431→   431→        // ── Name AR → auto-derive Short Desc AR, SEO Title AR ──
+   432→   432→        if (field === 'nameAr') {
+   433→   433→          next.shortDescAr = deriveShortDescAr(value || null);
+   434→   434→          next.seoTitleAr = deriveSeoTitleAr(value || null);
+   435→   435→        }
+   436→   436→
+   437→   437→        // ── Name EN → auto-derive Short Desc EN, Long Desc EN ──
+   438→   438→        if (field === 'nameEn') {
+   439→   439→          next.shortDescEn = deriveShortDescEn(value || null);
+   440→   440→          next.longDescEn = deriveLongDescEn(prev.brand || null, value || null);
+   441→   441→        }
+   442→   442→
+   443→   443→        // ── Dimensions → default Dimension Unit to 'cm' ──
+   444→   444→        if (['length', 'width', 'height', 'diameter'].includes(field)) {
+   445→   445→          if (value && !next.dimensionUnit) {
+   446→   446→            next.dimensionUnit = 'cm';
+   447→   447→          }
+   448→   448→        }
+   449→   449→
+   450→   450→        return next;
+   451→   451→      });
+   452→   452→
+   453→   453→      // ── Trigger duplicate check for key fields ──
+   454→   454→      if (['ndNumber', 'barcode', 'productId', 'sku'].includes(field)) {
+   455→   455→        // Use a timeout so state updates first
+   456→   456→        setTimeout(() => {
+   457→   457→          setFormData((current) => {
+   458→   458→            checkDuplicates({
+   459→   459→              ndNumber: field === 'ndNumber' ? value : current.ndNumber,
+   460→   460→              barcode: field === 'barcode' ? value : current.barcode,
+   461→   461→              productId: field === 'productId' ? value : current.productId,
+   462→   462→              sku: field === 'sku' ? value : current.sku,
+   463→   463→            });
+   464→   464→            return current; // don't mutate
+   465→   465→          });
+   466→   466→        }, 0);
+   467→   467→      }
+   468→   468→
+   469→   469→      // Clear validation error for this field
+   470→   470→      setValidationErrors((prev) => {
+   471→   471→        if (prev[field]) {
+   472→   472→          const next = { ...prev };
+   473→   473→          delete next[field];
+   474→   474→          return next;
+   475→   475→        }
+   476→   476→        return prev;
+   477→   477→      });
+   478→   478→    },
+   479→   479→    [checkDuplicates]
+   480→   480→  );
+   481→   481→
+   482→   482→  // ── Helper: parse price string into Dinar + Fils ──
+   483→   483→  const parsePriceToDinarFils = (priceStr: string): { dinar: string; fils: string } => {
+   484→   484→    if (!priceStr) return { dinar: '', fils: '' };
+   485→   485→    const num = parseFloat(priceStr);
+   486→   486→    if (isNaN(num)) return { dinar: '', fils: '' };
+   487→   487→    const dinar = Math.floor(num);
+   488→   488→    const fils = Math.round((num - dinar) * 1000);
+   489→   489→    return { dinar: String(dinar), fils: String(fils).padStart(3, '0') };
+   490→   490→  };
+   491→   491→
+   492→   492→  // Compute the combined price string from Dinar + Fils
+   493→   493→  const combinedPrice = useMemo(() => {
+   494→   494→    const dinar = priceDinar.trim() || '0';
+   495→   495→    const filsRaw = priceFils.trim();
+   496→   496→    const fils = filsRaw ? filsRaw.padStart(3, '0') : '000';
+   497→   497→    const dinarNum = parseInt(dinar) || 0;
+   498→   498→    const filsNum = parseInt(fils) || 0;
+   499→   499→    if (dinarNum === 0 && filsNum === 0) return '';
+   500→   500→    return `${dinarNum}.${fils}`;
+   501→   501→  }, [priceDinar, priceFils]);
+   502→   502→
+   503→   503→  const handlePriceDinarChange = useCallback(
+   504→   504→    (value: string) => {
+   505→   505→      const clean = value.replace(/[^0-9]/g, '');
+   506→   506→      setPriceDinar(clean);
+   507→   507→      const dinar = clean || '0';
+   508→   508→      const filsRaw = priceFils.trim();
+   509→   509→      const fils = filsRaw ? filsRaw.padStart(3, '0') : '000';
+   510→   510→      const dinarNum = parseInt(dinar) || 0;
+   511→   511→      const filsNum = parseInt(fils) || 0;
+   512→   512→      if (dinarNum === 0 && filsNum === 0) {
+   513→   513→        updateField('defaultPrice', '');
+   514→   514→      } else {
+   515→   515→        updateField('defaultPrice', `${dinarNum}.${fils}`);
+   516→   516→      }
+   517→   517→    },
+   518→   518→    [priceFils, updateField]
+   519→   519→  );
+   520→   520→
+   521→   521→  const handlePriceFilsChange = useCallback(
+   522→   522→    (value: string) => {
+   523→   523→      let clean = value.replace(/[^0-9]/g, '');
+   524→   524→      if (clean.length > 3) clean = clean.slice(0, 3);
+   525→   525→      if (clean && parseInt(clean) > 999) clean = '999';
+   526→   526→      setPriceFils(clean);
+   527→   527→      const dinar = priceDinar.trim() || '0';
+   528→   528→      const fils = clean ? clean.padStart(3, '0') : '000';
+   529→   529→      const dinarNum = parseInt(dinar) || 0;
+   530→   530→      const filsNum = parseInt(fils) || 0;
+   531→   531→      if (dinarNum === 0 && filsNum === 0) {
+   532→   532→        updateField('defaultPrice', '');
+   533→   533→      } else {
+   534→   534→        updateField('defaultPrice', `${dinarNum}.${fils}`);
+   535→   535→      }
+   536→   536→    },
+   537→   537→    [priceDinar, updateField]
+   538→   538→  );
+   539→   539→
+   540→   540→  // ── Load form data from currentProduct in edit mode ────────
+   541→   541→  useEffect(() => {
+   542→   542→    if (mode === 'edit' && currentProduct) {
+   543→   543→      const p = currentProduct;
+   544→   544→      setFormData({
+   545→   545→        sourceRow: p.sourceRow?.toString() || '',
+   546→   546→        productId: p.productId || '',
+   547→   547→        sku: p.sku || '',
+   548→   548→        ndNumber: p.ndNumber || '',
+   549→   549→        barcode: p.barcode || '',
+   550→   550→        legacyCode: p.legacyCode || '',
+   551→   551→        brand: p.brand || '',
+   552→   552→        brandAr: p.brandAr || '',
+   553→   553→        brandCode: p.brandCode || '',
+   554→   554→        model: p.model || '',
+   555→   555→        department: p.department || '',
+   556→   556→        category: p.category || '',
+   557→   557→        subcategory: p.subcategory || '',
+   558→   558→        sectionCode: p.sectionCode || '',
+   559→   559→        productFamily: p.productFamily || '',
+   560→   560→        productType: p.productType || '',
+   561→   561→        nameAr: p.nameAr || '',
+   562→   562→        nameEn: p.nameEn || '',
+   563→   563→        shortDescAr: p.shortDescAr || '',
+   564→   564→        shortDescEn: p.shortDescEn || '',
+   565→   565→        longDescAr: p.longDescAr || '',
+   566→   566→        longDescEn: p.longDescEn || '',
+   567→   567→        color: p.color || '',
+   568→   568→        colorAr: p.colorAr || '',
+   569→   569→        material: p.material || '',
+   570→   570→        materialAr: p.materialAr || '',
+   571→   571→        capacity: p.capacity?.toString() || '',
+   572→   572→        capacityUnit: p.capacityUnit || '',
+   573→   573→        weight: p.weight?.toString() || '',
+   574→   574→        weightUnit: p.weightUnit || '',
+   575→   575→        length: p.length?.toString() || '',
+   576→   576→        width: p.width?.toString() || '',
+   577→   577→        height: p.height?.toString() || '',
+   578→   578→        diameter: p.diameter?.toString() || '',
+   579→   579→        dimensionUnit: p.dimensionUnit || '',
+   580→   580→        countryOfOrigin: p.countryOfOrigin || '',
+   581→   581→        unit: p.unit || '',
+   582→   582→        minSalesMultiples: p.minSalesMultiples || '',
+   583→   583→        defaultPrice: p.defaultPrice?.toString() || '',
+   584→   584→        seoTitleEn: p.seoTitleEn || '',
+   585→   585→        seoTitleAr: p.seoTitleAr || '',
+   586→   586→        seoDescriptionEn: p.seoDescriptionEn || '',
+   587→   587→        seoDescriptionAr: p.seoDescriptionAr || '',
+   588→   588→        searchKeywords: p.searchKeywords || '',
+   589→   589→        internalNotes: p.internalNotes || '',
+   590→   590→        validationStatus: p.validationStatus || '',
+   591→   591→        confidenceScore: p.confidenceScore?.toString() || '',
+   592→   592→        pieces: p.pieces?.toString() || '',
+   593→   593→        setCount: p.setCount?.toString() || '',
+   594→   594→        shape: p.shape || '',
+   595→   595→        finish: p.finish || '',
+   596→   596→        additionalInfo: p.additionalInfo || '',
+   597→   597→      });
+   598→   598→
+   599→   599→      const { dinar, fils } = parsePriceToDinarFils(p.defaultPrice?.toString() || '');
+   600→   600→      setPriceDinar(dinar);
+   601→   601→      setPriceFils(fils);
+   602→   602→    }
+   603→   603→  }, [mode, currentProduct]);
+   604→   604→
+   605→   605→  // ── Dependent dropdown option lists ────────────────────────
+   606→   606→  const categoryOptions = useMemo(
+   607→   607→    () => getCategoriesForDepartment(formData.department || null),
+   608→   608→    [formData.department]
+   609→   609→  );
+   610→   610→
+   611→   611→  const subcategoryOptions = useMemo(
+   612→   612→    () => getSubcategoriesForCategory(formData.department || null, formData.category || null),
+   613→   613→    [formData.department, formData.category]
+   614→   614→  );
+   615→   615→
+   616→   616→  const hasSubcategories = useMemo(
+   617→   617→    () => categoryHasSubcategories(formData.department || null, formData.category || null),
+   618→   618→    [formData.department, formData.category]
+   619→   619→  );
+   620→   620→
+   621→   621→  const productFamilyOptions = useMemo(
+   622→   622→    () => getFamiliesForSubcategory(formData.subcategory || null),
+   623→   623→    [formData.subcategory]
+   624→   624→  );
+   625→   625→
+   626→   626→  const productTypeOptions = useMemo(
+   627→   627→    () => getTypesForFamily(formData.productFamily || null),
+   628→   628→    [formData.productFamily]
+   629→   629→  );
+   630→   630→
+   631→   631→  // ── Validation ─────────────────────────────────────────────
+   632→   632→  const validateForm = useCallback((): boolean => {
+   633→   633→    const errors: Record<string, string> = {};
+   634→   634→
+   635→   635→    // Mandatory fields
+   636→   636→    if (!formData.productId.trim()) errors.productId = 'Product ID is required';
+   637→   637→    if (!formData.sku.trim()) errors.sku = 'SKU is required';
+   638→   638→    if (!formData.barcode.trim()) errors.barcode = 'Barcode is required';
+   639→   639→    if (!formData.brand) errors.brand = 'Brand is required';
+   640→   640→    if (!formData.department) errors.department = 'Department is required';
+   641→   641→    if (!formData.category) errors.category = 'Category is required';
+   642→   642→    if (!formData.productFamily) errors.productFamily = 'Product Family is required';
+   643→   643→    if (!formData.productType) errors.productType = 'Product Type is required';
+   644→   644→    if (!formData.nameAr.trim()) errors.nameAr = 'Name AR is required';
+   645→   645→    if (!formData.nameEn.trim()) errors.nameEn = 'Name EN is required';
+   646→   646→    if (!formData.unit) errors.unit = 'Unit is required';
+   647→   647→    if (!formData.minSalesMultiples) errors.minSalesMultiples = 'Min Sales Multiples is required';
+   648→   648→    if (!formData.validationStatus) errors.validationStatus = 'Validation Status is required';
+   649→   649→
+   650→   650→    // Format validations
+   651→   651→    if (formData.ndNumber && !/^ND-\d{4}(-[A-Z0-9-]+)?$/.test(formData.ndNumber)) {
+   652→   652→      errors.ndNumber = 'Format: ND-XXXX or ND-XXXX-SUFFIX';
+   653→   653→    }
+   654→   654→    if (formData.barcode && !/^\d{12,13}$/.test(formData.barcode)) {
+   655→   655→      errors.barcode = 'Barcode must be 12-13 digits';
+   656→   656→    }
+   657→   657→
+   658→   658→    // Confidence score range
+   659→   659→    if (formData.confidenceScore) {
+   660→   660→      const score = parseInt(formData.confidenceScore);
+   661→   661→      if (isNaN(score) || score < 0 || score > 100) {
+   662→   662→        errors.confidenceScore = 'Must be 0-100';
+   663→   663→      }
+   664→   664→    }
+   665→   665→
+   666→   666→    setValidationErrors(errors);
+   667→   667→    return Object.keys(errors).length === 0;
+   668→   668→  }, [formData]);
+   669→   669→
+   670→   670→  // ── Build save payload ─────────────────────────────────────
+   671→   671→  const buildPayload = useCallback(() => {
+   672→   672→    const toNum = (v: string): number | null => {
+   673→   673→      const n = parseFloat(v);
+   674→   674→      return v && !isNaN(n) ? n : null;
+   675→   675→    };
+   676→   676→    const toInt = (v: string): number | null => {
+   677→   677→      const n = parseInt(v, 10);
+   678→   678→      return v && !isNaN(n) ? n : null;
+   679→   679→    };
+   680→   680→    const toStr = (v: string): string | null => (v.trim() || null);
+   681→   681→
+   682→   682→    return {
+   683→   683→      sourceRow: toInt(formData.sourceRow),
+   684→   684→      productId: toStr(formData.productId),
+   685→   685→      sku: toStr(formData.sku),
+   686→   686→      ndNumber: toStr(formData.ndNumber),
+   687→   687→      barcode: toStr(formData.barcode),
+   688→   688→      legacyCode: toStr(formData.legacyCode),
+   689→   689→      brand: toStr(formData.brand),
+   690→   690→      brandAr: toStr(formData.brandAr),
+   691→   691→      brandCode: toStr(formData.brandCode),
+   692→   692→      model: toStr(formData.model),
+   693→   693→      department: toStr(formData.department),
+   694→   694→      category: toStr(formData.category),
+   695→   695→      subcategory: toStr(formData.subcategory),
+   696→   696→      sectionCode: toStr(formData.sectionCode),
+   697→   697→      productFamily: toStr(formData.productFamily),
+   698→   698→      productType: toStr(formData.productType),
+   699→   699→      nameAr: toStr(formData.nameAr),
+   700→   700→      nameEn: toStr(formData.nameEn),
+   701→   701→      shortDescAr: toStr(formData.shortDescAr),
+   702→   702→      shortDescEn: toStr(formData.shortDescEn),
+   703→   703→      longDescAr: toStr(formData.longDescAr),
+   704→   704→      longDescEn: toStr(formData.longDescEn),
+   705→   705→      color: toStr(formData.color),
+   706→   706→      colorAr: toStr(formData.colorAr),
+   707→   707→      material: toStr(formData.material),
+   708→   708→      materialAr: toStr(formData.materialAr),
+   709→   709→      capacity: toNum(formData.capacity),
+   710→   710→      capacityUnit: toStr(formData.capacityUnit),
+   711→   711→      weight: toNum(formData.weight),
+   712→   712→      weightUnit: toStr(formData.weightUnit),
+   713→   713→      length: toNum(formData.length),
+   714→   714→      width: toNum(formData.width),
+   715→   715→      height: toNum(formData.height),
+   716→   716→      diameter: toNum(formData.diameter),
+   717→   717→      dimensionUnit: toStr(formData.dimensionUnit),
+   718→   718→      countryOfOrigin: toStr(formData.countryOfOrigin),
+   719→   719→      unit: toStr(formData.unit),
+   720→   720→      minSalesMultiples: toStr(formData.minSalesMultiples),
+   721→   721→      defaultPrice: toNum(formData.defaultPrice),
+   722→   722→      seoTitleEn: toStr(formData.seoTitleEn),
+   723→   723→      seoTitleAr: toStr(formData.seoTitleAr),
+   724→   724→      seoDescriptionEn: toStr(formData.seoDescriptionEn),
+   725→   725→      seoDescriptionAr: toStr(formData.seoDescriptionAr),
+   726→   726→      searchKeywords: toStr(formData.searchKeywords),
+   727→   727→      internalNotes: toStr(formData.internalNotes),
+   728→   728→      validationStatus: toStr(formData.validationStatus),
+   729→   729→      confidenceScore: toInt(formData.confidenceScore),
+   730→   730→      pieces: toInt(formData.pieces),
+   731→   731→      setCount: toInt(formData.setCount),
+   732→   732→      shape: toStr(formData.shape),
+   733→   733→      finish: toStr(formData.finish),
+   734→   734→      additionalInfo: toStr(formData.additionalInfo),
+   735→   735→    };
+   736→   736→  }, [formData]);
+   737→   737→
+   738→   738→  // ── Save handler ───────────────────────────────────────────
+   739→   739→  const handleSave = async () => {
+   740→   740→    if (!validateForm()) {
+   741→   741→      toast.error('Please fix the validation errors before saving.');
+   742→   742→      // Expand sections that have errors
+   743→   743→      const errorFields = Object.keys(validationErrors);
+   744→   744→      // We can't perfectly map, but expand all sections to show errors
+   745→   745→      setExpandedSections(new Set(SECTION_ORDER));
+   746→   746→      return;
+   747→   747→    }
+   748→   748→
+   749→   749→    setSaving(true);
+   750→   750→    try {
+   751→   751→      const payload = buildPayload();
+   752→   752→      let res: Response | undefined;
+   753→   753→
+   754→   754→      if (mode === 'add') {
+   755→   755→        res = await fetch('/api/products', {
+   756→   756→          method: 'POST',
+   757→   757→          headers: { 'Content-Type': 'application/json' },
+   758→   758→          body: JSON.stringify(payload),
+   759→   759→        });
+   760→   760→      } else if (currentProduct) {
+   761→   761→        res = await fetch(`/api/products/${currentProduct.id}`, {
+   762→   762→          method: 'PUT',
+   763→   763→          headers: { 'Content-Type': 'application/json' },
+   764→   764→          body: JSON.stringify(payload),
+   765→   765→        });
+   766→   766→      }
+   767→   767→
+   768→   768→      if (res?.ok) {
+   769→   769→        toast.success(mode === 'add' ? 'Product created successfully!' : 'Product updated successfully!');
+   770→   770→        setView('products');
+   771→   771→      } else {
+   772→   772→        const errData = await res?.json().catch(() => ({}));
+   773→   773→        toast.error(errData?.error || 'Failed to save product');
+   774→   774→      }
+   775→   775→    } catch (error) {
+   776→   776→      console.error('Error saving product:', error);
+   777→   777→      toast.error('Failed to save product');
+   778→   778→    } finally {
+   779→   779→      setSaving(false);
+   780→   780→    }
+   781→   781→  };
+   782→   782→
+   783→   783→  // ── Image handlers (edit mode) ─────────────────────────────
+   784→   784→  const handleImageUpload = async (file: File, isPrimary?: boolean) => {
+   785→   785→    if (!currentProduct) return;
+   786→   786→    const fd = new FormData();
+   787→   787→    fd.append('file', file);
+   788→   788→    fd.append('productId', currentProduct.id);
+   789→   789→    if (isPrimary) fd.append('isPrimary', 'true');
+   790→   790→
+   791→   791→    const res = await fetch('/api/images/upload', { method: 'POST', body: fd });
+   792→   792→    if (res.ok) {
+   793→   793→      const newImage = await res.json();
+   794→   794→      setCurrentProduct({
+   795→   795→        ...currentProduct,
+   796→   796→        images: [...currentProduct.images, newImage].sort((a, b) => a.displayOrder - b.displayOrder),
+   797→   797→      });
+   798→   798→      toast.success('Image uploaded successfully');
+   799→   799→    } else {
+   800→   800→      let errorMsg = 'Upload failed';
+   801→   801→      try {
+   802→   802→        const errData = await res.json();
+   803→   803→        errorMsg = errData.error || errorMsg;
+   804→   804→      } catch {}
+   805→   805→      toast.error(errorMsg);
+   806→   806→      throw new Error(errorMsg);
+   807→   807→    }
+   808→   808→  };
+   809→   809→
+   810→   810→  const handleImageDelete = async (imageId: string) => {
+   811→   811→    const res = await fetch(`/api/images/${imageId}`, { method: 'DELETE' });
+   812→   812→    if (res.ok && currentProduct) {
+   813→   813→      setCurrentProduct({
+   814→   814→        ...currentProduct,
+   815→   815→        images: currentProduct.images.filter((img) => img.id !== imageId),
+   816→   816→      });
+   817→   817→    }
+   818→   818→  };
+   819→   819→
+   820→   820→  const handleSetPrimary = async (imageId: string) => {
+   821→   821→    const res = await fetch(`/api/images/${imageId}`, {
+   822→   822→      method: 'PATCH',
+   823→   823→      headers: { 'Content-Type': 'application/json' },
+   824→   824→      body: JSON.stringify({ isPrimary: true }),
+   825→   825→    });
+   826→   826→    if (res.ok && currentProduct) {
+   827→   827→      setCurrentProduct({
+   828→   828→        ...currentProduct,
+   829→   829→        images: currentProduct.images.map((img) => ({
+   830→   830→          ...img,
+   831→   831→          isPrimary: img.id === imageId,
+   832→   832→        })),
+   833→   833→      });
+   834→   834→    }
+   835→   835→  };
+   836→   836→
+   837→   837→  // ── Duplicate warnings ─────────────────────────────────────
+   838→   838→  const hasDuplicates = duplicates && (duplicates.ndNumber || duplicates.barcode || duplicates.productId || duplicates.sku);
+   839→   839→
+   840→   840→  // ── Grid layout helper ─────────────────────────────────────
+   841→   841→  /** 2-column grid on desktop, 1-column on mobile */
+   842→   842→  const Grid2 = ({ children }: { children: React.ReactNode }) => (
+   843→   843→    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
+   844→   844→  );
+   845→   845→
+   846→   846→  const Grid3 = ({ children }: { children: React.ReactNode }) => (
+   847→   847→    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{children}</div>
+   848→   848→  );
+   849→   849→
+   850→   850→  // ── Error message helper ───────────────────────────────────
+   851→   851→  const FieldError = ({ field }: { field: keyof FormData }) => {
+   852→   852→    if (!validationErrors[field]) return null;
+   853→   853→    return <p className="text-xs text-red-500 mt-1">{validationErrors[field]}</p>;
+   854→   854→  };
+   855→   855→
+   856→   856→  // ═══════════════════════════════════════════════════════════
+   857→   857→  // RENDER
+   858→   858→  // ═══════════════════════════════════════════════════════════
+   859→   859→
+   860→   860→  return (
+   861→   861→    <div className="space-y-4 pb-6">
+   862→   862→      {/* ── Header ── */}
+   863→   863→      <div className="flex items-center gap-3">
+   864→   864→        <Button variant="ghost" size="sm" onClick={goBack} className="h-9 w-9 p-0">
+   865→   865→          <ArrowLeft className="h-5 w-5" />
+   866→   866→        </Button>
+   867→   867→        <div className="flex-1">
+   868→   868→          <h1 className="text-xl font-bold">{mode === 'add' ? 'Add New Product' : 'Edit Product'}</h1>
+   869→   869→        </div>
+   870→   870→        <Button onClick={handleSave} disabled={!!hasDuplicates || isSaving} className="h-10">
+   871→   871→          {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+   872→   872→          {mode === 'add' ? 'Create' : 'Save'}
+   873→   873→        </Button>
+   874→   874→      </div>
+   875→   875→
+   876→   876→      {/* ── Duplicate Warnings ── */}
+   877→   877→      {hasDuplicates && (
+   878→   878→        <Alert variant="destructive">
+   879→   879→          <AlertTriangle className="h-4 w-4" />
+   880→   880→          <AlertDescription className="space-y-1">
+   881→   881→            {duplicates.ndNumber && (
+   882→   882→              <div>ND Number &ldquo;{duplicates.ndNumber.ndNumber}&rdquo; already exists{duplicates.ndNumber.nameEn ? ` (${duplicates.ndNumber.nameEn})` : ''}</div>
+   883→   883→            )}
+   884→   884→            {duplicates.barcode && (
+   885→   885→              <div>Barcode &ldquo;{duplicates.barcode.barcode}&rdquo; already exists{duplicates.barcode.nameEn ? ` (${duplicates.barcode.nameEn})` : ''}</div>
+   886→   886→            )}
+   887→   887→            {duplicates.productId && (
+   888→   888→              <div>Product ID &ldquo;{duplicates.productId.productId}&rdquo; already exists{duplicates.productId.nameEn ? ` (${duplicates.productId.nameEn})` : ''}</div>
+   889→   889→            )}
+   890→   890→            {duplicates.sku && (
+   891→   891→              <div>SKU &ldquo;{duplicates.sku.sku}&rdquo; already exists{duplicates.sku.nameEn ? ` (${duplicates.sku.nameEn})` : ''}</div>
+   892→   892→            )}
+   893→   893→          </AlertDescription>
+   894→   894→        </Alert>
+   895→   895→      )}
+   896→   896→
+   897→   897→      {/* ── Product Images (edit mode only) ── */}
+   898→   898→      {mode === 'edit' && currentProduct && (
+   899→   899→        <Card>
+   900→   900→          <CardContent className="pt-4">
+   901→   901→            <ImageGallery
+   902→   902→              images={currentProduct.images}
+   903→   903→              productId={currentProduct.id}
+   904→   904→              onUpload={handleImageUpload}
+   905→   905→              onDelete={handleImageDelete}
+   906→   906→              onSetPrimary={handleSetPrimary}
+   907→   907→            />
+   908→   908→          </CardContent>
+   909→   909→        </Card>
+   910→   910→      )}
+   911→   911→
+   912→   912→      {/* ═══════════════════════════════════════════════════════
+   913→   913→          SECTION 1: Product Identity (10 fields)
+   914→   914→          ═══════════════════════════════════════════════════════ */}
+   915→   915→      <SectionCard
+   916→   916→        title="Product Identity"
+   917→   917→        fieldCount={10}
+   918→   918→        open={expandedSections.has('Product Identity')}
+   919→   919→        onToggle={() => toggleSection('Product Identity')}
+   920→   920→      >
+   921→   921→        <Grid2>
+   922→   922→          {/* Source Row (auto-generated, read-only in edit) */}
+   923→   923→          <div className="space-y-2">
+   924→   924→            <div className="flex items-center">
+   925→   925→              <FieldLabel htmlFor="sourceRow">Source Row</FieldLabel>
+   926→   926→              <AutoBadge />
+   927→   927→            </div>
+   928→   928→            <ReadOnlyInput value={formData.sourceRow} placeholder="Auto-generated" />
+   929→   929→          </div>
+   930→   930→
+   931→   931→          {/* Product ID * */}
+   932→   932→          <div className="space-y-2">
+   933→   933→            <FieldLabel htmlFor="productId" mandatory>Product ID</FieldLabel>
+   934→   934→            <Input
+   935→   935→              id="productId"
+   936→   936→              value={formData.productId}
+   937→   937→              onChange={(e) => updateField('productId', e.target.value)}
+   938→   938→              placeholder="e.g. 123456789012"
+   939→   939→              className="h-11"
+   940→   940→            />
+   941→   941→            <FieldError field="productId" />
+   942→   942→          </div>
+   943→   943→
+   944→   944→          {/* SKU * */}
+   945→   945→          <div className="space-y-2">
+   946→   946→            <FieldLabel htmlFor="sku" mandatory>SKU</FieldLabel>
+   947→   947→            <Input
+   948→   948→              id="sku"
+   949→   949→              value={formData.sku}
+   950→   950→              onChange={(e) => updateField('sku', e.target.value)}
+   951→   951→              placeholder="e.g. 123456789012"
+   952→   952→              className="h-11"
+   953→   953→            />
+   954→   954→            <FieldError field="sku" />
+   955→   955→          </div>
+   956→   956→
+   957→   957→          {/* ND Number */}
+   958→   958→          <div className="space-y-2">
+   959→   959→            <FieldLabel htmlFor="ndNumber">ND Number</FieldLabel>
+   960→   960→            <Input
+   961→   961→              id="ndNumber"
+   962→   962→              value={formData.ndNumber}
+   963→   963→              onChange={(e) => updateField('ndNumber', e.target.value)}
+   964→   964→              placeholder="ND-1000"
+   965→   965→              className="h-11"
+   966→   966→            />
+   967→   967→            <FieldError field="ndNumber" />
+   968→   968→          </div>
+   969→   969→
+   970→   970→          {/* Barcode * + Scanner */}
+   971→   971→          <div className="space-y-2">
+   972→   972→            <FieldLabel mandatory>Barcode</FieldLabel>
+   973→   973→            <div className="flex gap-2">
+   974→   974→              <Input
+   975→   975→                value={formData.barcode}
+   976→   976→                onChange={(e) => updateField('barcode', e.target.value)}
+   977→   977→                placeholder="102000001249"
+   978→   978→                className="h-11 flex-1"
+   979→   979→              />
+   980→   980→              <BarcodeScanner onScan={(barcode) => updateField('barcode', barcode)} />
+   981→   981→            </div>
+   982→   982→            <FieldError field="barcode" />
+   983→   983→          </div>
+   984→   984→
+   985→   985→          {/* Legacy Code */}
+   986→   986→          <div className="space-y-2">
+   987→   987→            <FieldLabel htmlFor="legacyCode">Legacy Code</FieldLabel>
+   988→   988→            <Input
+   989→   989→              id="legacyCode"
+   990→   990→              value={formData.legacyCode}
+   991→   991→              onChange={(e) => updateField('legacyCode', e.target.value)}
+   992→   992→              placeholder="Legacy ERP code"
+   993→   993→              className="h-11"
+   994→   994→            />
+   995→   995→          </div>
+   996→   996→
+   997→   997→          {/* Brand * */}
+   998→   998→          <div className="space-y-2">
+   999→   999→            <FieldLabel mandatory>Brand</FieldLabel>
+  1000→  1000→            <SearchableSingleSelect
+  1001→  1001→              label="Brand"
+  1002→  1002→              value={formData.brand}
+  1003→  1003→              onChange={(v) => updateField('brand', v)}
+  1004→  1004→              suggestions={BRAND_OPTIONS}
+  1005→  1005→              placeholder="Select brand..."
+  1006→  1006→              emptyMessage="No brand found."
+  1007→  1007→              allowAddNew
+  1008→  1008→            />
+  1009→  1009→            <FieldError field="brand" />
+  1010→  1010→          </div>
+  1011→  1011→
+  1012→  1012→          {/* Brand AR (auto) */}
+  1013→  1013→          <div className="space-y-2">
+  1014→  1014→            <div className="flex items-center">
+  1015→  1015→              <FieldLabel>Brand AR</FieldLabel>
+  1016→  1016→              <AutoBadge />
+  1017→  1017→            </div>
+  1018→  1018→            <ReadOnlyInput value={formData.brandAr} placeholder="Auto-filled from Brand" dir="rtl" />
+  1019→  1019→          </div>
+  1020→  1020→
+  1021→  1021→          {/* Brand Code (auto) */}
+  1022→  1022→          <div className="space-y-2">
+  1023→  1023→            <div className="flex items-center">
+  1024→  1024→              <FieldLabel>Brand Code</FieldLabel>
+  1025→  1025→              <AutoBadge />
+  1026→  1026→            </div>
+  1027→  1027→            <ReadOnlyInput value={formData.brandCode} placeholder="Auto-filled from Brand" />
+  1028→  1028→          </div>
+  1029→  1029→
+  1030→  1030→          {/* Model */}
+  1031→  1031→          <div className="space-y-2">
+  1032→  1032→            <FieldLabel htmlFor="model">Model</FieldLabel>
+  1033→  1033→            <Input
+  1034→  1034→              id="model"
+  1035→  1035→              value={formData.model}
+  1036→  1036→              onChange={(e) => updateField('model', e.target.value)}
+  1037→  1037→              placeholder="Manufacturer model/variant"
+  1038→  1038→              className="h-11"
+  1039→  1039→            />
+  1040→  1040→          </div>
+  1041→  1041→        </Grid2>
+  1042→  1042→      </SectionCard>
+  1043→  1043→
+  1044→  1044→      {/* ═══════════════════════════════════════════════════════
+  1045→  1045→          SECTION 2: Classification (6 fields)
+  1046→  1046→          ═══════════════════════════════════════════════════════ */}
+  1047→  1047→      <SectionCard
+  1048→  1048→        title="Classification"
+  1049→  1049→        fieldCount={6}
+  1050→  1050→        open={expandedSections.has('Classification')}
+  1051→  1051→        onToggle={() => toggleSection('Classification')}
+  1052→  1052→      >
+  1053→  1053→        <Grid2>
+  1054→  1054→          {/* Department * */}
+  1055→  1055→          <div className="space-y-2">
+  1056→  1056→            <FieldLabel mandatory>Department</FieldLabel>
+  1057→  1057→            <SearchableSingleSelect
+  1058→  1058→              label="Department"
+  1059→  1059→              value={formData.department}
+  1060→  1060→              onChange={(v) => updateField('department', v)}
+  1061→  1061→              suggestions={DEPARTMENTS}
+  1062→  1062→              placeholder="Select department..."
+  1063→  1063→              emptyMessage="No department found."
+  1064→  1064→            />
+  1065→  1065→            <FieldError field="department" />
+  1066→  1066→          </div>
+  1067→  1067→
+  1068→  1068→          {/* Category * (dependent on Department) */}
+  1069→  1069→          <div className="space-y-2">
+  1070→  1070→            <FieldLabel mandatory>Category</FieldLabel>
+  1071→  1071→            <SearchableSingleSelect
+  1072→  1072→              label="Category"
+  1073→  1073→              value={formData.category}
+  1074→  1074→              onChange={(v) => updateField('category', v)}
+  1075→  1075→              suggestions={categoryOptions}
+  1076→  1076→              placeholder={formData.department ? 'Select category...' : 'Select a department first...'}
+  1077→  1077→              emptyMessage="No categories found."
+  1078→  1078→            />
+  1079→  1079→            <FieldError field="category" />
+  1080→  1080→          </div>
+  1081→  1081→
+  1082→  1082→          {/* Subcategory (dependent on Category) */}
+  1083→  1083→          <div className="space-y-2">
+  1084→  1084→            <FieldLabel>Subcategory</FieldLabel>
+  1085→  1085→            <SearchableSingleSelect
+  1086→  1086→              label="Subcategory"
+  1087→  1087→              value={formData.subcategory}
+  1088→  1088→              onChange={(v) => updateField('subcategory', v)}
+  1089→  1089→              suggestions={subcategoryOptions}
+  1090→  1090→              placeholder={
+  1091→  1091→                !formData.department
+  1092→  1092→                  ? 'Select a department first...'
+  1093→  1093→                  : !formData.category
+  1094→  1094→                    ? 'Select a category first...'
+  1095→  1095→                    : hasSubcategories
+  1096→  1096→                      ? 'Select subcategory...'
+  1097→  1097→                      : 'No subcategories for this category'
+  1098→  1098→              }
+  1099→  1099→              emptyMessage="No subcategories found."
+  1100→  1100→            />
+  1101→  1101→          </div>
+  1102→  1102→
+  1103→  1103→          {/* Section Code (auto) */}
+  1104→  1104→          <div className="space-y-2">
+  1105→  1105→            <div className="flex items-center">
+  1106→  1106→              <FieldLabel>Section Code</FieldLabel>
+  1107→  1107→              <AutoBadge />
+  1108→  1108→            </div>
+  1109→  1109→            <ReadOnlyInput value={formData.sectionCode} placeholder="Auto-filled from Department" />
+  1110→  1110→          </div>
+  1111→  1111→
+  1112→  1112→          {/* Product Family * (dependent on Subcategory) */}
+  1113→  1113→          <div className="space-y-2">
+  1114→  1114→            <FieldLabel mandatory>Product Family</FieldLabel>
+  1115→  1115→            <SearchableSingleSelect
+  1116→  1116→              label="Product Family"
+  1117→  1117→              value={formData.productFamily}
+  1118→  1118→              onChange={(v) => updateField('productFamily', v)}
+  1119→  1119→              suggestions={productFamilyOptions}
+  1120→  1120→              placeholder={formData.subcategory ? 'Select product family...' : 'Select a subcategory first...'}
+  1121→  1121→              emptyMessage="No product families found."
+  1122→  1122→            />
+  1123→  1123→            <FieldError field="productFamily" />
+  1124→  1124→          </div>
+  1125→  1125→
+  1126→  1126→          {/* Product Type * (dependent on Product Family) */}
+  1127→  1127→          <div className="space-y-2">
+  1128→  1128→            <FieldLabel mandatory>Product Type</FieldLabel>
+  1129→  1129→            <SearchableSingleSelect
+  1130→  1130→              label="Product Type"
+  1131→  1131→              value={formData.productType}
+  1132→  1132→              onChange={(v) => updateField('productType', v)}
+  1133→  1133→              suggestions={productTypeOptions}
+  1134→  1134→              placeholder={formData.productFamily ? 'Select product type...' : 'Select a product family first...'}
+  1135→  1135→              emptyMessage="No product types found."
+  1136→  1136→            />
+  1137→  1137→            <FieldError field="productType" />
+  1138→  1138→          </div>
+  1139→  1139→        </Grid2>
+  1140→  1140→      </SectionCard>
+  1141→  1141→
+  1142→  1142→      {/* ═══════════════════════════════════════════════════════
+  1143→  1143→          SECTION 3: Product Information (6 fields)
+  1144→  1144→          ═══════════════════════════════════════════════════════ */}
+  1145→  1145→      <SectionCard
+  1146→  1146→        title="Product Information"
+  1147→  1147→        fieldCount={6}
+  1148→  1148→        open={expandedSections.has('Product Information')}
+  1149→  1149→        onToggle={() => toggleSection('Product Information')}
+  1150→  1150→      >
+  1151→  1151→        <Grid2>
+  1152→  1152→          {/* Name AR * */}
+  1153→  1153→          <div className="space-y-2">
+  1154→  1154→            <FieldLabel htmlFor="nameAr" mandatory>Name AR</FieldLabel>
+  1155→  1155→            <Input
+  1156→  1156→              id="nameAr"
+  1157→  1157→              value={formData.nameAr}
+  1158→  1158→              onChange={(e) => updateField('nameAr', e.target.value)}
+  1159→  1159→              placeholder="اسم المنتج بالعربية"
+  1160→  1160→              className="h-11"
+  1161→  1161→              dir="rtl"
+  1162→  1162→            />
+  1163→  1163→            <FieldError field="nameAr" />
+  1164→  1164→          </div>
+  1165→  1165→
+  1166→  1166→          {/* Name EN * */}
+  1167→  1167→          <div className="space-y-2">
+  1168→  1168→            <FieldLabel htmlFor="nameEn" mandatory>Name EN</FieldLabel>
+  1169→  1169→            <Input
+  1170→  1170→              id="nameEn"
+  1171→  1171→              value={formData.nameEn}
+  1172→  1172→              onChange={(e) => updateField('nameEn', e.target.value)}
+  1173→  1173→              placeholder="Product name in English"
+  1174→  1174→              className="h-11"
+  1175→  1175→            />
+  1176→  1176→            <FieldError field="nameEn" />
+  1177→  1177→          </div>
+  1178→  1178→        </Grid2>
+  1179→  1179→
+  1180→  1180→        <Grid2>
+  1181→  1181→          {/* Short Desc AR (auto-derived, but editable) */}
+  1182→  1182→          <div className="space-y-2">
+  1183→  1183→            <div className="flex items-center">
+  1184→  1184→              <FieldLabel htmlFor="shortDescAr" mandatory>Short Desc AR</FieldLabel>
+  1185→  1185→              <AutoBadge />
+  1186→  1186→            </div>
+  1187→  1187→            <Input
+  1188→  1188→              id="shortDescAr"
+  1189→  1189→              value={formData.shortDescAr}
+  1190→  1190→              onChange={(e) => updateField('shortDescAr', e.target.value)}
+  1191→  1191→              placeholder="Auto-fills from Name AR"
+  1192→  1192→              className="h-11"
+  1193→  1193→              dir="rtl"
+  1194→  1194→            />
+  1195→  1195→          </div>
+  1196→  1196→
+  1197→  1197→          {/* Short Desc EN (auto-derived, but editable) */}
+  1198→  1198→          <div className="space-y-2">
+  1199→  1199→            <div className="flex items-center">
+  1200→  1200→              <FieldLabel htmlFor="shortDescEn" mandatory>Short Desc EN</FieldLabel>
+  1201→  1201→              <AutoBadge />
+  1202→  1202→            </div>
+  1203→  1203→            <Input
+  1204→  1204→              id="shortDescEn"
+  1205→  1205→              value={formData.shortDescEn}
+  1206→  1206→              onChange={(e) => updateField('shortDescEn', e.target.value)}
+  1207→  1207→              placeholder="Auto-fills from Name EN"
+  1208→  1208→              className="h-11"
+  1209→  1209→            />
+  1210→  1210→          </div>
+  1211→  1211→        </Grid2>
+  1212→  1212→
+  1213→  1213→        {/* Long Desc AR (optional) */}
+  1214→  1214→        <div className="space-y-2">
+  1215→  1215→          <FieldLabel htmlFor="longDescAr">Long Desc AR</FieldLabel>
+  1216→  1216→          <Textarea
+  1217→  1217→            id="longDescAr"
+  1218→  1218→            value={formData.longDescAr}
+  1219→  1219→            onChange={(e) => updateField('longDescAr', e.target.value)}
+  1220→  1220→            placeholder="وصف تفصيلي بالعربية"
+  1221→  1221→            dir="rtl"
+  1222→  1222→            rows={3}
+  1223→  1223→          />
+  1224→  1224→        </div>
+  1225→  1225→
+  1226→  1226→        {/* Long Desc EN (auto-derived, but editable) */}
+  1227→  1227→        <div className="space-y-2">
+  1228→  1228→          <div className="flex items-center">
+  1229→  1229→            <FieldLabel htmlFor="longDescEn" mandatory>Long Desc EN</FieldLabel>
+  1230→  1230→            <AutoBadge />
+  1231→  1231→          </div>
+  1232→  1232→          <Textarea
+  1233→  1233→            id="longDescEn"
+  1234→  1234→            value={formData.longDescEn}
+  1235→  1235→            onChange={(e) => updateField('longDescEn', e.target.value)}
+  1236→  1236→            placeholder="Auto-generated from Brand + Name EN"
+  1237→  1237→            rows={3}
+  1238→  1238→          />
+  1239→  1239→        </div>
+  1240→  1240→      </SectionCard>
+  1241→  1241→
+  1242→  1242→      {/* ═══════════════════════════════════════════════════════
+  1243→  1243→          SECTION 4: Attributes (13 fields)
+  1244→  1244→          ═══════════════════════════════════════════════════════ */}
+  1245→  1245→      <SectionCard
+  1246→  1246→        title="Attributes"
+  1247→  1247→        fieldCount={13}
+  1248→  1248→        open={expandedSections.has('Attributes')}
+  1249→  1249→        onToggle={() => toggleSection('Attributes')}
+  1250→  1250→      >
+  1251→  1251→        <Grid2>
+  1252→  1252→          {/* Color */}
+  1253→  1253→          <div className="space-y-2">
+  1254→  1254→            <FieldLabel>Color</FieldLabel>
+  1255→  1255→            <SearchableSingleSelect
+  1256→  1256→              label="Color"
+  1257→  1257→              value={formData.color}
+  1258→  1258→              onChange={(v) => updateField('color', v)}
+  1259→  1259→              suggestions={COLOR_OPTIONS}
+  1260→  1260→              placeholder="Select color..."
+  1261→  1261→              emptyMessage="No color found."
+  1262→  1262→            />
+  1263→  1263→          </div>
+  1264→  1264→
+  1265→  1265→          {/* Color AR (auto) */}
+  1266→  1266→          <div className="space-y-2">
+  1267→  1267→            <div className="flex items-center">
+  1268→  1268→              <FieldLabel>Color AR</FieldLabel>
+  1269→  1269→              <AutoBadge />
+  1270→  1270→            </div>
+  1271→  1271→            <ReadOnlyInput value={formData.colorAr} placeholder="Auto-filled from Color" dir="rtl" />
+  1272→  1272→          </div>
+  1273→  1273→
+  1274→  1274→          {/* Material */}
+  1275→  1275→          <div className="space-y-2">
+  1276→  1276→            <FieldLabel>Material</FieldLabel>
+  1277→  1277→            <SearchableSingleSelect
+  1278→  1278→              label="Material"
+  1279→  1279→              value={formData.material}
+  1280→  1280→              onChange={(v) => updateField('material', v)}
+  1281→  1281→              suggestions={MATERIAL_OPTIONS}
+  1282→  1282→              placeholder="Select material..."
+  1283→  1283→              emptyMessage="No material found."
+  1284→  1284→            />
+  1285→  1285→          </div>
+  1286→  1286→
+  1287→  1287→          {/* Material AR (auto) */}
+  1288→  1288→          <div className="space-y-2">
+  1289→  1289→            <div className="flex items-center">
+  1290→  1290→              <FieldLabel>Material AR</FieldLabel>
+  1291→  1291→              <AutoBadge />
+  1292→  1292→            </div>
+  1293→  1293→            <ReadOnlyInput value={formData.materialAr} placeholder="Auto-filled from Material" dir="rtl" />
+  1294→  1294→          </div>
+  1295→  1295→        </Grid2>
+  1296→  1296→
+  1297→  1297→        {/* Capacity + Capacity Unit */}
+  1298→  1298→        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+  1299→  1299→          <div className="space-y-2 sm:col-span-2">
+  1300→  1300→            <FieldLabel htmlFor="capacity">Capacity</FieldLabel>
+  1301→  1301→            <Input
+  1302→  1302→              id="capacity"
+  1303→  1303→              type="number"
+  1304→  1304→              step="0.01"
+  1305→  1305→              value={formData.capacity}
+  1306→  1306→              onChange={(e) => updateField('capacity', e.target.value)}
+  1307→  1307→              placeholder="0"
+  1308→  1308→              className="h-11"
+  1309→  1309→            />
+  1310→  1310→          </div>
+  1311→  1311→          <div className="space-y-2">
+  1312→  1312→            <FieldLabel>Capacity Unit</FieldLabel>
+  1313→  1313→            <SearchableSingleSelect
+  1314→  1314→              label="Capacity Unit"
+  1315→  1315→              value={formData.capacityUnit}
+  1316→  1316→              onChange={(v) => updateField('capacityUnit', v)}
+  1317→  1317→              suggestions={[...CAPACITY_UNIT_OPTIONS]}
+  1318→  1318→              placeholder="Unit..."
+  1319→  1319→              emptyMessage="No unit found."
+  1320→  1320→            />
+  1321→  1321→          </div>
+  1322→  1322→        </div>
+  1323→  1323→
+  1324→  1324→        {/* Weight + Weight Unit */}
+  1325→  1325→        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+  1326→  1326→          <div className="space-y-2 sm:col-span-2">
+  1327→  1327→            <FieldLabel htmlFor="weight">Weight</FieldLabel>
+  1328→  1328→            <Input
+  1329→  1329→              id="weight"
+  1330→  1330→              type="number"
+  1331→  1331→              step="0.01"
+  1332→  1332→              value={formData.weight}
+  1333→  1333→              onChange={(e) => updateField('weight', e.target.value)}
+  1334→  1334→              placeholder="0"
+  1335→  1335→              className="h-11"
+  1336→  1336→            />
+  1337→  1337→          </div>
+  1338→  1338→          <div className="space-y-2">
+  1339→  1339→            <FieldLabel>Weight Unit</FieldLabel>
+  1340→  1340→            <SearchableSingleSelect
+  1341→  1341→              label="Weight Unit"
+  1342→  1342→              value={formData.weightUnit}
+  1343→  1343→              onChange={(v) => updateField('weightUnit', v)}
+  1344→  1344→              suggestions={[...WEIGHT_UNIT_OPTIONS]}
+  1345→  1345→              placeholder="Unit..."
+  1346→  1346→              emptyMessage="No unit found."
+  1347→  1347→            />
+  1348→  1348→          </div>
+  1349→  1349→        </div>
+  1350→  1350→
+  1351→  1351→        {/* Dimensions (L, W, H, Diameter) + Dimension Unit */}
+  1352→  1352→        <div className="space-y-2">
+  1353→  1353→          <FieldLabel>Dimensions</FieldLabel>
+  1354→  1354→          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+  1355→  1355→            <div>
+  1356→  1356→              <span className="text-[10px] text-muted-foreground pl-1">Length</span>
+  1357→  1357→              <Input
+  1358→  1358→                type="number"
+  1359→  1359→                step="0.01"
+  1360→  1360→                value={formData.length}
+  1361→  1361→                onChange={(e) => updateField('length', e.target.value)}
+  1362→  1362→                placeholder="0"
+  1363→  1363→                className="h-11"
+  1364→  1364→              />
+  1365→  1365→            </div>
+  1366→  1366→            <div>
+  1367→  1367→              <span className="text-[10px] text-muted-foreground pl-1">Width</span>
+  1368→  1368→              <Input
+  1369→  1369→                type="number"
+  1370→  1370→                step="0.01"
+  1371→  1371→                value={formData.width}
+  1372→  1372→                onChange={(e) => updateField('width', e.target.value)}
+  1373→  1373→                placeholder="0"
+  1374→  1374→                className="h-11"
+  1375→  1375→              />
+  1376→  1376→            </div>
+  1377→  1377→            <div>
+  1378→  1378→              <span className="text-[10px] text-muted-foreground pl-1">Height</span>
+  1379→  1379→              <Input
+  1380→  1380→                type="number"
+  1381→  1381→                step="0.01"
+  1382→  1382→                value={formData.height}
+  1383→  1383→                onChange={(e) => updateField('height', e.target.value)}
+  1384→  1384→                placeholder="0"
+  1385→  1385→                className="h-11"
+  1386→  1386→              />
+  1387→  1387→            </div>
+  1388→  1388→            <div>
+  1389→  1389→              <span className="text-[10px] text-muted-foreground pl-1">Diameter</span>
+  1390→  1390→              <Input
+  1391→  1391→                type="number"
+  1392→  1392→                step="0.01"
+  1393→  1393→                value={formData.diameter}
+  1394→  1394→                onChange={(e) => updateField('diameter', e.target.value)}
+  1395→  1395→                placeholder="0"
+  1396→  1396→                className="h-11"
+  1397→  1397→              />
+  1398→  1398→            </div>
+  1399→  1399→            <div>
+  1400→  1400→              <span className="text-[10px] text-muted-foreground pl-1">Unit</span>
+  1401→  1401→              <SearchableSingleSelect
+  1402→  1402→                label="Dimension Unit"
+  1403→  1403→                value={formData.dimensionUnit}
+  1404→  1404→                onChange={(v) => updateField('dimensionUnit', v)}
+  1405→  1405→                suggestions={[...DIMENSION_UNIT_OPTIONS]}
+  1406→  1406→                placeholder="cm"
+  1407→  1407→                emptyMessage="No unit found."
+  1408→  1408→              />
+  1409→  1409→            </div>
+  1410→  1410→          </div>
+  1411→  1411→          {formData.dimensionUnit && (
+  1412→  1412→            <p className="text-xs text-muted-foreground">All dimension values are in {formData.dimensionUnit}</p>
+  1413→  1413→          )}
+  1414→  1414→        </div>
+  1415→  1415→      </SectionCard>
+  1416→  1416→
+  1417→  1417→      {/* ═══════════════════════════════════════════════════════
+  1418→  1418→          SECTION 5: Logistics (3 fields)
+  1419→  1419→          ═══════════════════════════════════════════════════════ */}
+  1420→  1420→      <SectionCard
+  1421→  1421→        title="Logistics"
+  1422→  1422→        fieldCount={3}
+  1423→  1423→        open={expandedSections.has('Logistics')}
+  1424→  1424→        onToggle={() => toggleSection('Logistics')}
+  1425→  1425→      >
+  1426→  1426→        <Grid2>
+  1427→  1427→          {/* Country of Origin */}
+  1428→  1428→          <div className="space-y-2">
+  1429→  1429→            <FieldLabel>Country of Origin</FieldLabel>
+  1430→  1430→            <SearchableSingleSelect
+  1431→  1431→              label="Country of Origin"
+  1432→  1432→              value={formData.countryOfOrigin}
+  1433→  1433→              onChange={(v) => updateField('countryOfOrigin', v)}
+  1434→  1434→              suggestions={[...COUNTRY_OPTIONS]}
+  1435→  1435→              placeholder="Select country..."
+  1436→  1436→              emptyMessage="No country found."
+  1437→  1437→              allowAddNew
+  1438→  1438→            />
+  1439→  1439→          </div>
+  1440→  1440→
+  1441→  1441→          {/* Unit * */}
+  1442→  1442→          <div className="space-y-2">
+  1443→  1443→            <FieldLabel mandatory>Unit</FieldLabel>
+  1444→  1444→            <SearchableSingleSelect
+  1445→  1445→              label="Unit"
+  1446→  1446→              value={formData.unit}
+  1447→  1447→              onChange={(v) => updateField('unit', v)}
+  1448→  1448→              suggestions={[...UNIT_OPTIONS]}
+  1449→  1449→              placeholder="Select unit..."
+  1450→  1450→              emptyMessage="No unit found."
+  1451→  1451→            />
+  1452→  1452→            <FieldError field="unit" />
+  1453→  1453→          </div>
+  1454→  1454→
+  1455→  1455→          {/* Min Sales Multiples * */}
+  1456→  1456→          <div className="space-y-2">
+  1457→  1457→            <FieldLabel mandatory>Min Sales Multiples</FieldLabel>
+  1458→  1458→            <SearchableSingleSelect
+  1459→  1459→              label="Min Sales Multiples"
+  1460→  1460→              value={formData.minSalesMultiples}
+  1461→  1461→              onChange={(v) => updateField('minSalesMultiples', v)}
+  1462→  1462→              suggestions={[...MIN_SALES_MULTIPLES_OPTIONS]}
+  1463→  1463→              placeholder="Select..."
+  1464→  1464→              emptyMessage="No option found."
+  1465→  1465→            />
+  1466→  1466→            <FieldError field="minSalesMultiples" />
+  1467→  1467→          </div>
+  1468→  1468→        </Grid2>
+  1469→  1469→      </SectionCard>
+  1470→  1470→
+  1471→  1471→      {/* ═══════════════════════════════════════════════════════
+  1472→  1472→          SECTION 6: Commercial (1 field — Price)
+  1473→  1473→          ═══════════════════════════════════════════════════════ */}
+  1474→  1474→      <SectionCard
+  1475→  1475→        title="Commercial"
+  1476→  1476→        fieldCount={1}
+  1477→  1477→        open={expandedSections.has('Commercial')}
+  1478→  1478→        onToggle={() => toggleSection('Commercial')}
+  1479→  1479→      >
+  1480→  1480→        <div className="space-y-2 max-w-md">
+  1481→  1481→          <FieldLabel>Default Price (KWD)</FieldLabel>
+  1482→  1482→          <div className="grid grid-cols-2 gap-0">
+  1483→  1483→            <div className="space-y-0.5">
+  1484→  1484→              <span className="text-[10px] text-muted-foreground pl-1">Dinar</span>
+  1485→  1485→              <Input
+  1486→  1486→                type="text"
+  1487→  1487→                inputMode="numeric"
+  1488→  1488→                value={priceDinar}
+  1489→  1489→                onChange={(e) => handlePriceDinarChange(e.target.value)}
+  1490→  1490→                placeholder="0"
+  1491→  1491→                className="h-11 rounded-r-none text-right font-mono text-base"
+  1492→  1492→                aria-label="Dinar"
+  1493→  1493→              />
+  1494→  1494→            </div>
+  1495→  1495→            <div className="space-y-0.5">
+  1496→  1496→              <span className="text-[10px] text-muted-foreground pl-1">Fils</span>
+  1497→  1497→              <div className="flex items-center">
+  1498→  1498→                <span className="flex h-11 items-center justify-center border-y border-input bg-muted px-1.5 text-lg font-bold text-muted-foreground select-none">
+  1499→  1499→                  .
+  1500→  1500→                </span>
+  1501→  1501→                <Input
+  1502→  1502→                  type="text"
+  1503→  1503→                  inputMode="numeric"
+  1504→  1504→                  value={priceFils}
+  1505→  1505→                  onChange={(e) => handlePriceFilsChange(e.target.value)}
+  1506→  1506→                  placeholder="000"
+  1507→  1507→                  maxLength={3}
+  1508→  1508→                  className="h-11 rounded-l-none font-mono text-base"
+  1509→  1509→                  aria-label="Fils"
+  1510→  1510→                />
+  1511→  1511→              </div>
+  1512→  1512→            </div>
+  1513→  1513→          </div>
+  1514→  1514→          {combinedPrice && (
+  1515→  1515→            <p className="text-xs text-muted-foreground font-mono">
+  1516→  1516→              {combinedPrice} KWD
+  1517→  1517→            </p>
+  1518→  1518→          )}
+  1519→  1519→        </div>
+  1520→  1520→      </SectionCard>
+  1521→  1521→
+  1522→  1522→      {/* ═══════════════════════════════════════════════════════
+  1523→  1523→          SECTION 7: SEO (5 fields)
+  1524→  1524→          ═══════════════════════════════════════════════════════ */}
+  1525→  1525→      <SectionCard
+  1526→  1526→        title="SEO"
+  1527→  1527→        fieldCount={5}
+  1528→  1528→        open={expandedSections.has('SEO')}
+  1529→  1529→        onToggle={() => toggleSection('SEO')}
+  1530→  1530→      >
+  1531→  1531→        <Grid2>
+  1532→  1532→          {/* SEO Title EN */}
+  1533→  1533→          <div className="space-y-2">
+  1534→  1534→            <FieldLabel htmlFor="seoTitleEn">SEO Title EN</FieldLabel>
+  1535→  1535→            <Input
+  1536→  1536→              id="seoTitleEn"
+  1537→  1537→              value={formData.seoTitleEn}
+  1538→  1538→              onChange={(e) => updateField('seoTitleEn', e.target.value)}
+  1539→  1539→              placeholder="SEO title in English (< 60 chars)"
+  1540→  1540→              className="h-11"
+  1541→  1541→              maxLength={60}
+  1542→  1542→            />
+  1543→  1543→            {formData.seoTitleEn && (
+  1544→  1544→              <p className="text-xs text-muted-foreground">{formData.seoTitleEn.length}/60</p>
+  1545→  1545→            )}
+  1546→  1546→          </div>
+  1547→  1547→
+  1548→  1548→          {/* SEO Title AR (auto-derived from Name AR) */}
+  1549→  1549→          <div className="space-y-2">
+  1550→  1550→            <div className="flex items-center">
+  1551→  1551→              <FieldLabel htmlFor="seoTitleAr" mandatory>SEO Title AR</FieldLabel>
+  1552→  1552→              <AutoBadge />
+  1553→  1553→            </div>
+  1554→  1554→            <Input
+  1555→  1555→              id="seoTitleAr"
+  1556→  1556→              value={formData.seoTitleAr}
+  1557→  1557→              onChange={(e) => updateField('seoTitleAr', e.target.value)}
+  1558→  1558→              placeholder="Auto-fills from Name AR"
+  1559→  1559→              className="h-11"
+  1560→  1560→              dir="rtl"
+  1561→  1561→            />
+  1562→  1562→          </div>
+  1563→  1563→        </Grid2>
+  1564→  1564→
+  1565→  1565→        {/* SEO Description EN (auto-derived) */}
+  1566→  1566→        <div className="space-y-2">
+  1567→  1567→          <div className="flex items-center">
+  1568→  1568→            <FieldLabel htmlFor="seoDescriptionEn" mandatory>SEO Description EN</FieldLabel>
+  1569→  1569→            <AutoBadge />
+  1570→  1570→          </div>
+  1571→  1571→          <Textarea
+  1572→  1572→            id="seoDescriptionEn"
+  1573→  1573→            value={formData.seoDescriptionEn}
+  1574→  1574→            onChange={(e) => updateField('seoDescriptionEn', e.target.value)}
+  1575→  1575→            placeholder="Auto-generated: {Brand} {Product Type}. Available in Kuwait."
+  1576→  1576→            rows={2}
+  1577→  1577→          />
+  1578→  1578→        </div>
+  1579→  1579→
+  1580→  1580→        {/* SEO Description AR (auto-derived) */}
+  1581→  1581→        <div className="space-y-2">
+  1582→  1582→          <div className="flex items-center">
+  1583→  1583→            <FieldLabel htmlFor="seoDescriptionAr" mandatory>SEO Description AR</FieldLabel>
+  1584→  1584→            <AutoBadge />
+  1585→  1585→          </div>
+  1586→  1586→          <Textarea
+  1587→  1587→            id="seoDescriptionAr"
+  1588→  1588→            value={formData.seoDescriptionAr}
+  1589→  1589→            onChange={(e) => updateField('seoDescriptionAr', e.target.value)}
+  1590→  1590→            placeholder="Auto-generated from Brand AR + Product Type"
+  1591→  1591→            dir="rtl"
+  1592→  1592→            rows={2}
+  1593→  1593→          />
+  1594→  1594→        </div>
+  1595→  1595→
+  1596→  1596→        {/* Search Keywords (pipe-separated, auto-derived) */}
+  1597→  1597→        <div className="space-y-2">
+  1598→  1598→          <div className="flex items-center">
+  1599→  1599→            <FieldLabel htmlFor="searchKeywords" mandatory>Search Keywords</FieldLabel>
+  1600→  1600→            <AutoBadge />
+  1601→  1601→          </div>
+  1602→  1602→          <Textarea
+  1603→  1603→            id="searchKeywords"
+  1604→  1604→            value={formData.searchKeywords}
+  1605→  1605→            onChange={(e) => updateField('searchKeywords', e.target.value)}
+  1606→  1606→            placeholder="Auto-generated: Brand | Product Family | Product Type"
+  1607→  1607→            rows={2}
+  1608→  1608→          />
+  1609→  1609→          <p className="text-xs text-muted-foreground">Pipe-separated keywords for search indexing</p>
+  1610→  1610→        </div>
+  1611→  1611→      </SectionCard>
+  1612→  1612→
+  1613→  1613→      {/* ═══════════════════════════════════════════════════════
+  1614→  1614→          SECTION 8: Internal (8 fields)
+  1615→  1615→          ═══════════════════════════════════════════════════════ */}
+  1616→  1616→      <SectionCard
+  1617→  1617→        title="Internal"
+  1618→  1618→        fieldCount={8}
+  1619→  1619→        open={expandedSections.has('Internal')}
+  1620→  1620→        onToggle={() => toggleSection('Internal')}
+  1621→  1621→      >
+  1622→  1622→        <Grid2>
+  1623→  1623→          {/* Internal Notes */}
+  1624→  1624→          <div className="space-y-2 sm:col-span-2">
+  1625→  1625→            <FieldLabel htmlFor="internalNotes">Internal Notes</FieldLabel>
+  1626→  1626→            <Textarea
+  1627→  1627→              id="internalNotes"
+  1628→  1628→              value={formData.internalNotes}
+  1629→  1629→              onChange={(e) => updateField('internalNotes', e.target.value)}
+  1630→  1630→              placeholder="Staff notes, remarks..."
+  1631→  1631→              rows={2}
+  1632→  1632→            />
+  1633→  1633→          </div>
+  1634→  1634→
+  1635→  1635→          {/* Validation Status * */}
+  1636→  1636→          <div className="space-y-2">
+  1637→  1637→            <FieldLabel mandatory>Validation Status</FieldLabel>
+  1638→  1638→            <SearchableSingleSelect
+  1639→  1639→              label="Validation Status"
+  1640→  1640→              value={formData.validationStatus}
+  1641→  1641→              onChange={(v) => updateField('validationStatus', v)}
+  1642→  1642→              suggestions={[...VALIDATION_STATUS_OPTIONS]}
+  1643→  1643→              placeholder="Select status..."
+  1644→  1644→              emptyMessage="No status found."
+  1645→  1645→            />
+  1646→  1646→            <FieldError field="validationStatus" />
+  1647→  1647→          </div>
+  1648→  1648→
+  1649→  1649→          {/* Confidence Score * */}
+  1650→  1650→          <div className="space-y-2">
+  1651→  1651→            <FieldLabel htmlFor="confidenceScore" mandatory>Confidence Score</FieldLabel>
+  1652→  1652→            <Input
+  1653→  1653→              id="confidenceScore"
+  1654→  1654→              type="number"
+  1655→  1655→              min={0}
+  1656→  1656→              max={100}
+  1657→  1657→              step={1}
+  1658→  1658→              value={formData.confidenceScore}
+  1659→  1659→              onChange={(e) => updateField('confidenceScore', e.target.value)}
+  1660→  1660→              placeholder="0-100"
+  1661→  1661→              className="h-11"
+  1662→  1662→            />
+  1663→  1663→            <FieldError field="confidenceScore" />
+  1664→  1664→          </div>
+  1665→  1665→
+  1666→  1666→          {/* Pieces */}
+  1667→  1667→          <div className="space-y-2">
+  1668→  1668→            <FieldLabel htmlFor="pieces">Pieces</FieldLabel>
+  1669→  1669→            <Input
+  1670→  1670→              id="pieces"
+  1671→  1671→              type="number"
+  1672→  1672→              step={1}
+  1673→  1673→              min={0}
+  1674→  1674→              value={formData.pieces}
+  1675→  1675→              onChange={(e) => updateField('pieces', e.target.value)}
+  1676→  1676→              placeholder="0"
+  1677→  1677→              className="h-11"
+  1678→  1678→            />
+  1679→  1679→          </div>
+  1680→  1680→
+  1681→  1681→          {/* Set Count */}
+  1682→  1682→          <div className="space-y-2">
+  1683→  1683→            <FieldLabel htmlFor="setCount">Set Count</FieldLabel>
+  1684→  1684→            <Input
+  1685→  1685→              id="setCount"
+  1686→  1686→              type="number"
+  1687→  1687→              step={1}
+  1688→  1688→              min={0}
+  1689→  1689→              value={formData.setCount}
+  1690→  1690→              onChange={(e) => updateField('setCount', e.target.value)}
+  1691→  1691→              placeholder="0"
+  1692→  1692→              className="h-11"
+  1693→  1693→            />
+  1694→  1694→          </div>
+  1695→  1695→
+  1696→  1696→          {/* Shape */}
+  1697→  1697→          <div className="space-y-2">
+  1698→  1698→            <FieldLabel>Shape</FieldLabel>
+  1699→  1699→            <SearchableSingleSelect
+  1700→  1700→              label="Shape"
+  1701→  1701→              value={formData.shape}
+  1702→  1702→              onChange={(v) => updateField('shape', v)}
+  1703→  1703→              suggestions={[...SHAPE_OPTIONS]}
+  1704→  1704→              placeholder="Select shape..."
+  1705→  1705→              emptyMessage="No shape found."
+  1706→  1706→            />
+  1707→  1707→          </div>
+  1708→  1708→
+  1709→  1709→          {/* Finish */}
+  1710→  1710→          <div className="space-y-2">
+  1711→  1711→            <FieldLabel>Finish</FieldLabel>
+  1712→  1712→            <SearchableSingleSelect
+  1713→  1713→              label="Finish"
+  1714→  1714→              value={formData.finish}
+  1715→  1715→              onChange={(v) => updateField('finish', v)}
+  1716→  1716→              suggestions={[...FINISH_OPTIONS]}
+  1717→  1717→              placeholder="Select finish..."
+  1718→  1718→              emptyMessage="No finish found."
+  1719→  1719→            />
+  1720→  1720→          </div>
+  1721→  1721→
+  1722→  1722→          {/* Additional Info */}
+  1723→  1723→          <div className="space-y-2">
+  1724→  1724→            <FieldLabel>Additional Information</FieldLabel>
+  1725→  1725→            <SearchableSingleSelect
+  1726→  1726→              label="Additional Information"
+  1727→  1727→              value={formData.additionalInfo}
+  1728→  1728→              onChange={(v) => updateField('additionalInfo', v)}
+  1729→  1729→              suggestions={[...ADDITIONAL_INFO_OPTIONS]}
+  1730→  1730→              placeholder="Select..."
+  1731→  1731→              emptyMessage="No option found."
+  1732→  1732→              allowAddNew
+  1733→  1733→            />
+  1734→  1734→          </div>
+  1735→  1735→        </Grid2>
+  1736→  1736→      </SectionCard>
+  1737→  1737→    </div>
+  1738→  1738→  );
+  1739→  1739→}
+  1740→  1740→

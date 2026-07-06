@@ -178,7 +178,11 @@ export async function GET(request: NextRequest) {
       db.product.count({ where }),
       db.product.findMany({
         where,
-        include: { images: { orderBy: { displayOrder: 'asc' } } },
+        include: {
+          images: { orderBy: { displayOrder: 'asc' } },
+          original: true,
+          variantMemberships: true,
+        },
         orderBy: { [sortColumn]: orderDir },
         skip: (page - 1) * limit,
         take: limit,
@@ -255,12 +259,86 @@ export async function POST(request: NextRequest) {
     // Apply auto-derivations
     const data = applyAutoDerivations(rawData);
 
+    // Create product and its original record for change tracking
     const product = await db.product.create({
       data,
-      include: { images: { orderBy: { displayOrder: 'asc' } } },
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: true,
+      },
     });
 
-    return NextResponse.json(serializeProduct(product), { status: 201 });
+    // Create ProductOriginal for change tracking (baseline for manually added products)
+    await db.productOriginal.create({
+      data: {
+        productId: product.id,
+        sourceRow: product.sourceRow,
+        origProductId: product.productId,
+        sku: product.sku,
+        ndNumber: product.ndNumber,
+        barcode: product.barcode,
+        legacyCode: product.legacyCode,
+        brand: product.brand,
+        brandAr: product.brandAr,
+        brandCode: product.brandCode,
+        model: product.model,
+        department: product.department,
+        category: product.category,
+        subcategory: product.subcategory,
+        sectionCode: product.sectionCode,
+        productFamily: product.productFamily,
+        productType: product.productType,
+        nameAr: product.nameAr,
+        nameEn: product.nameEn,
+        shortDescAr: product.shortDescAr,
+        shortDescEn: product.shortDescEn,
+        longDescAr: product.longDescAr,
+        longDescEn: product.longDescEn,
+        color: product.color,
+        colorAr: product.colorAr,
+        material: product.material,
+        materialAr: product.materialAr,
+        capacity: product.capacity,
+        capacityUnit: product.capacityUnit,
+        weight: product.weight,
+        weightUnit: product.weightUnit,
+        length: product.length,
+        width: product.width,
+        height: product.height,
+        diameter: product.diameter,
+        dimensionUnit: product.dimensionUnit,
+        countryOfOrigin: product.countryOfOrigin,
+        unit: product.unit,
+        minSalesMultiples: product.minSalesMultiples,
+        defaultPrice: product.defaultPrice,
+        seoTitleEn: product.seoTitleEn,
+        seoTitleAr: product.seoTitleAr,
+        seoDescriptionEn: product.seoDescriptionEn,
+        seoDescriptionAr: product.seoDescriptionAr,
+        searchKeywords: product.searchKeywords,
+        internalNotes: product.internalNotes,
+        validationStatus: product.validationStatus,
+        confidenceScore: product.confidenceScore,
+        pieces: product.pieces,
+        setCount: product.setCount,
+        shape: product.shape,
+        finish: product.finish,
+        additionalInfo: product.additionalInfo,
+      }
+    });
+
+    // Fetch the product again with original included
+    const productWithOriginal = await db.product.findUnique({
+      where: { id: product.id },
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: true,
+      },
+    });
+
+    return NextResponse.json(serializeProduct(productWithOriginal!), { status: 201 });
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });

@@ -29,6 +29,78 @@ interface ProductImageRow {
   createdAt: Date;
 }
 
+interface ProductOriginalRow {
+  id: string;
+  productId: string;
+  sourceRow: number | null;
+  origProductId: string | null;
+  sku: string | null;
+  ndNumber: string | null;
+  barcode: string | null;
+  legacyCode: string | null;
+  brand: string | null;
+  brandAr: string | null;
+  brandCode: string | null;
+  model: string | null;
+  department: string | null;
+  category: string | null;
+  subcategory: string | null;
+  sectionCode: string | null;
+  productFamily: string | null;
+  productType: string | null;
+  nameAr: string | null;
+  nameEn: string | null;
+  shortDescAr: string | null;
+  shortDescEn: string | null;
+  longDescAr: string | null;
+  longDescEn: string | null;
+  color: string | null;
+  colorAr: string | null;
+  material: string | null;
+  materialAr: string | null;
+  capacity: number | null;
+  capacityUnit: string | null;
+  weight: number | null;
+  weightUnit: string | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  diameter: number | null;
+  dimensionUnit: string | null;
+  countryOfOrigin: string | null;
+  unit: string | null;
+  minSalesMultiples: string | null;
+  defaultPrice: number | null;
+  seoTitleEn: string | null;
+  seoTitleAr: string | null;
+  seoDescriptionEn: string | null;
+  seoDescriptionAr: string | null;
+  searchKeywords: string | null;
+  internalNotes: string | null;
+  validationStatus: string | null;
+  confidenceScore: number | null;
+  pieces: number | null;
+  setCount: number | null;
+  shape: string | null;
+  finish: string | null;
+  additionalInfo: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface VariantMemberRow {
+  id: string;
+  variantGroupId: string;
+  productId: string;
+  color: string | null;
+  colorAr: string | null;
+  variantImage: string | null;
+  variantNotes: string | null;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface ProductRow {
   id: string;
   // Product Identity
@@ -95,6 +167,10 @@ interface ProductRow {
   createdAt: Date;
   updatedAt: Date;
   images: ProductImageRow[];
+  // Change Tracking
+  original: ProductOriginalRow | null;
+  // Variants
+  variantMemberships: VariantMemberRow[];
 }
 
 export function serializeProduct(p: ProductRow) {
@@ -170,6 +246,76 @@ export function serializeProduct(p: ProductRow) {
       displayOrder: img.displayOrder,
       isPrimary: img.isPrimary,
       createdAt: img.createdAt.toISOString(),
+    })),
+    // Change Tracking - Original values
+    original: p.original ? {
+      id: p.original.id,
+      productId: p.original.productId,
+      sourceRow: p.original.sourceRow,
+      origProductId: p.original.origProductId,
+      sku: p.original.sku,
+      ndNumber: p.original.ndNumber,
+      barcode: p.original.barcode,
+      legacyCode: p.original.legacyCode,
+      brand: p.original.brand,
+      brandAr: p.original.brandAr,
+      brandCode: p.original.brandCode,
+      model: p.original.model,
+      department: p.original.department,
+      category: p.original.category,
+      subcategory: p.original.subcategory,
+      sectionCode: p.original.sectionCode,
+      productFamily: p.original.productFamily,
+      productType: p.original.productType,
+      nameAr: p.original.nameAr,
+      nameEn: p.original.nameEn,
+      shortDescAr: p.original.shortDescAr,
+      shortDescEn: p.original.shortDescEn,
+      longDescAr: p.original.longDescAr,
+      longDescEn: p.original.longDescEn,
+      color: p.original.color,
+      colorAr: p.original.colorAr,
+      material: p.original.material,
+      materialAr: p.original.materialAr,
+      capacity: p.original.capacity,
+      capacityUnit: p.original.capacityUnit,
+      weight: p.original.weight,
+      weightUnit: p.original.weightUnit,
+      length: p.original.length,
+      width: p.original.width,
+      height: p.original.height,
+      diameter: p.original.diameter,
+      dimensionUnit: p.original.dimensionUnit,
+      countryOfOrigin: p.original.countryOfOrigin,
+      unit: p.original.unit,
+      minSalesMultiples: p.original.minSalesMultiples,
+      defaultPrice: p.original.defaultPrice,
+      seoTitleEn: p.original.seoTitleEn,
+      seoTitleAr: p.original.seoTitleAr,
+      seoDescriptionEn: p.original.seoDescriptionEn,
+      seoDescriptionAr: p.original.seoDescriptionAr,
+      searchKeywords: p.original.searchKeywords,
+      internalNotes: p.original.internalNotes,
+      validationStatus: p.original.validationStatus,
+      confidenceScore: p.original.confidenceScore,
+      pieces: p.original.pieces,
+      setCount: p.original.setCount,
+      shape: p.original.shape,
+      finish: p.original.finish,
+      additionalInfo: p.original.additionalInfo,
+    } : null,
+    // Variants
+    variantMemberships: (p.variantMemberships ?? []).map((vm) => ({
+      id: vm.id,
+      variantGroupId: vm.variantGroupId,
+      productId: vm.productId,
+      color: vm.color,
+      colorAr: vm.colorAr,
+      variantImage: vm.variantImage,
+      variantNotes: vm.variantNotes,
+      displayOrder: vm.displayOrder,
+      createdAt: vm.createdAt.toISOString(),
+      updatedAt: vm.updatedAt.toISOString(),
     })),
   };
 }

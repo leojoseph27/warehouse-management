@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -315,6 +315,9 @@ export function ProductForm({ mode }: ProductFormProps) {
   // ── Form data ──────────────────────────────────────────────
   const [formData, setFormData] = useState<FormData>({ ...EMPTY_FORM });
 
+  // ── Track whether form has been initialized (to prevent reset on image upload) ──
+  const formInitializedRef = useRef(false);
+
   // ── Section collapse state ─────────────────────────────────
   const [expandedSections, setExpandedSections] = useState<Set<SectionName>>(
     new Set(['Product Identity', 'Classification'])
@@ -537,9 +540,12 @@ export function ProductForm({ mode }: ProductFormProps) {
     [priceDinar, updateField]
   );
 
-  // ── Load form data from currentProduct in edit mode ────────
+  // ── Load form data from currentProduct in edit mode (ONE-TIME initialization) ──
+  // This useEffect should only run ONCE when entering edit mode, not on every currentProduct change
+  // Image uploads update currentProduct.images but should NOT reset the form
   useEffect(() => {
-    if (mode === 'edit' && currentProduct) {
+    if (mode === 'edit' && currentProduct && !formInitializedRef.current) {
+      formInitializedRef.current = true;
       const p = currentProduct;
       setFormData({
         sourceRow: p.sourceRow?.toString() || '',
@@ -600,7 +606,12 @@ export function ProductForm({ mode }: ProductFormProps) {
       setPriceDinar(dinar);
       setPriceFils(fils);
     }
-  }, [mode, currentProduct]);
+
+    // Reset initialization flag when switching to add mode or different product
+    if (mode === 'add') {
+      formInitializedRef.current = false;
+    }
+  }, [mode, currentProduct?.id]); // Only watch mode and product ID, not the whole currentProduct object
 
   // ── Dependent dropdown option lists ────────────────────────
   const categoryOptions = useMemo(
