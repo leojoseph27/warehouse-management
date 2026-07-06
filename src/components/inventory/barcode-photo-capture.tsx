@@ -137,6 +137,13 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const trackRef = useRef<MediaStreamTrack | null>(null);
+  
+  // CRITICAL: Track component mount status to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  
+  // Stable callback refs to prevent dependency issues
+  const onScanRef = useRef(onScan);
+  const onCloseRef = useRef(onClose);
 
   const [isStarting, setIsStarting] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,8 +158,24 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
   const [detectedBarcode, setDetectedBarcode] = useState<string | null>(null);
   const [processingStep, setProcessingStep] = useState<string>('');
 
+  // ── Update refs when props change (but don't trigger re-renders) ──
+  useEffect(() => {
+    onScanRef.current = onScan;
+    onCloseRef.current = onClose;
+  }, [onScan, onClose]);
+
+  // ── Cleanup function that safely stops the camera ──
+  const cleanupCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    trackRef.current = null;
+  }, []);
+
   // ── Start camera on mount ──
   useEffect(() => {
+    isMountedRef.current = true;
     let cancelled = false;
 
     const startCamera = async () => {
@@ -228,13 +251,12 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
     startCamera();
 
     return () => {
+      // Mark as unmounted first to prevent any async callbacks
+      isMountedRef.current = false;
       cancelled = true;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
-      }
+      cleanupCamera();
     };
-  }, []);
+  }, [cleanupCamera]);
 
   // ── Toggle flashlight/torch ──
   const toggleTorch = useCallback(async () => {
@@ -434,6 +456,12 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
     console.log('[BarcodeCapture]   OCR result:', ocrResult || '(none)');
     console.log('[BarcodeCapture]   Final selected barcode:', finalBarcode || '(none)');
 
+    // Only update state if still mounted - prevents crashes on cancel/back
+    if (!isMountedRef.current) {
+      console.log('[BarcodeCapture] Component unmounted during processing, skipping state update');
+      return;
+    }
+
     setIsProcessing(false);
     setProcessingStep('');
 
@@ -442,18 +470,18 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
     } else {
       setNoBarcodeFound(true);
     }
-  }, [onScan, cropScanZone, runOcr, runEnhancedOcr]);
+  }, [cropScanZone, runOcr, runEnhancedOcr]);
 
   // ── Confirm detected barcode → search ──
   const confirmBarcode = useCallback(() => {
     if (!detectedBarcode) return;
     // Stop camera
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
+    cleanupCamera();
+    // Only call callback if still mounted
+    if (isMountedRef.current) {
+      onScanRef.current(detectedBarcode);
     }
-    onScan(detectedBarcode);
-  }, [detectedBarcode, onScan]);
+  }, [detectedBarcode, cleanupCamera]);
 
   // ── Retry: go back to live camera ──
   const retry = useCallback(() => {
@@ -495,7 +523,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
         <Button
           variant="ghost"
           size="sm"
-          onClick={onClose}
+          onClick={() => { cleanupCamera(); onCloseRef.current(); }}
           className="text-white hover:bg-white/20 h-9 w-9 p-0"
         >
           <X className="h-5 w-5" />
@@ -656,7 +684,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
             </div>
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={() => { cleanupCamera(); onCloseRef.current(); }}
               className="text-white border-white/30 hover:bg-white/10"
             >
               Go Back
@@ -701,7 +729,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
           <Button
             variant="outline"
             size="sm"
-            onClick={onClose}
+            onClick={() => { cleanupCamera(); onCloseRef.current(); }}
             className="text-white border-white/30 hover:bg-white/10 h-11 px-4"
           >
             Type Manually

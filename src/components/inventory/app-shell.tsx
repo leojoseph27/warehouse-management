@@ -10,6 +10,7 @@ import { ProductDetail } from './product-detail';
 import { ExcelImport } from './excel-import';
 import { AuthScreen } from './auth-screen';
 import { Button } from '@/components/ui/button';
+import { ErrorBoundary } from '@/components/error-boundary';
 import {
   Package,
   LayoutDashboard,
@@ -20,8 +21,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import { useGlobalErrorHandler } from '@/hooks/use-global-error-handler';
 
 export function AppShell() {
+  // Global error handler for uncaught exceptions and promise rejections
+  useGlobalErrorHandler();
+  
   const {
     isAuthenticated,
     currentView,
@@ -39,25 +44,59 @@ export function AppShell() {
   }, [currentView]);
 
   if (!isAuthenticated) {
-    return <AuthScreen />;
+    return (
+      <ErrorBoundary fallbackMessage="Login screen encountered an error. Please refresh the page.">
+        <AuthScreen />
+      </ErrorBoundary>
+    );
   }
 
   const renderView = () => {
+    // Each view is wrapped in an ErrorBoundary to prevent entire app crashes
+    // from individual component failures
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return (
+          <ErrorBoundary fallbackMessage="Dashboard encountered an error. Try refreshing or navigate to another section.">
+            <Dashboard />
+          </ErrorBoundary>
+        );
       case 'products':
-        return <ProductTable />;
+        return (
+          <ErrorBoundary fallbackMessage="Products list encountered an error. Try refreshing or use the search.">
+            <ProductTable />
+          </ErrorBoundary>
+        );
       case 'add-product':
-        return <ProductForm mode="add" />;
+        return (
+          <ErrorBoundary fallbackMessage="Product form encountered an error. Your data may not have been saved.">
+            <ProductForm mode="add" />
+          </ErrorBoundary>
+        );
       case 'edit-product':
-        return <ProductForm mode="edit" />;
+        return (
+          <ErrorBoundary fallbackMessage="Edit form encountered an error. Your changes may not have been saved.">
+            <ProductForm mode="edit" />
+          </ErrorBoundary>
+        );
       case 'product-detail':
-        return <ProductDetail />;
+        return (
+          <ErrorBoundary fallbackMessage="Product details could not be loaded. Try selecting another product.">
+            <ProductDetail />
+          </ErrorBoundary>
+        );
       case 'import':
-        return <ExcelImport />;
+        return (
+          <ErrorBoundary fallbackMessage="Import process encountered an error. Please try again.">
+            <ExcelImport />
+          </ErrorBoundary>
+        );
       default:
-        return <Dashboard />;
+        return (
+          <ErrorBoundary fallbackMessage="Dashboard encountered an error. Try refreshing or navigate to another section.">
+            <Dashboard />
+          </ErrorBoundary>
+        );
     }
   };
 
