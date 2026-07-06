@@ -1,8 +1,8 @@
 'use client';
 
 import { useInventoryStore, ViewMode } from '@/store/inventory-store';
-import { UploadQueueProvider } from '@/store/upload-queue-context';
 import { UploadQueuePanel } from './upload-queue-panel';
+import { initializeUploadStore } from '@/store/upload-store';
 import { Dashboard } from './dashboard';
 import { ProductTable } from './product-table';
 import { ProductForm } from './product-form';
@@ -36,6 +36,11 @@ export function AppShell() {
 
   // Mobile menu state for tablet
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  
+  // Initialize upload store on mount (loads persisted state from IndexedDB)
+  useEffect(() => {
+    initializeUploadStore();
+  }, []);
 
   // Close mobile menu on view change
   useEffect(() => {
@@ -106,8 +111,7 @@ export function AppShell() {
   };
 
   return (
-    <UploadQueueProvider>
-      <div className="bg-background flex flex-col h-full">
+    <div className="bg-background flex flex-col h-full">
         {/* Top Navigation Bar */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b safe-area-inset">
           <div className="mx-auto px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-3">
@@ -231,7 +235,6 @@ export function AppShell() {
         {/* Upload Queue Panel (floating) - positioned to avoid mobile nav */}
         <UploadQueuePanel />
       </div>
-    </UploadQueueProvider>
   );
 }
 

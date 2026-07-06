@@ -16,7 +16,7 @@ import { Camera, Barcode } from 'lucide-react';
 import { ViewChangesPanel } from './view-changes-panel';
 import { VariantManager } from './variant-manager';
 import { useInventoryStore, Product, DuplicateCheck, getFieldChanges, hasModifications } from '@/store/inventory-store';
-import { useUploadQueue } from '@/store/upload-queue-context';
+import { useUploadStore } from '@/store/upload-store';
 import {
   ArrowLeft,
   Save,
