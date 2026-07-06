@@ -182,3 +182,119 @@ Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts_
 
 Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
 [00:42:10.486] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:45:47.363] Server  LOG     ✓ Compiled in 317ms
+[00:46:05.177] Server  LOG     ✓ Compiled in 192ms
+[00:46:35.431] Server  LOG     ✓ Compiled in 320ms
+[00:47:05.164] Server  LOG     ✓ Compiled in 268ms
+[00:47:38.375] Server  LOG     ✓ Compiled in 183ms
+[00:47:39.105] Browser ERROR   ./src/components/inventory/variant-manager.tsx:509:10
+Ecmascript file had an error
+  507 |
+  508 | // Simple barcode scanner modal component
+> 509 | function BarcodeScannerModal({
+      |          ^^^^^^^^^^^^^^^^^^^
+  510 |   onScan,
+  511 |   onClose,
+  512 | }: {
+
+the name `BarcodeScannerModal` is defined multiple times
+
+Import traces:
+  Client Component Browser:
+    ./src/components/inventory/variant-manager.tsx [Client Component Browser]
+    ./src/components/inventory/product-form.tsx [Client Component Browser]
+    ./src/components/inventory/app-shell.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/inventory/variant-manager.tsx [Client Component SSR]
+    ./src/components/inventory/product-form.tsx [Client Component SSR]
+    ./src/components/inventory/app-shell.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:47:58.996] Server  LOG     ✓ Compiled in 218ms
+[00:48:42.323] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:48:52.777] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:48:56.547] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:48:58.961] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           sourceRow: "asc"
+         },
+         skip: 0,
+         take: 50
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:49:00.718] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:49:04.023] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')

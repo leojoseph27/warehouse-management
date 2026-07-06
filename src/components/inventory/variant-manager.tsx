@@ -11,7 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Product, VariantGroup, VariantMember } from '@/store/inventory-store';
 import { COLOR_OPTIONS, getColorAr } from '@/lib/lookups';
-import { Plus, Link2, Unlink2, Trash2, Camera, Loader2, Layers, ChevronDown, ChevronRight, X, Check } from 'lucide-react';
+import { BarcodeScanner as BarcodeScannerModal } from './barcode-scanner-modal';
+import { BarcodePhotoCapture } from './barcode-photo-capture';
+import { Plus, Link2, Unlink2, Trash2, Camera, Loader2, Layers, ChevronDown, ChevronRight, X, Check, Barcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -490,7 +492,7 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
             </DialogContent>
           </Dialog>
 
-          {/* Barcode Scanner Modal - using BarcodePhotoCapture as fallback */}
+          {/* Pro Scanner Modal - using full barcode scanner with html5-qrcode */}
           {scannerOpen && (
             <BarcodeScannerModal
               onScan={handleBarcodeScanned}
@@ -500,54 +502,5 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
         </CardContent>
       )}
     </Card>
-  );
-}
-
-// Simple barcode scanner modal component
-function BarcodeScannerModal({
-  onScan,
-  onClose,
-}: {
-  onScan: (barcode: string) => void;
-  onClose: () => void;
-}) {
-  const [isScanning, setIsScanning] = useState(false);
-  const [manualBarcode, setManualBarcode] = useState('');
-
-  const handleManualSubmit = () => {
-    if (manualBarcode.trim()) {
-      onScan(manualBarcode.trim());
-    }
-  };
-
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Scan Barcode</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          {/* Manual barcode input */}
-          <div>
-            <Label className="text-sm font-medium">Enter Barcode Manually</Label>
-            <Input
-              placeholder="Enter barcode..."
-              value={manualBarcode}
-              onChange={(e) => setManualBarcode(e.target.value)}
-              className="h-10 mt-1"
-              autoFocus
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={handleManualSubmit} className="flex-1">
-              Find Product
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }

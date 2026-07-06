@@ -10,7 +10,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { SearchableSingleSelect } from './searchable-single-select';
 import { ImageGallery } from './image-gallery';
-import { BarcodeScanner } from './barcode-scanner';
+import { BarcodeScanner as BarcodeScannerModal } from './barcode-scanner-modal';
+import { BarcodePhotoCapture } from './barcode-photo-capture';
+import { Camera, Barcode } from 'lucide-react';
 import { ViewChangesPanel } from './view-changes-panel';
 import { VariantManager } from './variant-manager';
 import { useInventoryStore, Product, DuplicateCheck, getFieldChanges, hasModifications } from '@/store/inventory-store';
@@ -342,6 +344,10 @@ export function ProductForm({ mode }: ProductFormProps) {
 
   // ── Validation errors ──────────────────────────────────────
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // ── Pro Scanner modal state ─────────────────────────────────
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
 
   // ── Duplicate check ────────────────────────────────────────
   const checkDuplicates = useCallback(
@@ -1007,7 +1013,7 @@ export function ProductForm({ mode }: ProductFormProps) {
             <FieldError field="ndNumber" />
           </div>
 
-          {/* Barcode * + Scanner */}
+          {/* Barcode * + Pro Scanner */}
           <div className="space-y-2">
             <FieldLabel mandatory>Barcode</FieldLabel>
             <div className="flex gap-2">
@@ -1017,7 +1023,16 @@ export function ProductForm({ mode }: ProductFormProps) {
                 placeholder="102000001249"
                 className="h-11 flex-1"
               />
-              <BarcodeScanner onScan={(barcode) => updateField('barcode', barcode)} />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBarcodeScanner(true)}
+                className="h-11 px-3"
+                title="Open Pro Scanner"
+              >
+                <Barcode className="h-4 w-4" />
+              </Button>
             </div>
             <FieldError field="barcode" />
           </div>
@@ -1774,6 +1789,34 @@ export function ProductForm({ mode }: ProductFormProps) {
           </div>
         </Grid2>
       </SectionCard>
+
+      {/* ═══════════════════════════════════════════════════════
+          PRO SCANNER MODALS
+          Full-screen barcode scanner with html5-qrcode library
+          ═══════════════════════════════════════════════════════ */}
+      {showBarcodeScanner && (
+        <BarcodeScannerModal
+          onScan={(barcode) => {
+            updateField('barcode', barcode);
+            setShowBarcodeScanner(false);
+            // Trigger duplicate check for the scanned barcode
+            checkDuplicates({ barcode });
+          }}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
+
+      {/* Pro Scanner with OCR fallback and camera controls */}
+      {showPhotoCapture && (
+        <BarcodePhotoCapture
+          onScan={(barcode) => {
+            updateField('barcode', barcode);
+            setShowPhotoCapture(false);
+            checkDuplicates({ barcode });
+          }}
+          onClose={() => setShowPhotoCapture(false)}
+        />
+      )}
     </div>
   );
 }
