@@ -21,6 +21,8 @@ import {
   Tag,
   Type,
   DollarSign,
+  Edit3,
+  Layers,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -97,6 +99,22 @@ export function Dashboard() {
       bg: 'bg-blue-50',
     },
     {
+      title: 'Modified',
+      value: stats?.productsWithModifications ?? 0,
+      icon: Edit3,
+      color: 'text-red-600',
+      bg: 'bg-red-50',
+      description: 'Manually edited fields',
+    },
+    {
+      title: 'Variant Groups',
+      value: stats?.totalVariantGroups ?? 0,
+      icon: Layers,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-50',
+      description: 'Linked product variants',
+    },
+    {
       title: 'Missing Images',
       value: stats?.productsMissingImages ?? 0,
       icon: ImageOff,
@@ -155,17 +173,20 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10 gap-3">
         {statCards.map((card) => (
           <Card key={card.title} className="overflow-hidden">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className={`${card.bg} p-2.5 rounded-lg`}>
+                <div className={`${card.bg} p-2.5 rounded-lg shrink-0`}>
                   <card.icon className={`h-5 w-5 ${card.color}`} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-2xl font-bold">{card.value}</p>
-                  <p className="text-xs text-muted-foreground leading-tight">{card.title}</p>
+                  <p className="text-xs text-muted-foreground leading-tight truncate">{card.title}</p>
+                  {card.description && (
+                    <p className="text-xs text-muted-foreground/70 leading-tight truncate">{card.description}</p>
+                  )}
                 </div>
               </div>
             </CardContent>

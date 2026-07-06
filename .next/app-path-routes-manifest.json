@@ -15,5 +15,9 @@
   "/api/route": "/api",
   "/api/seed/route": "/api/seed",
   "/api/setup/route": "/api/setup",
+  "/api/variants/[id]/members/route": "/api/variants/[id]/members",
+  "/api/variants/[id]/route": "/api/variants/[id]",
+  "/api/variants/member/[memberId]/route": "/api/variants/member/[memberId]",
+  "/api/variants/route": "/api/variants",
   "/page": "/"
 }

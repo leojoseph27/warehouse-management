@@ -1,6 +1,8 @@
 'use client';
 
 import { useInventoryStore, ViewMode } from '@/store/inventory-store';
+import { UploadQueueProvider } from '@/store/upload-queue-context';
+import { UploadQueuePanel } from './upload-queue-panel';
 import { Dashboard } from './dashboard';
 import { ProductTable } from './product-table';
 import { ProductForm } from './product-form';
@@ -53,9 +55,10 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <UploadQueueProvider>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Top Navigation Bar */}
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
           <button
             onClick={() => setView('dashboard')}
@@ -108,30 +111,34 @@ export function AppShell() {
         {renderView()}
       </main>
 
-      {/* Bottom Navigation for Mobile */}
-      <nav className="md:hidden sticky bottom-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
-        <div className="flex items-center justify-around h-14">
-          <MobileNavButton
-            active={currentView === 'dashboard'}
-            onClick={() => setView('dashboard')}
-            icon={LayoutDashboard}
-            label="Dashboard"
-          />
-          <MobileNavButton
-            active={currentView === 'products'}
-            onClick={() => setView('products')}
-            icon={Package}
-            label="Products"
-          />
-          <MobileNavButton
-            active={currentView === 'add-product'}
-            onClick={() => setView('add-product')}
-            icon={Plus}
-            label="Add"
-          />
-        </div>
-      </nav>
-    </div>
+        {/* Bottom Navigation for Mobile */}
+        <nav className="md:hidden sticky bottom-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+          <div className="flex items-center justify-around h-14">
+            <MobileNavButton
+              active={currentView === 'dashboard'}
+              onClick={() => setView('dashboard')}
+              icon={LayoutDashboard}
+              label="Dashboard"
+            />
+            <MobileNavButton
+              active={currentView === 'products'}
+              onClick={() => setView('products')}
+              icon={Package}
+              label="Products"
+            />
+            <MobileNavButton
+              active={currentView === 'add-product'}
+              onClick={() => setView('add-product')}
+              icon={Plus}
+              label="Add"
+            />
+          </div>
+        </nav>
+
+        {/* Upload Queue Panel (floating) */}
+        <UploadQueuePanel />
+      </div>
+    </UploadQueueProvider>
   );
 }
 

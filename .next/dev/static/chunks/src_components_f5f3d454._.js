@@ -436,6 +436,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$tag$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Tag$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/tag.js [app-client] (ecmascript) <export default as Tag>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$type$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Type$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/type.js [app-client] (ecmascript) <export default as Type>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$dollar$2d$sign$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__DollarSign$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/dollar-sign.js [app-client] (ecmascript) <export default as DollarSign>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pen$2d$line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Edit3$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/pen-line.js [app-client] (ecmascript) <export default as Edit3>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layers$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Layers$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/layers.js [app-client] (ecmascript) <export default as Layers>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/alert-dialog.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
 ;
@@ -510,6 +512,22 @@ function Dashboard() {
             bg: 'bg-blue-50'
         },
         {
+            title: 'Modified',
+            value: stats?.productsWithModifications ?? 0,
+            icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$pen$2d$line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Edit3$3e$__["Edit3"],
+            color: 'text-red-600',
+            bg: 'bg-red-50',
+            description: 'Manually edited fields'
+        },
+        {
+            title: 'Variant Groups',
+            value: stats?.totalVariantGroups ?? 0,
+            icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layers$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Layers$3e$__["Layers"],
+            color: 'text-indigo-600',
+            bg: 'bg-indigo-50',
+            description: 'Linked product variants'
+        },
+        {
             title: 'Missing Images',
             value: stats?.productsMissingImages ?? 0,
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$image$2d$off$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ImageOff$3e$__["ImageOff"],
@@ -565,7 +583,7 @@ function Dashboard() {
                                 children: "Dashboard"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 148,
+                                lineNumber: 166,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -573,13 +591,13 @@ function Dashboard() {
                                 children: "Product Inventory & Catalog Management"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 149,
+                                lineNumber: 167,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 147,
+                        lineNumber: 165,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -590,24 +608,24 @@ function Dashboard() {
                                 className: "h-5 w-5 mr-2"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 152,
+                                lineNumber: 170,
                                 columnNumber: 11
                             }, this),
                             "Add Product"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 151,
+                        lineNumber: 169,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                lineNumber: 146,
+                lineNumber: 164,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3",
+                className: "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-10 gap-3",
                 children: statCards.map((card)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
                         className: "overflow-hidden",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -616,62 +634,71 @@ function Dashboard() {
                                 className: "flex items-center gap-3",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: `${card.bg} p-2.5 rounded-lg`,
+                                        className: `${card.bg} p-2.5 rounded-lg shrink-0`,
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(card.icon, {
                                             className: `h-5 w-5 ${card.color}`
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 164,
+                                            lineNumber: 182,
                                             columnNumber: 19
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                        lineNumber: 163,
+                                        lineNumber: 181,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "min-w-0",
                                         children: [
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                                 className: "text-2xl font-bold",
                                                 children: card.value
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                lineNumber: 167,
+                                                lineNumber: 185,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                className: "text-xs text-muted-foreground leading-tight",
+                                                className: "text-xs text-muted-foreground leading-tight truncate",
                                                 children: card.title
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                lineNumber: 168,
+                                                lineNumber: 186,
                                                 columnNumber: 19
+                                            }, this),
+                                            card.description && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                                                className: "text-xs text-muted-foreground/70 leading-tight truncate",
+                                                children: card.description
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/dashboard.tsx",
+                                                lineNumber: 188,
+                                                columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                        lineNumber: 166,
+                                        lineNumber: 184,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 162,
+                                lineNumber: 180,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 161,
+                            lineNumber: 179,
                             columnNumber: 13
                         }, this)
                     }, card.title, false, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 160,
+                        lineNumber: 178,
                         columnNumber: 11
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                lineNumber: 158,
+                lineNumber: 176,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -683,12 +710,12 @@ function Dashboard() {
                             children: "Quick Actions"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 179,
+                            lineNumber: 200,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 178,
+                        lineNumber: 199,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -704,7 +731,7 @@ function Dashboard() {
                                             className: "h-6 w-6 text-emerald-600"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 188,
+                                            lineNumber: 209,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -712,13 +739,13 @@ function Dashboard() {
                                             children: "Add Product"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 189,
+                                            lineNumber: 210,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 183,
+                                    lineNumber: 204,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -730,7 +757,7 @@ function Dashboard() {
                                             className: "h-6 w-6 text-amber-600"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 196,
+                                            lineNumber: 217,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -738,13 +765,13 @@ function Dashboard() {
                                             children: "Import Excel"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 197,
+                                            lineNumber: 218,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 191,
+                                    lineNumber: 212,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -761,13 +788,13 @@ function Dashboard() {
                                                     className: "h-6 w-6 border-2 border-purple-600 border-t-transparent animate-spin rounded-full"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 207,
+                                                    lineNumber: 228,
                                                     columnNumber: 19
                                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$download$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Download$3e$__["Download"], {
                                                     className: "h-6 w-6 text-purple-600"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 209,
+                                                    lineNumber: 230,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -775,13 +802,13 @@ function Dashboard() {
                                                     children: "Export Excel"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 211,
+                                                    lineNumber: 232,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 200,
+                                            lineNumber: 221,
                                             columnNumber: 15
                                         }, this),
                                         showExportMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -794,7 +821,7 @@ function Dashboard() {
                                                     }
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 216,
+                                                    lineNumber: 237,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -805,7 +832,7 @@ function Dashboard() {
                                                             children: "Export Excel"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 218,
+                                                            lineNumber: 239,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -837,21 +864,21 @@ function Dashboard() {
                                                                     className: "h-4 w-4 mr-2"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 242,
+                                                                    lineNumber: 263,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 "Export All Products"
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 220,
+                                                            lineNumber: 241,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                             className: "border-t"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 246,
+                                                            lineNumber: 267,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -862,7 +889,7 @@ function Dashboard() {
                                                                     children: "Export by Serial Number Range"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 249,
+                                                                    lineNumber: 270,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Input"], {
@@ -908,7 +935,7 @@ function Dashboard() {
                                                                     disabled: isExporting
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 250,
+                                                                    lineNumber: 271,
                                                                     columnNumber: 23
                                                                 }, this),
                                                                 srRangeError && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -916,7 +943,7 @@ function Dashboard() {
                                                                     children: srRangeError
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 277,
+                                                                    lineNumber: 298,
                                                                     columnNumber: 40
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -958,26 +985,26 @@ function Dashboard() {
                                                                             className: "h-4 w-4 mr-2"
                                                                         }, void 0, false, {
                                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                            lineNumber: 301,
+                                                                            lineNumber: 322,
                                                                             columnNumber: 25
                                                                         }, this),
                                                                         "Export Range"
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 278,
+                                                                    lineNumber: 299,
                                                                     columnNumber: 23
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 248,
+                                                            lineNumber: 269,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 217,
+                                                    lineNumber: 238,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
@@ -985,7 +1012,7 @@ function Dashboard() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 199,
+                                    lineNumber: 220,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialog"], {
@@ -1001,13 +1028,13 @@ function Dashboard() {
                                                         className: "h-6 w-6 text-destructive animate-spin"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                        lineNumber: 317,
+                                                        lineNumber: 338,
                                                         columnNumber: 21
                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$trash$2d$2$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Trash2$3e$__["Trash2"], {
                                                         className: "h-6 w-6 text-destructive"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                        lineNumber: 319,
+                                                        lineNumber: 340,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1015,18 +1042,18 @@ function Dashboard() {
                                                         children: "Clear All"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                        lineNumber: 321,
+                                                        lineNumber: 342,
                                                         columnNumber: 19
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                lineNumber: 311,
+                                                lineNumber: 332,
                                                 columnNumber: 17
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 310,
+                                            lineNumber: 331,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogContent"], {
@@ -1037,7 +1064,7 @@ function Dashboard() {
                                                             children: "Delete all products?"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 326,
+                                                            lineNumber: 347,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogDescription"], {
@@ -1051,20 +1078,20 @@ function Dashboard() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                    lineNumber: 328,
+                                                                    lineNumber: 349,
                                                                     columnNumber: 50
                                                                 }, this),
                                                                 ", all product images from the database, and all image files from storage. This action cannot be undone."
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 327,
+                                                            lineNumber: 348,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 325,
+                                                    lineNumber: 346,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogFooter"], {
@@ -1073,7 +1100,7 @@ function Dashboard() {
                                                             children: "Cancel"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 334,
+                                                            lineNumber: 355,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2d$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDialogAction"], {
@@ -1101,42 +1128,42 @@ function Dashboard() {
                                                             children: "Yes, delete everything"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 335,
+                                                            lineNumber: 356,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 333,
+                                                    lineNumber: 354,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 324,
+                                            lineNumber: 345,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 309,
+                                    lineNumber: 330,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 182,
+                            lineNumber: 203,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 181,
+                        lineNumber: 202,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                lineNumber: 177,
+                lineNumber: 198,
                 columnNumber: 7
             }, this),
             (stats?.totalProducts ?? 0) === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1148,7 +1175,7 @@ function Dashboard() {
                             className: "h-16 w-16 mx-auto text-muted-foreground/30 mb-4"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 369,
+                            lineNumber: 390,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1156,7 +1183,7 @@ function Dashboard() {
                             children: "No products found"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 370,
+                            lineNumber: 391,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1164,7 +1191,7 @@ function Dashboard() {
                             children: "Import an Excel file to begin."
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 371,
+                            lineNumber: 392,
                             columnNumber: 13
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1177,14 +1204,14 @@ function Dashboard() {
                                             className: "h-4 w-4 mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 374,
+                                            lineNumber: 395,
                                             columnNumber: 17
                                         }, this),
                                         "Import Excel"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 373,
+                                    lineNumber: 394,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1195,31 +1222,31 @@ function Dashboard() {
                                             className: "h-4 w-4 mr-2"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 378,
+                                            lineNumber: 399,
                                             columnNumber: 17
                                         }, this),
                                         "Add Product"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 377,
+                                    lineNumber: 398,
                                     columnNumber: 15
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                            lineNumber: 372,
+                            lineNumber: 393,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                    lineNumber: 368,
+                    lineNumber: 389,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                lineNumber: 367,
+                lineNumber: 388,
                 columnNumber: 9
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "space-y-3",
@@ -1233,7 +1260,7 @@ function Dashboard() {
                                 className: "h-5 w-5 mr-2"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 392,
+                                lineNumber: 413,
                                 columnNumber: 13
                             }, this),
                             "Browse All Products (",
@@ -1242,7 +1269,7 @@ function Dashboard() {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 387,
+                        lineNumber: 408,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -1257,7 +1284,7 @@ function Dashboard() {
                                             children: "Recent Products"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 400,
+                                            lineNumber: 421,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -1270,24 +1297,24 @@ function Dashboard() {
                                                     className: "h-4 w-4 ml-2"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 403,
+                                                    lineNumber: 424,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                            lineNumber: 401,
+                                            lineNumber: 422,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 399,
+                                    lineNumber: 420,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 398,
+                                lineNumber: 419,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1297,19 +1324,19 @@ function Dashboard() {
                                         className: "h-6 w-6 animate-spin text-muted-foreground"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                        lineNumber: 410,
+                                        lineNumber: 431,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 409,
+                                    lineNumber: 430,
                                     columnNumber: 17
                                 }, this) : recentProducts.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "text-center py-8 text-muted-foreground text-sm",
                                     children: "No recent products"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 413,
+                                    lineNumber: 434,
                                     columnNumber: 17
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "overflow-x-auto",
@@ -1325,7 +1352,7 @@ function Dashboard() {
                                                             children: "SR"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 421,
+                                                            lineNumber: 442,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1333,7 +1360,7 @@ function Dashboard() {
                                                             children: "ND Number"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 422,
+                                                            lineNumber: 443,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1341,7 +1368,7 @@ function Dashboard() {
                                                             children: "Barcode"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 423,
+                                                            lineNumber: 444,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1349,7 +1376,7 @@ function Dashboard() {
                                                             children: "Name EN"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 424,
+                                                            lineNumber: 445,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1357,7 +1384,7 @@ function Dashboard() {
                                                             children: "Product Type"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 425,
+                                                            lineNumber: 446,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -1365,18 +1392,18 @@ function Dashboard() {
                                                             children: "Brand"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                            lineNumber: 426,
+                                                            lineNumber: 447,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                    lineNumber: 420,
+                                                    lineNumber: 441,
                                                     columnNumber: 23
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                lineNumber: 419,
+                                                lineNumber: 440,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -1393,7 +1420,7 @@ function Dashboard() {
                                                                 children: product.sourceRow ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 440,
+                                                                lineNumber: 461,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1401,7 +1428,7 @@ function Dashboard() {
                                                                 children: product.ndNumber ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 441,
+                                                                lineNumber: 462,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1409,7 +1436,7 @@ function Dashboard() {
                                                                 children: product.barcode ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 442,
+                                                                lineNumber: 463,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1417,7 +1444,7 @@ function Dashboard() {
                                                                 children: product.nameEn ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 443,
+                                                                lineNumber: 464,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1425,7 +1452,7 @@ function Dashboard() {
                                                                 children: product.productType ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 444,
+                                                                lineNumber: 465,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
@@ -1433,52 +1460,52 @@ function Dashboard() {
                                                                 children: product.brand ?? '-'
                                                             }, void 0, false, {
                                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                                lineNumber: 445,
+                                                                lineNumber: 466,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, product.id, true, {
                                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                        lineNumber: 431,
+                                                        lineNumber: 452,
                                                         columnNumber: 25
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                                lineNumber: 429,
+                                                lineNumber: 450,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                        lineNumber: 418,
+                                        lineNumber: 439,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                    lineNumber: 417,
+                                    lineNumber: 438,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                                lineNumber: 407,
+                                lineNumber: 428,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/dashboard.tsx",
-                        lineNumber: 397,
+                        lineNumber: 418,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/dashboard.tsx",
-                lineNumber: 385,
+                lineNumber: 406,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/dashboard.tsx",
-        lineNumber: 144,
+        lineNumber: 162,
         columnNumber: 5
     }, this);
 }
@@ -7271,6 +7298,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$re
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$image$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Image$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/image.js [app-client] (ecmascript) <export default as Image>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/badge.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/dialog.tsx [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$upload$2d$queue$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/store/upload-queue-context.tsx [app-client] (ecmascript)");
+// Import Loader2 for pending upload display
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-client] (ecmascript) <export default as Loader2>");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
@@ -7279,33 +7309,52 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, readOnly }) {
+;
+function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, readOnly, useBackgroundUpload = false, variantId }) {
     _s();
-    const [uploading, setUploading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [previewImage, setPreviewImage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const fileInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const cameraInputRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
+    // Background upload queue
+    const { addToQueue, state } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$upload$2d$queue$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useUploadQueue"])();
+    // Handle file selection - add to background queue or upload directly
     const handleFileSelect = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "ImageGallery.useCallback[handleFileSelect]": async (e, isCamera = false)=>{
             const files = e.target.files;
             if (!files || files.length === 0) return;
-            setUploading(true);
-            try {
+            // Determine if this is the first image (should be primary)
+            const isFirstImage = images.length === 0;
+            if (useBackgroundUpload) {
+                // Add files to background upload queue
+                for (const file of Array.from(files)){
+                    addToQueue(file, productId, {
+                        isPrimary: isFirstImage && files.length === 1 && files[0] === file,
+                        variantId
+                    });
+                }
+                // Clear input
+                e.target.value = '';
+            } else {
+                // Blocking upload (original behavior)
                 for (const file of Array.from(files)){
                     await onUpload(file, images.length === 0);
                 }
-            } finally{
-                setUploading(false);
                 e.target.value = '';
             }
         }
     }["ImageGallery.useCallback[handleFileSelect]"], [
         onUpload,
-        images.length
+        images.length,
+        useBackgroundUpload,
+        addToQueue,
+        productId,
+        variantId
     ]);
     const handleDelete = async (imageId)=>{
         await onDelete(imageId);
     };
+    // Check for pending/uploading items for this product
+    const pendingUploads = useBackgroundUpload ? state.items.filter((i)=>i.productId === productId && i.status !== 'completed' && i.status !== 'failed') : [];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "space-y-3",
         children: [
@@ -7314,10 +7363,24 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
                         className: "text-sm font-medium text-foreground",
-                        children: "Product Images"
-                    }, void 0, false, {
+                        children: [
+                            "Product Images",
+                            pendingUploads.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
+                                variant: "secondary",
+                                className: "ml-2 text-xs",
+                                children: [
+                                    pendingUploads.length,
+                                    " uploading"
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                lineNumber: 93,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 51,
+                        lineNumber: 90,
                         columnNumber: 9
                     }, this),
                     !readOnly && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7328,21 +7391,20 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                 variant: "outline",
                                 size: "sm",
                                 onClick: ()=>cameraInputRef.current?.click(),
-                                disabled: uploading,
                                 className: "h-9",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$camera$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Camera$3e$__["Camera"], {
                                         className: "h-4 w-4 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                        lineNumber: 62,
+                                        lineNumber: 107,
                                         columnNumber: 15
                                     }, this),
                                     "Take Photo"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                lineNumber: 54,
+                                lineNumber: 100,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7350,33 +7412,32 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                 variant: "outline",
                                 size: "sm",
                                 onClick: ()=>fileInputRef.current?.click(),
-                                disabled: uploading,
                                 className: "h-9",
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$upload$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Upload$3e$__["Upload"], {
                                         className: "h-4 w-4 mr-1"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                        lineNumber: 73,
+                                        lineNumber: 117,
                                         columnNumber: 15
                                     }, this),
                                     "Upload"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                lineNumber: 65,
+                                lineNumber: 110,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 53,
+                        lineNumber: 99,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 50,
+                lineNumber: 89,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -7388,7 +7449,7 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 81,
+                lineNumber: 125,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
@@ -7400,8 +7461,73 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                 className: "hidden"
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 89,
+                lineNumber: 133,
                 columnNumber: 7
+            }, this),
+            pendingUploads.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "space-y-2",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "text-xs text-muted-foreground",
+                        children: [
+                            pendingUploads.length,
+                            " image(s) pending upload..."
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                        lineNumber: 145,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "grid grid-cols-3 gap-2",
+                        children: pendingUploads.map((item)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "relative group aspect-square rounded-lg overflow-hidden border bg-muted",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "w-full h-full flex items-center justify-center",
+                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "text-center",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
+                                                className: "h-6 w-6 animate-spin mx-auto text-muted-foreground"
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                                lineNumber: 154,
+                                                columnNumber: 21
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "text-xs text-muted-foreground mt-1",
+                                                children: item.status === 'queued' ? 'Queued' : `${item.progress}%`
+                                            }, void 0, false, {
+                                                fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                                lineNumber: 155,
+                                                columnNumber: 21
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                        lineNumber: 153,
+                                        columnNumber: 19
+                                    }, this)
+                                }, void 0, false, {
+                                    fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                    lineNumber: 152,
+                                    columnNumber: 17
+                                }, this)
+                            }, item.id, false, {
+                                fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                                lineNumber: 150,
+                                columnNumber: 15
+                            }, this))
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                        lineNumber: 148,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/components/inventory/image-gallery.tsx",
+                lineNumber: 144,
+                columnNumber: 9
             }, this),
             images.length > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "grid grid-cols-3 gap-2",
@@ -7418,7 +7544,7 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                 onClick: ()=>setPreviewImage(image.imageUrl)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                lineNumber: 108,
+                                lineNumber: 176,
                                 columnNumber: 17
                             }, this),
                             image.isPrimary && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7430,19 +7556,19 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                             className: "h-3 w-3 mr-0.5"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                            lineNumber: 117,
+                                            lineNumber: 185,
                                             columnNumber: 23
                                         }, this),
                                         "Primary"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                    lineNumber: 116,
+                                    lineNumber: 184,
                                     columnNumber: 21
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                lineNumber: 115,
+                                lineNumber: 183,
                                 columnNumber: 19
                             }, this),
                             !readOnly && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -7459,12 +7585,12 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                            lineNumber: 133,
+                                            lineNumber: 201,
                                             columnNumber: 25
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                        lineNumber: 125,
+                                        lineNumber: 193,
                                         columnNumber: 23
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -7478,29 +7604,29 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                            lineNumber: 144,
+                                            lineNumber: 212,
                                             columnNumber: 23
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                        lineNumber: 136,
+                                        lineNumber: 204,
                                         columnNumber: 21
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                                lineNumber: 123,
+                                lineNumber: 191,
                                 columnNumber: 19
                             }, this)
                         ]
                     }, image.id, true, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 107,
+                        lineNumber: 175,
                         columnNumber: 15
                     }, this))
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 100,
+                lineNumber: 168,
                 columnNumber: 9
             }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                 className: "border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground",
@@ -7509,7 +7635,7 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                         className: "h-10 w-10 mx-auto mb-2 opacity-50"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 153,
+                        lineNumber: 221,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -7517,7 +7643,7 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                         children: "No images yet"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 154,
+                        lineNumber: 222,
                         columnNumber: 11
                     }, this),
                     !readOnly && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -7525,37 +7651,13 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                         children: "Take a photo or upload images"
                     }, void 0, false, {
                         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 156,
+                        lineNumber: 224,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 152,
-                columnNumber: 9
-            }, this),
-            uploading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex items-center justify-center py-2",
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 163,
-                        columnNumber: 11
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                        className: "ml-2 text-sm text-muted-foreground",
-                        children: "Uploading..."
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                        lineNumber: 164,
-                        columnNumber: 11
-                    }, this)
-                ]
-            }, void 0, true, {
-                fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 162,
+                lineNumber: 220,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -7569,7 +7671,7 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                             children: "Image Preview"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                            lineNumber: 171,
+                            lineNumber: 232,
                             columnNumber: 11
                         }, this),
                         previewImage && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("img", {
@@ -7578,29 +7680,34 @@ function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, rea
                             className: "w-full rounded-md"
                         }, void 0, false, {
                             fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                            lineNumber: 173,
+                            lineNumber: 234,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                    lineNumber: 170,
+                    lineNumber: 231,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/inventory/image-gallery.tsx",
-                lineNumber: 169,
+                lineNumber: 230,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/inventory/image-gallery.tsx",
-        lineNumber: 49,
+        lineNumber: 88,
         columnNumber: 5
     }, this);
 }
-_s(ImageGallery, "k9vWmpSw3vEnJZWi7sesQPn1uYU=");
+_s(ImageGallery, "7DUHtOg8BGX6+p6smMjYk45PVwg=", false, function() {
+    return [
+        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$upload$2d$queue$2d$context$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useUploadQueue"]
+    ];
+});
 _c = ImageGallery;
+;
 var _c;
 __turbopack_context__.k.register(_c, "ImageGallery");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
@@ -13961,344 +14068,11 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
 }
 }),
-"[project]/src/components/inventory/app-shell.tsx [app-client] (ecmascript)", ((__turbopack_context__) => {
-"use strict";
+"[project]/src/components/inventory/app-shell.tsx [app-client] (ecmascript)", ((__turbopack_context__, module, exports) => {
 
-__turbopack_context__.s([
-    "AppShell",
-    ()=>AppShell
-]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/store/inventory-store.ts [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$dashboard$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/dashboard.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/product-table.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/product-form.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$detail$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/product-detail.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$excel$2d$import$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/excel-import.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$auth$2d$screen$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/inventory/auth-screen.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$package$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Package$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/package.js [app-client] (ecmascript) <export default as Package>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$dashboard$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutDashboard$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/layout-dashboard.js [app-client] (ecmascript) <export default as LayoutDashboard>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$log$2d$out$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LogOut$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/log-out.js [app-client] (ecmascript) <export default as LogOut>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/plus.js [app-client] (ecmascript) <export default as Plus>");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/sonner/dist/index.mjs [app-client] (ecmascript)");
-;
-var _s = __turbopack_context__.k.signature();
-'use client';
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-function AppShell() {
-    _s();
-    const { isAuthenticated, currentView, setView, setAuthenticated } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useInventoryStore"])();
-    if (!isAuthenticated) {
-        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$auth$2d$screen$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AuthScreen"], {}, void 0, false, {
-            fileName: "[project]/src/components/inventory/app-shell.tsx",
-            lineNumber: 28,
-            columnNumber: 12
-        }, this);
-    }
-    const renderView = ()=>{
-        switch(currentView){
-            case 'dashboard':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$dashboard$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dashboard"], {}, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 34,
-                    columnNumber: 16
-                }, this);
-            case 'products':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$table$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ProductTable"], {}, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 36,
-                    columnNumber: 16
-                }, this);
-            case 'add-product':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ProductForm"], {
-                    mode: "add"
-                }, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 38,
-                    columnNumber: 16
-                }, this);
-            case 'edit-product':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$form$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ProductForm"], {
-                    mode: "edit"
-                }, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 40,
-                    columnNumber: 16
-                }, this);
-            case 'product-detail':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$product$2d$detail$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ProductDetail"], {}, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 42,
-                    columnNumber: 16
-                }, this);
-            case 'import':
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$excel$2d$import$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ExcelImport"], {}, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 44,
-                    columnNumber: 16
-                }, this);
-            default:
-                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$inventory$2f$dashboard$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Dashboard"], {}, void 0, false, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 46,
-                    columnNumber: 16
-                }, this);
-        }
-    };
-    const handleLogout = ()=>{
-        setAuthenticated(false);
-        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$sonner$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toast"].success('Logged out successfully');
-    };
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "min-h-screen bg-background flex flex-col",
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("header", {
-                className: "sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "max-w-4xl mx-auto px-4 h-14 flex items-center gap-3",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                            onClick: ()=>setView('dashboard'),
-                            className: "flex items-center gap-2 hover:opacity-80 transition-opacity",
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                    className: "w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center",
-                                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$package$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Package$3e$__["Package"], {
-                                        className: "h-4 w-4 text-primary"
-                                    }, void 0, false, {
-                                        fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                        lineNumber: 65,
-                                        columnNumber: 15
-                                    }, this)
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 64,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "font-semibold text-sm hidden sm:inline",
-                                    children: "Product Catalog"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 67,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 60,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                            className: "flex-1"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 70,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
-                            className: "hidden md:flex items-center gap-1",
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavButton, {
-                                    active: currentView === 'dashboard',
-                                    onClick: ()=>setView('dashboard'),
-                                    icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$dashboard$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutDashboard$3e$__["LayoutDashboard"],
-                                    label: "Dashboard"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 74,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavButton, {
-                                    active: currentView === 'products',
-                                    onClick: ()=>setView('products'),
-                                    icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$package$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Package$3e$__["Package"],
-                                    label: "Products"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 80,
-                                    columnNumber: 13
-                                }, this),
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavButton, {
-                                    active: currentView === 'add-product',
-                                    onClick: ()=>setView('add-product'),
-                                    icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"],
-                                    label: "Add Product"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 86,
-                                    columnNumber: 13
-                                }, this)
-                            ]
-                        }, void 0, true, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 73,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
-                            variant: "ghost",
-                            size: "sm",
-                            onClick: handleLogout,
-                            className: "h-8 text-xs",
-                            children: [
-                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$log$2d$out$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LogOut$3e$__["LogOut"], {
-                                    className: "h-4 w-4 mr-1"
-                                }, void 0, false, {
-                                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                                    lineNumber: 100,
-                                    columnNumber: 13
-                                }, this),
-                                "Logout"
-                            ]
-                        }, void 0, true, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 94,
-                            columnNumber: 11
-                        }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 59,
-                    columnNumber: 9
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 58,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("main", {
-                className: "flex-1 max-w-4xl mx-auto w-full px-4 py-4",
-                children: renderView()
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 107,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
-                className: "md:hidden sticky bottom-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t",
-                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                    className: "flex items-center justify-around h-14",
-                    children: [
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(MobileNavButton, {
-                            active: currentView === 'dashboard',
-                            onClick: ()=>setView('dashboard'),
-                            icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$dashboard$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutDashboard$3e$__["LayoutDashboard"],
-                            label: "Dashboard"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 114,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(MobileNavButton, {
-                            active: currentView === 'products',
-                            onClick: ()=>setView('products'),
-                            icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$package$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Package$3e$__["Package"],
-                            label: "Products"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 120,
-                            columnNumber: 11
-                        }, this),
-                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(MobileNavButton, {
-                            active: currentView === 'add-product',
-                            onClick: ()=>setView('add-product'),
-                            icon: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$plus$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Plus$3e$__["Plus"],
-                            label: "Add"
-                        }, void 0, false, {
-                            fileName: "[project]/src/components/inventory/app-shell.tsx",
-                            lineNumber: 126,
-                            columnNumber: 11
-                        }, this)
-                    ]
-                }, void 0, true, {
-                    fileName: "[project]/src/components/inventory/app-shell.tsx",
-                    lineNumber: 113,
-                    columnNumber: 9
-                }, this)
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 112,
-                columnNumber: 7
-            }, this)
-        ]
-    }, void 0, true, {
-        fileName: "[project]/src/components/inventory/app-shell.tsx",
-        lineNumber: 56,
-        columnNumber: 5
-    }, this);
-}
-_s(AppShell, "uLBt605NXQ+P0kEoDGm3LC6c80U=", false, function() {
-    return [
-        __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$store$2f$inventory$2d$store$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useInventoryStore"]
-    ];
-});
-_c = AppShell;
-function NavButton({ active, onClick, icon: Icon, label }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-        onClick: onClick,
-        className: `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${active ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:text-foreground'}`,
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Icon, {
-                className: "h-4 w-4"
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 146,
-                columnNumber: 7
-            }, this),
-            label
-        ]
-    }, void 0, true, {
-        fileName: "[project]/src/components/inventory/app-shell.tsx",
-        lineNumber: 140,
-        columnNumber: 5
-    }, this);
-}
-_c1 = NavButton;
-function MobileNavButton({ active, onClick, icon: Icon, label }) {
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-        onClick: onClick,
-        className: `flex flex-col items-center gap-0.5 py-1 px-4 transition-colors ${active ? 'text-primary' : 'text-muted-foreground'}`,
-        children: [
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Icon, {
-                className: "h-5 w-5"
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 160,
-                columnNumber: 7
-            }, this),
-            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                className: "text-[10px] font-medium",
-                children: label
-            }, void 0, false, {
-                fileName: "[project]/src/components/inventory/app-shell.tsx",
-                lineNumber: 161,
-                columnNumber: 7
-            }, this)
-        ]
-    }, void 0, true, {
-        fileName: "[project]/src/components/inventory/app-shell.tsx",
-        lineNumber: 154,
-        columnNumber: 5
-    }, this);
-}
-_c2 = MobileNavButton;
-var _c, _c1, _c2;
-__turbopack_context__.k.register(_c, "AppShell");
-__turbopack_context__.k.register(_c1, "NavButton");
-__turbopack_context__.k.register(_c2, "MobileNavButton");
-if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
-    __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);
-}
+const e = new Error("Could not parse module '[project]/src/components/inventory/app-shell.tsx'\n\nUnexpected token. Did you mean `{'}'}` or `&rbrace;`?");
+e.code = 'MODULE_UNPARSABLE';
+throw e;
 }),
 ]);
 

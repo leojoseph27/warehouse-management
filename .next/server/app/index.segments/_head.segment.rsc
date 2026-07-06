@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[97367,["/_next/static/chunks/4392189f08a7af14.js"],"ViewportBoundary"]
-3:I[97367,["/_next/static/chunks/4392189f08a7af14.js"],"MetadataBoundary"]
+2:I[97367,["/_next/static/chunks/8ba4941a368b35ea.js"],"ViewportBoundary"]
+3:I[97367,["/_next/static/chunks/8ba4941a368b35ea.js"],"MetadataBoundary"]
 4:"$Sreact.suspense"
-5:I[27201,["/_next/static/chunks/4392189f08a7af14.js"],"IconMark"]
-0:{"buildId":"rERBjBRyzrr9QTYXjuUC4","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Product Catalog - Inventory Management"}],["$","meta","1",{"name":"description","content":"Mobile-first product inventory and catalog management system for houseware and household products."}],["$","link","2",{"rel":"icon","href":"https://z-cdn.chatglm.cn/z-ai/static/logo.svg"}],["$","$L5","3",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}
+5:I[27201,["/_next/static/chunks/8ba4941a368b35ea.js"],"IconMark"]
+0:{"buildId":"YhNpwmeUgwbKSztfMjV7o","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Product Catalog - Inventory Management"}],["$","meta","1",{"name":"description","content":"Mobile-first product inventory and catalog management system for houseware and household products."}],["$","link","2",{"rel":"icon","href":"https://z-cdn.chatglm.cn/z-ai/static/logo.svg"}],["$","$L5","3",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}

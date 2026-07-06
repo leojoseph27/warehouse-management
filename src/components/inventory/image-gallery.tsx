@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ProductImage } from '@/store/inventory-store';
+import { useUploadQueue } from '@/store/upload-queue-context';
 
 interface ImageGalleryProps {
   images: ProductImage[];
@@ -18,37 +19,82 @@ interface ImageGalleryProps {
   onDelete: (imageId: string) => Promise<void>;
   onSetPrimary: (imageId: string) => Promise<void>;
   readOnly?: boolean;
+  /**
+   * If true, use background upload queue instead of blocking uploads.
+   * When background mode is enabled, uploads are added to a queue and
+   * processed asynchronously, allowing the user to continue working.
+   */
+  useBackgroundUpload?: boolean;
+  /**
+   * Optional variant ID if this gallery is for a product variant.
+   */
+  variantId?: string;
 }
 
-export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrimary, readOnly }: ImageGalleryProps) {
-  const [uploading, setUploading] = useState(false);
+export function ImageGallery({
+  images,
+  productId,
+  onUpload,
+  onDelete,
+  onSetPrimary,
+  readOnly,
+  useBackgroundUpload = false,
+  variantId,
+}: ImageGalleryProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Background upload queue
+  const { addToQueue, state } = useUploadQueue();
+
+  // Handle file selection - add to background queue or upload directly
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, isCamera: boolean = false) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    try {
+    // Determine if this is the first image (should be primary)
+    const isFirstImage = images.length === 0;
+
+    if (useBackgroundUpload) {
+      // Add files to background upload queue
+      for (const file of Array.from(files)) {
+        addToQueue(file, productId, {
+          isPrimary: isFirstImage && files.length === 1 && files[0] === file,
+          variantId,
+        });
+      }
+      // Clear input
+      e.target.value = '';
+    } else {
+      // Blocking upload (original behavior)
       for (const file of Array.from(files)) {
         await onUpload(file, images.length === 0);
       }
-    } finally {
-      setUploading(false);
       e.target.value = '';
     }
-  }, [onUpload, images.length]);
+  }, [onUpload, images.length, useBackgroundUpload, addToQueue, productId, variantId]);
 
   const handleDelete = async (imageId: string) => {
     await onDelete(imageId);
   };
 
+  // Check for pending/uploading items for this product
+  const pendingUploads = useBackgroundUpload
+    ? state.items.filter(i => i.productId === productId && i.status !== 'completed' && i.status !== 'failed')
+    : [];
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Product Images</label>
+        <label className="text-sm font-medium text-foreground">
+          Product Images
+          {pendingUploads.length > 0 && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {pendingUploads.length} uploading
+            </Badge>
+          )}
+        </label>
         {!readOnly && (
           <div className="flex items-center gap-2">
             <Button
@@ -56,7 +102,6 @@ export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrima
               variant="outline"
               size="sm"
               onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
               className="h-9"
             >
               <Camera className="h-4 w-4 mr-1" />
@@ -67,7 +112,6 @@ export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrima
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
               className="h-9"
             >
               <Upload className="h-4 w-4 mr-1" />
@@ -94,6 +138,30 @@ export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrima
         onChange={(e) => handleFileSelect(e, false)}
         className="hidden"
       />
+
+      {/* Pending uploads preview */}
+      {pendingUploads.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs text-muted-foreground">
+            {pendingUploads.length} image(s) pending upload...
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {pendingUploads.map((item) => (
+              <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
+                {/* Show placeholder or local preview */}
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {item.status === 'queued' ? 'Queued' : `${item.progress}%`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Image grid */}
       {images.length > 0 ? (
@@ -158,13 +226,6 @@ export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrima
         </div>
       )}
 
-      {uploading && (
-        <div className="flex items-center justify-center py-2">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
-          <span className="ml-2 text-sm text-muted-foreground">Uploading...</span>
-        </div>
-      )}
-
       {/* Image preview dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-lg p-2">
@@ -177,3 +238,6 @@ export function ImageGallery({ images, productId, onUpload, onDelete, onSetPrima
     </div>
   );
 }
+
+// Import Loader2 for pending upload display
+import { Loader2 } from 'lucide-react';

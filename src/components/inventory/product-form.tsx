@@ -11,7 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { SearchableSingleSelect } from './searchable-single-select';
 import { ImageGallery } from './image-gallery';
 import { BarcodeScanner } from './barcode-scanner';
-import { useInventoryStore, Product, DuplicateCheck } from '@/store/inventory-store';
+import { ViewChangesPanel } from './view-changes-panel';
+import { VariantManager } from './variant-manager';
+import { useInventoryStore, Product, DuplicateCheck, getFieldChanges, hasModifications } from '@/store/inventory-store';
+import { useUploadQueue } from '@/store/upload-queue-context';
 import {
   ArrowLeft,
   Save,
@@ -21,6 +24,7 @@ import {
   ChevronRight,
   Lock,
   Sparkles,
+  Edit3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -908,16 +912,41 @@ export function ProductForm({ mode }: ProductFormProps) {
       {/* ── Product Images (edit mode only) ── */}
       {mode === 'edit' && currentProduct && (
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-4">
+            {/* Modified badge and View Changes Panel */}
+            {hasModifications(currentProduct) && (
+              <div className="flex items-center justify-between pb-2">
+                <Badge variant="destructive" className="gap-1">
+                  <Edit3 className="h-3 w-3" />
+                  {getFieldChanges(currentProduct).length} fields modified
+                </Badge>
+                <ViewChangesPanel
+                  product={currentProduct}
+                  changes={getFieldChanges(currentProduct)}
+                />
+              </div>
+            )}
             <ImageGallery
               images={currentProduct.images}
               productId={currentProduct.id}
               onUpload={handleImageUpload}
               onDelete={handleImageDelete}
               onSetPrimary={handleSetPrimary}
+              useBackgroundUpload={true}
             />
           </CardContent>
         </Card>
+      )}
+
+      {/* ── Variant Manager (edit mode only) ── */}
+      {mode === 'edit' && currentProduct && (
+        <VariantManager
+          product={currentProduct}
+          onVariantChange={() => {
+            // Refresh product data to reflect variant changes
+            // This could trigger a reload of the product or update the state
+          }}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════

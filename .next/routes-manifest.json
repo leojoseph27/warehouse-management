@@ -36,6 +36,30 @@
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/api/products/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/variants/member/[memberId]",
+      "regex": "^/api/variants/member/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPmemberId": "nxtPmemberId"
+      },
+      "namedRegex": "^/api/variants/member/(?<nxtPmemberId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/variants/[id]",
+      "regex": "^/api/variants/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/variants/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/variants/[id]/members",
+      "regex": "^/api/variants/([^/]+?)/members(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/variants/(?<nxtPid>[^/]+?)/members(?:/)?$"
     }
   ],
   "staticRoutes": [
@@ -128,6 +152,12 @@
       "regex": "^/api/setup(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/api/setup(?:/)?$"
+    },
+    {
+      "page": "/api/variants",
+      "regex": "^/api/variants(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/variants(?:/)?$"
     }
   ],
   "dataRoutes": [],

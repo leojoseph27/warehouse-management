@@ -15,5 +15,9 @@
   "/api/route": "app/api/route.js",
   "/api/seed/route": "app/api/seed/route.js",
   "/api/setup/route": "app/api/setup/route.js",
+  "/api/variants/[id]/members/route": "app/api/variants/[id]/members/route.js",
+  "/api/variants/[id]/route": "app/api/variants/[id]/route.js",
+  "/api/variants/member/[memberId]/route": "app/api/variants/member/[memberId]/route.js",
+  "/api/variants/route": "app/api/variants/route.js",
   "/page": "app/page.js"
 }

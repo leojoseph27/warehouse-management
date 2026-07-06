@@ -3,3 +3,182 @@
 [00:00:05.236] Server  LOG     ○ Compiling / ...
 [00:12:37.142] Server  LOG     ✓ Compiled in 1265ms
 [00:17:45.887] Server  LOG     ✓ Compiled in 80ms
+[00:30:10.541] Server  LOG     ✓ Compiled in 166ms
+[00:30:11.171] Server  LOG     ✓ Compiled in 523ms
+[00:30:29.464] Server  LOG     ✓ Compiled in 247ms
+[00:32:52.596] Server  LOG     ✓ Compiled in 333ms
+[00:32:52.796] Server  LOG     ✓ Compiled in 139ms
+[00:32:53.208] Server  LOG     ✓ Compiled in 136ms
+[00:34:33.444] Server  LOG     ✓ Compiled in 210ms
+[00:35:40.751] Server  LOG     ✓ Compiled in 206ms
+[00:36:28.488] Server  LOG     ✓ Compiled in 243ms
+[00:37:00.685] Server  LOG     ✓ Compiled in 156ms
+[00:37:00.999] Server  LOG     ✓ Compiled in 211ms
+[00:37:01.404] Browser ERROR   ./src/components/inventory/app-shell.tsx:139:1
+Parsing ecmascript source code failed
+  137 |     </div>
+  138 |   );
+> 139 | }
+      | ^
+  140 |
+  141 | function NavButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: any; label: string }) {
+  142 |   return (
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/inventory/app-shell.tsx [Client Component Browser]
+    ./src/app/page.tsx [Client Component Browser]
+    ./src/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/inventory/app-shell.tsx [Client Component SSR]
+    ./src/app/page.tsx [Client Component SSR]
+    ./src/app/page.tsx [Server Component]
+[00:37:01.533] Server  LOG     ✓ Compiled in 521ms
+[00:37:02.682] Server  WARN    ⚠ Cross origin request detected from preview-chat-6402b571-38dc-491f-94e9-266cad9fa328.space-z.ai to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[00:37:53.595] Server  LOG     ✓ Compiled in 184ms
+[00:38:15.582] Server  LOG     ✓ Compiled in 500ms
+[00:38:59.016] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:39:02.500] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:39:18.972] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:39:20.623] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:41:15.661] Server  LOG     ✓ Compiled in 189ms
+[00:41:56.020] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:41:57.201] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           sourceRow: "asc"
+         },
+         skip: 0,
+         take: 50
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:41:57.391] Browser ERROR   Camera start error: {}
+[00:41:59.466] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')
+[00:42:07.109] Server  ERROR   Error fetching products: PrismaClientValidationError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany()` invocation in
+/home/z/my-project/.next/dev/server/chunks/[root-of-the-server]__2e53ce57._.js:2252:142
+
+  2249 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.count({
+  2250     where
+  2251 }),
+→ 2252 __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findMany({
+         where: {},
+         include: {
+           images: {
+             orderBy: {
+               displayOrder: "asc"
+             }
+           },
+           original: true,
+           ~~~~~~~~
+           variantMemberships: true
+         },
+         orderBy: {
+           createdAt: "desc"
+         },
+         skip: 0,
+         take: 10
+       })
+
+Unknown field `original` for include statement on model `Product`. Available options are marked with ?.
+[00:42:10.486] Server  ERROR   Error fetching stats: TypeError: Cannot read properties of undefined (reading 'count')

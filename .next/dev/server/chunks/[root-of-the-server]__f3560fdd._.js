@@ -132,6 +132,64 @@ async function GET() {
                 defaultPrice: null
             }
         });
+        // Products with Modifications (products that have an original record AND differ from it)
+        // This counts products that were imported from ERP and have been manually edited
+        const productsWithOriginals = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].productOriginal.count();
+        // For each product with an original, check if any tracked field differs
+        // We'll use raw SQL for efficiency since we need to compare many fields
+        const modifiedProductsCount = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].$queryRaw`
+      SELECT COUNT(*) as count FROM products p
+      INNER JOIN product_originals po ON p.id = po.productId
+      WHERE
+        (p.product_id IS DISTINCT FROM po.orig_product_id) OR
+        (p.sku IS DISTINCT FROM po.sku) OR
+        (p.nd_number IS DISTINCT FROM po.nd_number) OR
+        (p.barcode IS DISTINCT FROM po.barcode) OR
+        (p.legacy_code IS DISTINCT FROM po.legacy_code) OR
+        (p.brand IS DISTINCT FROM po.brand) OR
+        (p.model IS DISTINCT FROM po.model) OR
+        (p.department IS DISTINCT FROM po.department) OR
+        (p.category IS DISTINCT FROM po.category) OR
+        (p.subcategory IS DISTINCT FROM po.subcategory) OR
+        (p.product_family IS DISTINCT FROM po.product_family) OR
+        (p.product_type IS DISTINCT FROM po.product_type) OR
+        (p.name_ar IS DISTINCT FROM po.name_ar) OR
+        (p.name_en IS DISTINCT FROM po.name_en) OR
+        (p.short_desc_ar IS DISTINCT FROM po.short_desc_ar) OR
+        (p.short_desc_en IS DISTINCT FROM po.short_desc_en) OR
+        (p.long_desc_ar IS DISTINCT FROM po.long_desc_ar) OR
+        (p.long_desc_en IS DISTINCT FROM po.long_desc_en) OR
+        (p.color IS DISTINCT FROM po.color) OR
+        (p.material IS DISTINCT FROM po.material) OR
+        (p.capacity IS DISTINCT FROM po.capacity) OR
+        (p.capacity_unit IS DISTINCT FROM po.capacity_unit) OR
+        (p.weight IS DISTINCT FROM po.weight) OR
+        (p.weight_unit IS DISTINCT FROM po.weight_unit) OR
+        (p.length IS DISTINCT FROM po.length) OR
+        (p.width IS DISTINCT FROM po.width) OR
+        (p.height IS DISTINCT FROM po.height) OR
+        (p.diameter IS DISTINCT FROM po.diameter) OR
+        (p.dimension_unit IS DISTINCT FROM po.dimension_unit) OR
+        (p.country_of_origin IS DISTINCT FROM po.country_of_origin) OR
+        (p.unit IS DISTINCT FROM po.unit) OR
+        (p.default_price IS DISTINCT FROM po.default_price) OR
+        (p.name_en IS DISTINCT FROM po.name_en) OR
+        (p.seo_title_en IS DISTINCT FROM po.seo_title_en) OR
+        (p.seo_title_ar IS DISTINCT FROM po.seo_title_ar) OR
+        (p.seo_description_en IS DISTINCT FROM po.seo_description_en) OR
+        (p.seo_description_ar IS DISTINCT FROM po.seo_description_ar) OR
+        (p.search_keywords IS DISTINCT FROM po.search_keywords) OR
+        (p.internal_notes IS DISTINCT FROM po.internal_notes) OR
+        (p.validation_status IS DISTINCT FROM po.validation_status) OR
+        (p.pieces IS DISTINCT FROM po.pieces) OR
+        (p.set_count IS DISTINCT FROM po.set_count) OR
+        (p.shape IS DISTINCT FROM po.shape) OR
+        (p.finish IS DISTINCT FROM po.finish) OR
+        (p.additional_info IS DISTINCT FROM po.additional_info)
+    `;
+        const productsWithModifications = Number(modifiedProductsCount[0]?.count ?? 0);
+        // Total Variant Groups
+        const totalVariantGroups = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].variantGroup.count();
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             totalProducts,
             productsAddedToday,
@@ -140,7 +198,9 @@ async function GET() {
             productsMissingDimensions,
             productsMissingClassification,
             productsMissingNameEn,
-            productsMissingPrice
+            productsMissingPrice,
+            productsWithModifications,
+            totalVariantGroups
         });
     } catch (error) {
         console.error('Error fetching stats:', error);

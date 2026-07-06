@@ -1685,6 +1685,76 @@ function serializeProduct(p) {
                 displayOrder: img.displayOrder,
                 isPrimary: img.isPrimary,
                 createdAt: img.createdAt.toISOString()
+            })),
+        // Change Tracking - Original values
+        original: p.original ? {
+            id: p.original.id,
+            productId: p.original.productId,
+            sourceRow: p.original.sourceRow,
+            origProductId: p.original.origProductId,
+            sku: p.original.sku,
+            ndNumber: p.original.ndNumber,
+            barcode: p.original.barcode,
+            legacyCode: p.original.legacyCode,
+            brand: p.original.brand,
+            brandAr: p.original.brandAr,
+            brandCode: p.original.brandCode,
+            model: p.original.model,
+            department: p.original.department,
+            category: p.original.category,
+            subcategory: p.original.subcategory,
+            sectionCode: p.original.sectionCode,
+            productFamily: p.original.productFamily,
+            productType: p.original.productType,
+            nameAr: p.original.nameAr,
+            nameEn: p.original.nameEn,
+            shortDescAr: p.original.shortDescAr,
+            shortDescEn: p.original.shortDescEn,
+            longDescAr: p.original.longDescAr,
+            longDescEn: p.original.longDescEn,
+            color: p.original.color,
+            colorAr: p.original.colorAr,
+            material: p.original.material,
+            materialAr: p.original.materialAr,
+            capacity: p.original.capacity,
+            capacityUnit: p.original.capacityUnit,
+            weight: p.original.weight,
+            weightUnit: p.original.weightUnit,
+            length: p.original.length,
+            width: p.original.width,
+            height: p.original.height,
+            diameter: p.original.diameter,
+            dimensionUnit: p.original.dimensionUnit,
+            countryOfOrigin: p.original.countryOfOrigin,
+            unit: p.original.unit,
+            minSalesMultiples: p.original.minSalesMultiples,
+            defaultPrice: p.original.defaultPrice,
+            seoTitleEn: p.original.seoTitleEn,
+            seoTitleAr: p.original.seoTitleAr,
+            seoDescriptionEn: p.original.seoDescriptionEn,
+            seoDescriptionAr: p.original.seoDescriptionAr,
+            searchKeywords: p.original.searchKeywords,
+            internalNotes: p.original.internalNotes,
+            validationStatus: p.original.validationStatus,
+            confidenceScore: p.original.confidenceScore,
+            pieces: p.original.pieces,
+            setCount: p.original.setCount,
+            shape: p.original.shape,
+            finish: p.original.finish,
+            additionalInfo: p.original.additionalInfo
+        } : null,
+        // Variants
+        variantMemberships: (p.variantMemberships ?? []).map((vm)=>({
+                id: vm.id,
+                variantGroupId: vm.variantGroupId,
+                productId: vm.productId,
+                color: vm.color,
+                colorAr: vm.colorAr,
+                variantImage: vm.variantImage,
+                variantNotes: vm.variantNotes,
+                displayOrder: vm.displayOrder,
+                createdAt: vm.createdAt.toISOString(),
+                updatedAt: vm.updatedAt.toISOString()
             }))
     };
 }
@@ -2186,7 +2256,9 @@ async function GET(request) {
                         orderBy: {
                             displayOrder: 'asc'
                         }
-                    }
+                    },
+                    original: true,
+                    variantMemberships: true
                 },
                 orderBy: {
                     [sortColumn]: orderDir
@@ -2310,6 +2382,7 @@ async function POST(request) {
         }
         // Apply auto-derivations
         const data = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$serialize$2d$product$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["applyAutoDerivations"])(rawData);
+        // Create product and its original record for change tracking
         const product = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.create({
             data,
             include: {
@@ -2317,10 +2390,85 @@ async function POST(request) {
                     orderBy: {
                         displayOrder: 'asc'
                     }
-                }
+                },
+                original: true,
+                variantMemberships: true
             }
         });
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$serialize$2d$product$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["serializeProduct"])(product), {
+        // Create ProductOriginal for change tracking (baseline for manually added products)
+        await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].productOriginal.create({
+            data: {
+                productId: product.id,
+                sourceRow: product.sourceRow,
+                origProductId: product.productId,
+                sku: product.sku,
+                ndNumber: product.ndNumber,
+                barcode: product.barcode,
+                legacyCode: product.legacyCode,
+                brand: product.brand,
+                brandAr: product.brandAr,
+                brandCode: product.brandCode,
+                model: product.model,
+                department: product.department,
+                category: product.category,
+                subcategory: product.subcategory,
+                sectionCode: product.sectionCode,
+                productFamily: product.productFamily,
+                productType: product.productType,
+                nameAr: product.nameAr,
+                nameEn: product.nameEn,
+                shortDescAr: product.shortDescAr,
+                shortDescEn: product.shortDescEn,
+                longDescAr: product.longDescAr,
+                longDescEn: product.longDescEn,
+                color: product.color,
+                colorAr: product.colorAr,
+                material: product.material,
+                materialAr: product.materialAr,
+                capacity: product.capacity,
+                capacityUnit: product.capacityUnit,
+                weight: product.weight,
+                weightUnit: product.weightUnit,
+                length: product.length,
+                width: product.width,
+                height: product.height,
+                diameter: product.diameter,
+                dimensionUnit: product.dimensionUnit,
+                countryOfOrigin: product.countryOfOrigin,
+                unit: product.unit,
+                minSalesMultiples: product.minSalesMultiples,
+                defaultPrice: product.defaultPrice,
+                seoTitleEn: product.seoTitleEn,
+                seoTitleAr: product.seoTitleAr,
+                seoDescriptionEn: product.seoDescriptionEn,
+                seoDescriptionAr: product.seoDescriptionAr,
+                searchKeywords: product.searchKeywords,
+                internalNotes: product.internalNotes,
+                validationStatus: product.validationStatus,
+                confidenceScore: product.confidenceScore,
+                pieces: product.pieces,
+                setCount: product.setCount,
+                shape: product.shape,
+                finish: product.finish,
+                additionalInfo: product.additionalInfo
+            }
+        });
+        // Fetch the product again with original included
+        const productWithOriginal = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["db"].product.findUnique({
+            where: {
+                id: product.id
+            },
+            include: {
+                images: {
+                    orderBy: {
+                        displayOrder: 'asc'
+                    }
+                },
+                original: true,
+                variantMemberships: true
+            }
+        });
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json((0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$serialize$2d$product$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["serializeProduct"])(productWithOriginal), {
             status: 201
         });
     } catch (error) {
