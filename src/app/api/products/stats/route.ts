@@ -27,7 +27,9 @@ export async function GET() {
     }
 
     // Use a single aggregation query for most stats
-    // This is much faster than separate count queries
+    // PostgreSQL: use COUNT(*) FILTER (WHERE ...) and double-quoted camelCase
+    // column names (Prisma creates camelCase columns; PG lowercases unquoted
+    // identifiers, so we MUST quote them to preserve case).
     const statsAggregation = await db.$queryRaw<{
       total_products: bigint;
       missing_barcode: bigint;
@@ -43,10 +45,10 @@ export async function GET() {
         COUNT(*) FILTER (WHERE barcode IS NULL) as missing_barcode,
         COUNT(*) FILTER (WHERE length IS NULL OR width IS NULL OR height IS NULL) as missing_dimensions,
         COUNT(*) FILTER (WHERE department IS NULL) as missing_classification,
-        COUNT(*) FILTER (WHERE name_en IS NULL) as missing_name_en,
-        COUNT(*) FILTER (WHERE default_price IS NULL) as missing_price,
-        (SELECT COUNT(DISTINCT product_id) FROM product_images) as with_images,
-        COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) as added_today
+        COUNT(*) FILTER (WHERE "nameEn" IS NULL) as missing_name_en,
+        COUNT(*) FILTER (WHERE "defaultPrice" IS NULL) as missing_price,
+        (SELECT COUNT(DISTINCT "productId") FROM product_images) as with_images,
+        COUNT(*) FILTER (WHERE "createdAt" >= CURRENT_DATE) as added_today
       FROM products
     `;
 
@@ -58,18 +60,19 @@ export async function GET() {
     const originalsCount = await db.productOriginal.count();
 
     // For modified products, use a simplified check on key fields
-    // This is still accurate for tracking meaningful changes
+    // PostgreSQL: IS DISTINCT FROM for null-safe comparison.
+    // Double-quote camelCase column names so PG preserves case.
     const modifiedProductsResult = await db.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*) as count FROM products p
-      INNER JOIN product_originals po ON p.id = po.product_id
+      INNER JOIN product_originals po ON p.id = po."productId"
       WHERE
-        (p.product_id IS DISTINCT FROM po.orig_product_id) OR
-        (p.nd_number IS DISTINCT FROM po.nd_number) OR
+        (p."productId" IS DISTINCT FROM po."origProductId") OR
+        (p."ndNumber" IS DISTINCT FROM po."ndNumber") OR
         (p.barcode IS DISTINCT FROM po.barcode) OR
         (p.brand IS DISTINCT FROM po.brand) OR
-        (p.name_en IS DISTINCT FROM po.name_en) OR
-        (p.name_ar IS DISTINCT FROM po.name_ar) OR
-        (p.default_price IS DISTINCT FROM po.default_price) OR
+        (p."nameEn" IS DISTINCT FROM po."nameEn") OR
+        (p."nameAr" IS DISTINCT FROM po."nameAr") OR
+        (p."defaultPrice" IS DISTINCT FROM po."defaultPrice") OR
         (p.department IS DISTINCT FROM po.department) OR
         (p.category IS DISTINCT FROM po.category) OR
         (p.color IS DISTINCT FROM po.color) OR

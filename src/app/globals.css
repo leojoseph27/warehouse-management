@@ -113,88 +113,83 @@
 }
 
 /* ═════════════════════════════════════════════════════════════════════════
-   iOS Safari Rubber-Band Prevention - ROOT FIX
-   
-   ROOT CAUSE: iOS Safari's elastic scrolling ("rubber-banding") occurs when:
-   1. The document height equals the viewport height (100vh/100dvh bug)
-   2. Touch events propagate through fixed overlays to underlying content
-   3. Multiple scroll containers compete for touch handling
-   
-   SOLUTION: Use a 3-layer approach:
-   - Layer 1 (html): Fixed position, no scroll - provides stable viewport
-   - Layer 2 (body): Positioned relative, handles ALL scrolling via overflow
-   - Layer 3 (content): No height/overflow declarations, flows naturally
-   
-   This ensures ONLY ONE scroll container (body) and prevents iOS Safari
-   from applying elastic scroll to the wrong element.
+   iOS Safari Rubber-Band Prevention — REAL ROOT FIX
+
+   PREVIOUS (BROKEN) APPROACH:
+   The earlier version of this file set `html { position: fixed; height: 100%;
+   overflow: hidden; }` and `body { position: absolute; inset: 0; overflow-y: auto;
+   touch-action: pan-y; }`. That approach actually CAUSED the rubber-band issue
+   because:
+     1. `position: fixed` on <html> locks the document to the viewport size
+        captured at first paint. When iOS Safari collapses the address bar on
+        scroll, the visible viewport grows but the document doesn't, so Safari
+        fills the gap with elastic overscroll = rubber-band.
+     2. `position: absolute; inset: 0` on <body> makes body exactly
+        viewport-sized. Its only child (AppShell `h-full`) is also
+        viewport-sized, so body.scrollHeight === body.clientHeight and
+        `overflow-y: auto` has nothing to scroll.
+     3. `touch-action: pan-y` on body delays the first scroll gesture because
+        Safari has to disambiguate horizontal vs vertical before committing.
+     4. With no scrollable ancestor, `position: sticky` on the header / bottom
+        nav has no valid scroll container to stick within — they render
+        statically or behave erratically.
+     5. The whole setup conflicts with Radix's `react-remove-scroll` (used by
+        Dialog / AlertDialog / Sheet), which applies its own `position: fixed`
+        to body when a modal opens. The style swap on close confuses iOS
+        Safari's scroll restoration — the “scrolling breaks after closing a
+        modal” symptom.
+
+   CORRECT APPROACH:
+   Let the document flow naturally. <html> and <body> use their default
+   positioning. <body> becomes the real scroll container (its default role).
+   `overscroll-behavior: none` on html/body prevents pull-to-refresh and
+   elastic bounce. `100dvh` (used in component classes) tracks iOS Safari's
+   dynamic viewport as the address bar shows/hides. `position: sticky` on the
+   app header / bottom nav works correctly because <body> is now a real
+   scroll container.
    ═════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    /* Prevent all elements from being scroll containers by default */
+    /* Prevent overscroll from propagating from nested scroll containers
+       (e.g. dropdowns, listboxes) back to body. This is the real fix for
+       bounce, NOT locking html/body. */
     overscroll-behavior: none;
   }
 
-  /* ── Layer 1: html element ──
-     Fixed to viewport, no scroll, provides stable anchor for iOS Safari */
+  /* <html>: default positioning. Only set overscroll-behavior to disable
+     pull-to-refresh and the browser-level elastic bounce on the document. */
   html {
-    /* Fix iOS Safari viewport height bug - use fixed positioning */
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    /* No overflow on html - prevents it from being a scroll container */
-    overflow: hidden;
-    /* Prevent overscroll from ever starting at html level */
     overscroll-behavior: none;
-    /* Enable smooth text rendering */
     -webkit-font-smoothing: antialiased;
-    /* Prevent iOS Safari address bar from triggering layout recalcs */
-    -webkit-overflow-scrolling: auto;
+    /* Do NOT set position/height/overflow here — locking <html> breaks
+       iOS Safari's dynamic viewport tracking. */
   }
 
-  /* ── Layer 2: body element ──
-     THE ONLY scroll container in the entire app */
+  /* <body>: the document's natural scroll container. Do NOT lock its size
+     or position. Only prevent horizontal scroll (from any wide content)
+     and disable pull-to-refresh. */
   body {
     @apply bg-background text-foreground;
-    /* Position relative to html's fixed viewport */
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    /* Body handles ALL scrolling - overflow must be here */
-    overflow-y: auto;
     overflow-x: hidden;
-    /* Prevent iOS Safari elastic bounce from propagating */
     overscroll-behavior: none;
-    /* Critical for iOS Safari: use auto, NOT touch (touch enables rubber-band) */
-    -webkit-overflow-scrolling: auto;
-    /* Allow vertical pan gestures only */
-    touch-action: pan-y;
-    /* Prevent pull-to-refresh on iOS */
-    overscroll-behavior-y: contain;
+    /* Do NOT set:
+       - position: absolute / fixed (breaks scroll restoration with Radix)
+       - inset: 0 (locks body to viewport, defeats scroll)
+       - overflow-y: auto (default is already `visible`, document scrolls)
+       - touch-action: pan-y (delays first scroll gesture on iOS)
+       - -webkit-overflow-scrolling (deprecated, no effect on modern iOS) */
   }
 
-  /* ── All other containers must NOT have overflow ──
-     Override any accidental scroll containers */
-  main, 
+  /* Content containers must NOT become scroll containers by accident.
+     They should flow naturally so the document (body) owns the scroll. */
+  main,
   [role="main"],
   .app-content,
   .main-content {
-    /* Content flows naturally, no height/overflow declarations */
     overflow: visible;
     overscroll-behavior: none;
-  }
-
-  /* ── Sticky elements: prevent scroll propagation ── */
-  header[style*="sticky"],
-  nav[style*="sticky"],
-  .sticky,
-  [data-sticky] {
-    overscroll-behavior: none;
-    /* Sticky elements should NOT be scroll containers */
-    overflow: visible;
   }
 
   /* Responsive touch-friendly targets */
@@ -211,30 +206,18 @@
   }
 }
 
-/* ═════════════════════════════════════════════════════════════════════════
-   Full-screen Modal/Overlay Fix for iOS Safari
-   
-   When a modal opens (scanner, camera, dialog), it must:
-   1. Prevent body scroll completely
-   2. Capture ALL touch events
-   3. Not allow touch to propagate to underlying content
-   
-   This class should be applied to all fixed full-screen overlays.
-   ═════════════════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────
+   Full-screen overlay helper for camera / scanner modals.
+   These modals already use `fixed inset-0 z-[100]` in their own JSX.
+   This class only needs to capture touch so nothing propagates to the
+   underlying document while the camera is active. Body scroll is already
+   locked by Radix (for Dialog/Sheet) or by the overlay itself covering
+   the viewport (for raw fixed overlays).
+   ───────────────────────────────────────────────────────────── */
 
 .modal-overlay-ios-fix {
-  /* Fixed to viewport, covers everything */
-  position: fixed;
-  inset: 0;
-  /* Prevent ANY scroll from happening on this layer */
-  overflow: hidden;
-  overscroll-behavior: none;
-  /* Capture ALL touch events - nothing propagates through */
   touch-action: none;
-  /* High z-index to be above everything */
-  z-index: 100;
-  /* Prevent iOS Safari from treating this as scrollable */
-  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: none;
 }
 
 /* ─────────────────────────────────────────────────────────────

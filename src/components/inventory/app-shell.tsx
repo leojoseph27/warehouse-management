@@ -111,7 +111,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="bg-background flex flex-col h-full">
+    <div className="bg-background flex flex-col min-h-[100dvh]">
         {/* Top Navigation Bar */}
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b safe-area-inset">
           <div className="mx-auto px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-3">

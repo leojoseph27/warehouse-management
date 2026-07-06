@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
       // Use a single raw query to get all distinct values at once
       // This is MUCH faster than 13 separate findMany with distinct
       try {
+        // PostgreSQL: ARRAY_AGG(DISTINCT ...) FILTER (WHERE ...) returns native arrays.
+        // Column names are double-quoted to preserve camelCase (PG lowercases
+        // unquoted identifiers, but Prisma creates camelCase columns).
         const suggestionsData = await db.$queryRaw<{
           brands: string[];
           departments: string[];
@@ -78,14 +81,14 @@ export async function GET(request: NextRequest) {
             ARRAY_AGG(DISTINCT department) FILTER (WHERE department IS NOT NULL) as departments,
             ARRAY_AGG(DISTINCT category) FILTER (WHERE category IS NOT NULL) as categories,
             ARRAY_AGG(DISTINCT subcategory) FILTER (WHERE subcategory IS NOT NULL) as subcategories,
-            ARRAY_AGG(DISTINCT product_family) FILTER (WHERE product_family IS NOT NULL) as product_families,
-            ARRAY_AGG(DISTINCT product_type) FILTER (WHERE product_type IS NOT NULL) as product_types,
+            ARRAY_AGG(DISTINCT "productFamily") FILTER (WHERE "productFamily" IS NOT NULL) as product_families,
+            ARRAY_AGG(DISTINCT "productType") FILTER (WHERE "productType" IS NOT NULL) as product_types,
             ARRAY_AGG(DISTINCT color) FILTER (WHERE color IS NOT NULL) as colors,
             ARRAY_AGG(DISTINCT material) FILTER (WHERE material IS NOT NULL) as materials,
-            ARRAY_AGG(DISTINCT country_of_origin) FILTER (WHERE country_of_origin IS NOT NULL) as countries,
+            ARRAY_AGG(DISTINCT "countryOfOrigin") FILTER (WHERE "countryOfOrigin" IS NOT NULL) as countries,
             ARRAY_AGG(DISTINCT shape) FILTER (WHERE shape IS NOT NULL) as shapes,
             ARRAY_AGG(DISTINCT finish) FILTER (WHERE finish IS NOT NULL) as finishes,
-            ARRAY_AGG(DISTINCT validation_status) FILTER (WHERE validation_status IS NOT NULL) as validation_statuses,
+            ARRAY_AGG(DISTINCT "validationStatus") FILTER (WHERE "validationStatus" IS NOT NULL) as validation_statuses,
             ARRAY_AGG(DISTINCT unit) FILTER (WHERE unit IS NOT NULL) as units
           FROM products
         `;
