@@ -12,6 +12,7 @@ import {
   Keyboard,
   Check,
   Loader2,
+  X,
 } from 'lucide-react';
 
 interface ScannerProProps {
@@ -22,42 +23,23 @@ interface ScannerProProps {
 // Discrete zoom levels for the buttons
 const ZOOM_LEVELS = [1, 2, 3, 4, 5];
 
-// Supported barcode formats
-const BARCODE_FORMATS = [
-  'EAN_13',
-  'EAN_8',
-  'CODE_128',
-  'CODE_39',
-  'UPC_A',
-  'UPC_E',
-  'ITF',
-  'QR_CODE',
-];
-
 /**
- * Scanner Pro — Full Replication of the Original Pro Scanner
+ * Scanner Pro — Continuous Barcode Scanner with Zoom
  * 
- * Key features:
- * - Continuous barcode detection using html5-qrcode
- * - Uses native browser BarcodeDetector API when available (faster)
- * - Discrete zoom levels: 1x, 2x, 3x, 4x, 5x buttons
- * - Torch toggle
- * - Manual barcode entry fallback
+ * This is NOT a photo capture scanner. It uses html5-qrcode for continuous
+ * live scanning at 15 fps. The camera stays on and decodes barcodes in real-time.
+ * Zoom is applied via MediaStreamTrack.applyConstraints() to the camera hardware.
  */
 export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
   // ── Refs ──
-  const scannerRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<any>(null);
-  const trackRef = useRef<MediaStreamTrack | null>(null);
-  const isMountedRef = useRef(true);
-  const hasScannedRef = useRef(false);
-  const onScanRef = useRef(onScan);
-  const onCloseRef = useRef(onClose);
-  
+  const scannerRef = useRef<HTMLDivElement>(null);   // div where camera renders
+  const html5QrCodeRef = useRef<any>(null);          // the html5-qrcode instance
+  const trackRef = useRef<MediaStreamTrack | null>(null); // raw camera track for zoom
+  const hasScannedRef = useRef(false);               // prevents double-trigger
+
   // ── State ──
   const [isStarting, setIsStarting] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scanStatus, setScanStatus] = useState(''); // Debug status
   
   // Torch state
   const [torchOn, setTorchOn] = useState(false);
@@ -72,147 +54,99 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
   // Manual entry state
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
-  
-  // Update refs when props change
-  useEffect(() => {
-    onScanRef.current = onScan;
-    onCloseRef.current = onClose;
-  }, [onScan, onClose]);
 
   // ── Start the camera (the "Scan engine") ──
   useEffect(() => {
-    isMountedRef.current = true;
-    hasScannedRef.current = false;
     let cancelled = false;
-    let scanAttempts = 0;
+    hasScannedRef.current = false;
 
     const startScanner = async () => {
       try {
-        // Dynamic import — avoids SSR issues
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
-        
-        if (cancelled || !scannerRef.current || !isMountedRef.current) {
-          console.log('[ScannerPro] Component unmounted during import');
-          return;
-        }
+        // Dynamic import — avoids SSR issues in Next.js
+        const { Html5Qrcode } = await import('html5-qrcode');
+        if (cancelled || !scannerRef.current) return;
 
+        // The library needs the div to have an ID
         const scannerId = 'scanner-pro-element';
         scannerRef.current.id = scannerId;
 
-        // Configure barcode formats to support
-        const formatsToSupport: any[] = [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.QR_CODE,
-        ];
-
-        const html5QrCode = new Html5Qrcode(scannerId, {
-          verbose: false, // Set to true for debugging
-          formatsToSupport,
-        });
+        const html5QrCode = new Html5Qrcode(scannerId);
         html5QrCodeRef.current = html5QrCode;
 
-        setScanStatus('Starting camera...');
-
-        // CRITICAL: Use native BarcodeDetector if browser supports it (much faster)
-        const config = {
-          fps: 10,                    // 10 fps is sufficient, higher can cause issues
-          qrbox: function(viewfinderWidth: number, viewfinderHeight: number) {
-            // Dynamic qrbox - wider for horizontal barcodes
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const qrboxSize = Math.floor(minEdge * 0.7);
-            // Make it wider for barcodes (width > height)
-            return {
-              width: qrboxSize,
-              height: Math.floor(qrboxSize * 0.5), // Half height for horizontal barcodes
-            };
-          },
-          aspectRatio: 1.777778,      // 16:9 aspect ratio (standard mobile)
-          useBarCodeDetectorIfSupported: true, // Use native API if available
-          tryHarder: true,            // More thorough scanning
-        };
+        console.log('[ScannerPro] Starting camera...');
 
         await html5QrCode.start(
-          { facingMode: 'environment' },
-          config,
-          (decodedText: string, decodedResult: any) => {
-            // Success callback
-            if (hasScannedRef.current) return;
-            hasScannedRef.current = true;
-            
-            console.log('[ScannerPro] ✅ Barcode detected:', decodedText, decodedResult);
-            
-            if (isMountedRef.current) {
-              setScanStatus(`Detected: ${decodedText}`);
-              // Small delay to show the detected barcode
-              setTimeout(() => {
-                if (isMountedRef.current) {
-                  onScanRef.current(decodedText);
-                }
-              }, 200);
+          { facingMode: 'environment' },          // rear camera
+          {
+            fps: 15,                              // scan 15 frames per second
+            qrbox: { width: 280, height: 160 },   // scan region - wider for barcodes
+            aspectRatio: 1.0,
+          },
+          (decodedText: string) => {              // success callback
+            if (!hasScannedRef.current) {
+              hasScannedRef.current = true;
+              console.log('[ScannerPro] ✅ Barcode detected:', decodedText);
+              onScan(decodedText);                // trigger search immediately
             }
           },
-          (errorMessage: string) => {
-            // Scan error callback - this is NORMAL, just keep scanning
-            scanAttempts++;
-            if (scanAttempts % 30 === 0) {
-              console.log('[ScannerPro] Scanning...', scanAttempts, 'attempts');
-            }
-            // Don't show error to user - this is normal "no barcode found" feedback
+          () => { 
+            // failure callback — do nothing, keep scanning
+            // This is normal when no barcode is in view
           }
         );
 
-        if (!cancelled && isMountedRef.current) {
-          setIsStarting(false);
-          setScanStatus('Scanning... Point camera at barcode');
-          console.log('[ScannerPro] Camera started successfully');
-          
-          // Detect zoom support
-          try {
-            const videoEl = document.querySelector('#scanner-pro-element video') as HTMLVideoElement;
-            if (videoEl && videoEl.srcObject) {
-              const stream = videoEl.srcObject as MediaStream;
-              const track = stream.getVideoTracks()[0];
-              if (track) {
-                trackRef.current = track;
-                const capabilities = track.getCapabilities?.() as any;
-                
-                if (capabilities?.zoom) {
-                  setZoomSupported(true);
-                  setZoomMin(capabilities.zoom.min ?? 1);
-                  setZoomMax(capabilities.zoom.max ?? 5);
-                  setZoomIndex(0);
-                  console.log('[ScannerPro] Zoom supported:', capabilities.zoom);
-                }
+        if (cancelled) {
+          // If cancelled during start, stop immediately
+          html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+          return;
+        }
+
+        setIsStarting(false);
+        console.log('[ScannerPro] Camera started successfully');
+
+        // ── Detect zoom support (after camera is running) ──
+        try {
+          const videoEl = document.querySelector('#scanner-pro-element video') as HTMLVideoElement;
+          if (videoEl && videoEl.srcObject) {
+            const stream = videoEl.srcObject as MediaStream;
+            const track = stream.getVideoTracks()[0];
+            if (track) {
+              trackRef.current = track;
+              const capabilities = track.getCapabilities?.() as any;
+              if (capabilities?.zoom) {
+                setZoomSupported(true);
+                setZoomMin(capabilities.zoom.min ?? 1);
+                setZoomMax(capabilities.zoom.max ?? 5);
+                setZoomIndex(0);  // start at 1x
+                console.log('[ScannerPro] Zoom supported:', capabilities.zoom);
               }
             }
-          } catch (zoomErr) {
-            console.log('[ScannerPro] Zoom detection skipped:', zoomErr);
           }
-
-          // Torch detection
-          try {
-            const capabilities = html5QrCode.getRunningTrackCameraCapabilities?.();
-            if (capabilities?.torchFeature?.()) {
-              setTorchSupported(true);
-              console.log('[ScannerPro] Torch supported');
-            }
-          } catch {}
+        } catch (zoomErr) {
+          // zoom not supported on this device
+          console.log('[ScannerPro] Zoom not supported:', zoomErr);
         }
+
+        // ── Torch detection using html5-qrcode API ──
+        try {
+          const capabilities = html5QrCode.getRunningTrackCameraCapabilities?.();
+          if (capabilities?.torchFeature?.()) {
+            setTorchSupported(true);
+            console.log('[ScannerPro] Torch supported');
+          }
+        } catch {
+          // torch not supported
+        }
+
       } catch (err: any) {
-        if (!cancelled && isMountedRef.current) {
-          console.error('[ScannerPro] ❌ Initialization error:', err);
+        if (!cancelled) {
+          console.error('[ScannerPro] ❌ Error:', err);
           const errStr = err?.toString?.() || '';
           if (errStr.includes('Permission') || errStr.includes('NotAllowed')) {
-            setError('Camera permission denied. Please allow camera access and refresh.');
+            setError('Camera permission denied. Please allow camera access.');
           } else if (errStr.includes('NotFound')) {
             setError('No camera found on this device.');
-          } else if (errStr.includes('Already started')) {
+          } else if (errStr.includes('Already')) {
             setError('Camera is already in use. Close other camera apps.');
           } else {
             setError(`Camera error: ${err?.message || 'Unknown error'}`);
@@ -224,11 +158,10 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
 
     startScanner();
 
-    // Cleanup
+    // ── Cleanup on unmount ──
     return () => {
-      isMountedRef.current = false;
-      hasScannedRef.current = true;
       cancelled = true;
+      hasScannedRef.current = true;
       
       if (html5QrCodeRef.current) {
         html5QrCodeRef.current
@@ -240,15 +173,16 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
           .catch(() => {});
       }
     };
-  }, []);
+  }, [onScan]);
 
-  // Apply zoom
+  // ── Apply zoom to the camera track ──
   const applyZoom = useCallback(async (newZoomIndex: number) => {
     const clampedIndex = Math.max(0, Math.min(ZOOM_LEVELS.length - 1, newZoomIndex));
     const targetZoom = ZOOM_LEVELS[clampedIndex];
+    // Clamp to device-supported range
     const safeZoom = Math.max(zoomMin, Math.min(zoomMax, targetZoom));
 
-    if (trackRef.current && zoomSupported && isMountedRef.current) {
+    if (trackRef.current && zoomSupported) {
       try {
         await trackRef.current.applyConstraints({
           advanced: [{ zoom: safeZoom }],
@@ -256,7 +190,7 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
         setZoomIndex(clampedIndex);
         console.log('[ScannerPro] Zoom applied:', safeZoom);
       } catch (err) {
-        console.warn('[ScannerPro] Zoom failed:', err);
+        console.warn('[ScannerPro] Zoom apply failed:', err);
       }
     }
   }, [zoomSupported, zoomMin, zoomMax]);
@@ -264,9 +198,9 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
   const zoomIn = useCallback(() => applyZoom(zoomIndex + 1), [zoomIndex, applyZoom]);
   const zoomOut = useCallback(() => applyZoom(zoomIndex - 1), [zoomIndex, applyZoom]);
 
-  // Torch toggle
+  // ── Torch toggle (uses html5-qrcode's built-in API) ──
   const toggleTorch = useCallback(async () => {
-    if (!html5QrCodeRef.current || !isMountedRef.current) return;
+    if (!html5QrCodeRef.current) return;
     
     try {
       const capabilities = html5QrCodeRef.current.getRunningTrackCameraCapabilities?.();
@@ -275,13 +209,12 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
         if (torchCap.isSupported?.()) {
           const newState = !torchOn;
           await torchCap.apply?.(newState);
-          if (isMountedRef.current) {
-            setTorchOn(newState);
-          }
+          setTorchOn(newState);
+          console.log('[ScannerPro] Torch:', newState ? 'ON' : 'OFF');
         }
       }
     } catch (err) {
-      console.log('[ScannerPro] Torch toggle failed:', err);
+      console.warn('[ScannerPro] Torch toggle failed:', err);
     }
   }, [torchOn]);
 
@@ -289,20 +222,20 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
   const handleManualSubmit = useCallback(() => {
     if (manualBarcode.trim()) {
       hasScannedRef.current = true;
-      onScanRef.current(manualBarcode.trim());
+      onScan(manualBarcode.trim());
     }
-  }, [manualBarcode]);
+  }, [manualBarcode, onScan]);
 
   // Handle close
   const handleClose = useCallback(() => {
     hasScannedRef.current = true;
-    onCloseRef.current();
-  }, []);
+    onClose();
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex flex-col safe-area-inset modal-overlay-ios-fix">
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 text-white border-b border-white/10">
+      <div className="flex items-center justify-between px-4 py-3 bg-black/80 text-white">
         <Button
           variant="ghost"
           size="sm"
@@ -324,18 +257,23 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
       </div>
 
       {/* Camera viewport */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative">
         <div ref={scannerRef} className="w-full h-full" style={{ minHeight: '300px' }} />
 
-        {/* Corner markers overlay */}
+        {/* Corner markers overlay - only show when camera is running */}
         {!error && !isStarting && !showManualEntry && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="relative w-[280px] sm:w-[300px] h-[120px] sm:h-[130px]">
-              <div className="absolute top-0 left-0 w-10 sm:w-12 h-10 sm:h-12 border-t-[3px] sm:border-t-4 border-l-[3px] sm:border-l-4 border-white rounded-tl-lg" />
-              <div className="absolute top-0 right-0 w-10 sm:w-12 h-10 sm:h-12 border-t-[3px] sm:border-t-4 border-r-[3px] sm:border-r-4 border-white rounded-tr-lg" />
-              <div className="absolute bottom-0 left-0 w-10 sm:w-12 h-10 sm:h-12 border-b-[3px] sm:border-b-4 border-l-[3px] sm:border-l-4 border-white rounded-bl-lg" />
-              <div className="absolute bottom-0 right-0 w-10 sm:w-12 h-10 sm:h-12 border-b-[3px] sm:border-b-4 border-r-[3px] sm:border-r-4 border-white rounded-br-lg" />
-              <div className="absolute top-1/2 left-4 right-4 h-[2px] bg-red-500 animate-pulse" />
+            <div className="relative w-[280px] h-[160px]">
+              {/* Top-left corner */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg" />
+              {/* Top-right corner */}
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg" />
+              {/* Bottom-left corner */}
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg" />
+              {/* Bottom-right corner */}
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg" />
+              {/* Scan line */}
+              <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-red-500 animate-pulse" />
             </div>
           </div>
         )}
@@ -344,7 +282,7 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
         {isStarting && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70">
             <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
-            <p className="text-white text-base font-medium">Starting camera...</p>
+            <p className="text-white text-lg font-medium">Starting camera...</p>
           </div>
         )}
 
@@ -411,16 +349,16 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
       </div>
 
       {/* Bottom controls */}
-      <div className="bg-black/80 border-t border-white/10">
-        {/* Zoom controls */}
+      <div className="bg-black/80 px-4 py-4">
+        {/* Zoom controls — only render if zoomSupported */}
         {zoomSupported && !error && !isStarting && (
-          <div className="flex items-center justify-center gap-2 px-4 py-3">
+          <div className="flex items-center justify-center gap-3 mb-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={zoomOut}
               disabled={zoomIndex === 0}
-              className="h-9 w-9 text-white hover:bg-white/20 disabled:opacity-40"
+              className="h-10 w-10 text-white hover:bg-white/20 disabled:opacity-40"
             >
               <ZoomOut className="h-5 w-5" />
             </Button>
@@ -429,7 +367,7 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
               <button
                 key={level}
                 onClick={() => applyZoom(idx)}
-                className={`h-9 w-9 rounded-md text-sm font-medium transition-colors ${
+                className={`h-10 w-10 rounded-md text-sm font-medium transition-colors ${
                   idx === zoomIndex
                     ? 'bg-white text-black'
                     : 'text-white bg-white/10 hover:bg-white/20'
@@ -444,7 +382,7 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
               size="sm"
               onClick={zoomIn}
               disabled={zoomIndex === ZOOM_LEVELS.length - 1}
-              className="h-9 w-9 text-white hover:bg-white/20 disabled:opacity-40"
+              className="h-10 w-10 text-white hover:bg-white/20 disabled:opacity-40"
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
@@ -452,13 +390,11 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
         )}
 
         {!zoomSupported && !error && !isStarting && (
-          <div className="text-center py-2">
-            <p className="text-white/50 text-xs">Zoom not supported on this device</p>
-          </div>
+          <p className="text-white/50 text-xs text-center mb-3">Zoom not supported on this device</p>
         )}
 
         {/* Torch and Manual buttons */}
-        <div className="flex items-center justify-center gap-3 px-4 py-3">
+        <div className="flex items-center justify-center gap-3">
           {torchSupported && !error && (
             <Button
               variant="outline"
@@ -489,11 +425,9 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
         </div>
 
         {/* Instructions */}
-        <div className="text-center pb-3 px-4">
-          <p className="text-white/70 text-xs sm:text-sm">
-            Point camera at barcode. Supports: EAN-13, EAN-8, UPC-A, Code 128, Code 39, QR
-          </p>
-        </div>
+        <p className="text-white/70 text-xs text-center mt-3">
+          Point camera at barcode. Supports: EAN-13, EAN-8, UPC-A, Code 128, QR
+        </p>
       </div>
     </div>
   );
