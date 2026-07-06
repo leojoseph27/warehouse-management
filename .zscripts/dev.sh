@@ -6,6 +6,7 @@ set -e
 cd /home/z/my-project
 
 # Load environment variables from .env.local
+# This MUST override system-level env vars like DATABASE_URL
 if [ -f .env.local ]; then
   set -a
   while IFS='=' read -r key value; do
@@ -15,7 +16,7 @@ if [ -f .env.local ]; then
     export "$key=$value"
   done < .env.local
   set +a
-  echo "[DEV] Loaded .env.local"
+  echo "[DEV] Loaded .env.local (DATABASE_URL=${DATABASE_URL:0:30}...)"
 fi
 
 # Always use dev mode in sandbox environment

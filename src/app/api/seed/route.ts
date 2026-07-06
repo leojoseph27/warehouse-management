@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/server';
+import { db } from '@/lib/db';
 import { createHash } from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminClient();
     const body = await request.json();
     const { email, password, name } = body;
 
@@ -12,34 +11,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    // Check if admin already exists
-    const { data: existing } = await supabase
-      .from('admin_users')
-      .select('id')
-      .limit(1);
-
-    if (existing && existing.length > 0) {
+    const existing = await db.adminUser.findFirst();
+    if (existing) {
       return NextResponse.json({ error: 'Admin user already exists' }, { status: 400 });
     }
 
     const hashedPassword = createHash('sha256').update(password).digest('hex');
 
-    const { data, error } = await supabase
-      .from('admin_users')
-      .insert({
+    const admin = await db.adminUser.create({
+      data: {
         email,
         password: hashedPassword,
         name: name || 'Admin',
-      })
-      .select()
-      .single();
+      },
+    });
 
-    if (error) {
-      console.error('Supabase error creating admin:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ id: data.id, email: data.email, name: data.name }, { status: 201 });
+    return NextResponse.json({ id: admin.id, email: admin.email, name: admin.name }, { status: 201 });
   } catch (error) {
     console.error('Error seeding admin:', error);
     return NextResponse.json({ error: 'Failed to create admin user' }, { status: 500 });

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/server';
-import { mapImageFromDb } from '@/utils/supabase/mappers';
+import { db } from '@/lib/db';
 
 export async function DELETE(
   request: NextRequest,
@@ -8,42 +7,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
 
-    // Get image record
-    const { data: image, error: fetchError } = await supabase
-      .from('product_images')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !image) {
+    const image = await db.productImage.findUnique({ where: { id } });
+    if (!image) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
     }
 
-    // Delete from Supabase Storage
-    try {
-      const url = new URL(image.image_url);
-      const pathParts = url.pathname.split('/');
-      const storagePath = pathParts.slice(pathParts.indexOf('product-images') + 1).join('/');
-      
-      if (storagePath) {
-        await supabase.storage.from('product-images').remove([storagePath]);
-      }
-    } catch (e) {
-      console.error('Error deleting image from storage:', e);
-    }
-
-    // Delete from database
-    const { error: deleteError } = await supabase
-      .from('product_images')
-      .delete()
-      .eq('id', id);
-
-    if (deleteError) {
-      console.error('Error deleting image record:', deleteError);
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
-    }
+    await db.productImage.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -58,44 +28,36 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
     const body = await request.json();
 
     // If setting as primary, unset other primaries for the same product
     if (body.isPrimary) {
-      const { data: image } = await supabase
-        .from('product_images')
-        .select('product_id')
-        .eq('id', id)
-        .single();
-
+      const image = await db.productImage.findUnique({ where: { id }, select: { productId: true } });
       if (image) {
-        await supabase
-          .from('product_images')
-          .update({ is_primary: false })
-          .eq('product_id', (image as any).product_id)
-          .eq('is_primary', true);
+        await db.productImage.updateMany({
+          where: { productId: image.productId, isPrimary: true },
+          data: { isPrimary: false },
+        });
       }
     }
 
-    // Build update data
     const updateData: Record<string, any> = {};
-    if (body.isPrimary !== undefined) updateData.is_primary = body.isPrimary;
-    if (body.displayOrder !== undefined) updateData.display_order = body.displayOrder;
+    if (body.isPrimary !== undefined) updateData.isPrimary = body.isPrimary;
+    if (body.displayOrder !== undefined) updateData.displayOrder = body.displayOrder;
 
-    const { data: updatedImage, error } = await supabase
-      .from('product_images')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+    const updatedImage = await db.productImage.update({
+      where: { id },
+      data: updateData,
+    });
 
-    if (error) {
-      console.error('Error updating image:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(mapImageFromDb(updatedImage));
+    return NextResponse.json({
+      id: updatedImage.id,
+      productId: updatedImage.productId,
+      imageUrl: updatedImage.imageUrl,
+      displayOrder: updatedImage.displayOrder,
+      isPrimary: updatedImage.isPrimary,
+      createdAt: updatedImage.createdAt.toISOString(),
+    });
   } catch (error) {
     console.error('Error updating image:', error);
     return NextResponse.json({ error: 'Failed to update image' }, { status: 500 });

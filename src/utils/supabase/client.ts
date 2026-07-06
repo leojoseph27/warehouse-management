@@ -1,7 +1,6 @@
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-export const createClient = () =>
-  createBrowserClient(supabaseUrl!, supabaseKey!);
+/**
+ * Client-side database utilities.
+ * With Prisma (server-only), the client doesn't need a database client.
+ * All database operations go through API routes.
+ * This file is kept for backward compatibility but is no longer used.
+ */

@@ -1,20 +1,35 @@
 ---
 Task ID: 1
 Agent: Main
-Task: Add "Capture Barcode Photo" feature alongside existing live barcode scanner
+Task: Migrate from Supabase to Neon PostgreSQL with Prisma
 
 Work Log:
-- Explored existing barcode scanner implementation (barcode-scanner-modal.tsx uses html5-qrcode)
-- Explored product-table.tsx to understand the search bar + ScanBarcode button flow
-- Created new component: src/components/inventory/barcode-photo-capture.tsx
-- Modified product-table.tsx to add Camera button + showPhotoCapture state + BarcodePhotoCapture modal
-- Build succeeded with no errors
-- Verified server starts correctly
+- Cloned repo from https://github.com/leojoseph27/my-inventory.git
+- Installed dependencies (npm install, bun install)
+- Analyzed all Supabase usage across the codebase (7 API routes + utility files)
+- Updated prisma/schema.prisma from SQLite to PostgreSQL with @@map directives
+- Added Neon DATABASE_URL to .env and .env.local
+- Ran prisma db push to create tables in Neon
+- Rewrote src/lib/db.ts as Prisma client singleton
+- Rewrote all API routes to use Prisma instead of Supabase:
+  - /api/products (GET, POST)
+  - /api/products/[id] (GET, PUT, DELETE)
+  - /api/products/stats (GET)
+  - /api/products/check-duplicate (GET)
+  - /api/products/cleanup (DELETE)
+  - /api/products/import (POST)
+  - /api/products/export (GET)
+  - /api/images/[id] (DELETE, PATCH)
+  - /api/images/upload (POST) - new route replacing Supabase Storage
+  - /api/setup (POST)
+  - /api/seed (POST)
+- Created image upload route that stores images as base64 data URLs in DB
+- Updated .zscripts/dev.sh to load .env.local and override system DATABASE_URL
+- Tested all endpoints successfully: products CRUD, stats, setup, auth, cleanup
 
 Stage Summary:
-- New feature added: "Capture Barcode Photo" button appears next to existing "Scan Barcode" button
-- The existing live barcode scanner is completely untouched
-- New component uses getUserMedia directly (for autofocus/torch control) + html5-qrcode scanFileV2 for barcode extraction
-- Workflow: Open camera → Click Capture → Image freezes → Auto-process with scanFileV2 → If barcode found: populate search + auto-search → If not found: "No barcode detected. Please try again."
-- Camera improvements: rear camera preference, continuous autofocus, autofocus, torch toggle
-- Supported barcode formats: EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39
+- All Supabase references replaced with Prisma ORM
+- Database tables created in Neon PostgreSQL
+- All API endpoints tested and working
+- Auth still uses env vars (ADMIN_EMAIL/ADMIN_PASSWORD)
+- Image storage changed from Supabase Storage to base64 in DB

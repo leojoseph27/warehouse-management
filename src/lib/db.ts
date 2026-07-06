@@ -1,3 +1,13 @@
-// DEPRECATED: This file is no longer used.
-// All database operations now use Supabase via @/utils/supabase/server
-// This file exists only to prevent build errors from any remaining imports.
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const db = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = db;
+}
+
+export default db;

@@ -1,41 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/utils/supabase/server';
-import { mapProductFromDb, mapProductToDb } from '@/utils/supabase/mappers';
+import { db } from '@/lib/db';
 
-/**
- * Normalizes array-like fields for JSONB columns in Supabase.
- *
- * IMPORTANT: Supabase JSONB columns require actual JavaScript arrays/objects,
- * NOT JSON strings. Passing '["Red","Blue"]' (a string) to a JSONB column
- * causes PostgreSQL to store it as a text string inside JSONB, which breaks
- * queries and exports. We must pass ["Red","Blue"] (actual array).
- *
- * Handles:
- * - Array (from frontend form) → pass through as-is
- * - String that looks like JSON → parse to array
- * - Comma-separated string → parse to array
- * - null/undefined/empty → null
- */
-function normalizeJsonField(value: any): any[] | null {
+function normalizeJsonField(value: any): string | null {
   if (value === null || value === undefined || value === '') return null;
   if (Array.isArray(value)) {
-    return value.length > 0 ? value : null;
+    return value.length > 0 ? JSON.stringify(value) : null;
   }
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) return null;
-    // Already a JSON array string? Parse it to an actual array
     if (trimmed.startsWith('[')) {
       try {
         const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) return parsed.length > 0 ? parsed : null;
+        if (Array.isArray(parsed)) return parsed.length > 0 ? JSON.stringify(parsed) : null;
       } catch {}
     }
-    // Comma/semicolon separated values → parse to array
     const items = trimmed.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
-    return items.length > 0 ? items : null;
+    return items.length > 0 ? JSON.stringify(items) : null;
   }
   return null;
+}
+
+function serializeJsonField(value: string | null): string | null {
+  return value;
 }
 
 export async function GET(
@@ -44,19 +31,43 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
 
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, product_images(*)')
-      .eq('id', id)
-      .single();
+    const product = await db.product.findUnique({
+      where: { id },
+      include: { images: { orderBy: { displayOrder: 'asc' } } },
+    });
 
-    if (error || !data) {
+    if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(mapProductFromDb(data));
+    return NextResponse.json({
+      id: product.id,
+      sr: product.sr,
+      englishDescription: product.englishDescription,
+      arabicDescription: product.arabicDescription,
+      ndNumber: product.ndNumber,
+      barcode: product.barcode,
+      colours: serializeJsonField(product.colours),
+      length: product.length,
+      width: product.width,
+      height: product.height,
+      made: product.made,
+      materials: serializeJsonField(product.materials),
+      additionalInfo: serializeJsonField(product.additionalInfo),
+      price: product.price,
+      pcs: product.pcs,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      images: product.images.map(img => ({
+        id: img.id,
+        productId: img.productId,
+        imageUrl: img.imageUrl,
+        displayOrder: img.displayOrder,
+        isPrimary: img.isPrimary,
+        createdAt: img.createdAt.toISOString(),
+      })),
+    });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
@@ -69,19 +80,15 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
     const body = await request.json();
 
-    // Build update data — only include fields that are explicitly provided in the request body.
-    // This prevents nulling out fields that the client didn't intend to change.
     const updateData: Record<string, any> = {};
 
-    // Mapping of request body keys to their database column names and normalizers
     const fieldMappings: Record<string, { dbKey: string; normalize?: (v: any) => any }> = {
       sr: { dbKey: 'sr' },
-      englishDescription: { dbKey: 'english_description' },
-      arabicDescription: { dbKey: 'arabic_description' },
-      ndNumber: { dbKey: 'nd_number' },
+      englishDescription: { dbKey: 'englishDescription' },
+      arabicDescription: { dbKey: 'arabicDescription' },
+      ndNumber: { dbKey: 'ndNumber' },
       barcode: { dbKey: 'barcode' },
       colours: { dbKey: 'colours', normalize: normalizeJsonField },
       length: { dbKey: 'length' },
@@ -89,7 +96,7 @@ export async function PUT(
       height: { dbKey: 'height' },
       made: { dbKey: 'made' },
       materials: { dbKey: 'materials', normalize: normalizeJsonField },
-      additionalInfo: { dbKey: 'additional_info', normalize: normalizeJsonField },
+      additionalInfo: { dbKey: 'additionalInfo', normalize: normalizeJsonField },
       price: { dbKey: 'price' },
       pcs: { dbKey: 'pcs' },
     };
@@ -106,19 +113,39 @@ export async function PUT(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from('products')
-      .update(updateData)
-      .eq('id', id)
-      .select('*, product_images(*)')
-      .single();
+    const product = await db.product.update({
+      where: { id },
+      data: updateData,
+      include: { images: { orderBy: { displayOrder: 'asc' } } },
+    });
 
-    if (error) {
-      console.error('Supabase error updating product:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(mapProductFromDb(data));
+    return NextResponse.json({
+      id: product.id,
+      sr: product.sr,
+      englishDescription: product.englishDescription,
+      arabicDescription: product.arabicDescription,
+      ndNumber: product.ndNumber,
+      barcode: product.barcode,
+      colours: serializeJsonField(product.colours),
+      length: product.length,
+      width: product.width,
+      height: product.height,
+      made: product.made,
+      materials: serializeJsonField(product.materials),
+      additionalInfo: serializeJsonField(product.additionalInfo),
+      price: product.price,
+      pcs: product.pcs,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      images: product.images.map(img => ({
+        id: img.id,
+        productId: img.productId,
+        imageUrl: img.imageUrl,
+        displayOrder: img.displayOrder,
+        isPrimary: img.isPrimary,
+        createdAt: img.createdAt.toISOString(),
+      })),
+    });
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
@@ -131,52 +158,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = createAdminClient();
 
-    // First get the product to find its images for storage cleanup
-    const { data: product } = await supabase
-      .from('products')
-      .select('*, product_images(*)')
-      .eq('id', id)
-      .single();
+    // Check product exists
+    const product = await db.product.findUnique({
+      where: { id },
+      include: { images: true },
+    });
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // Delete images from Supabase Storage
-    if (product.product_images && product.product_images.length > 0) {
-      const filePaths = product.product_images.map((img: any) => {
-        try {
-          const url = new URL(img.image_url);
-          const pathParts = url.pathname.split('/');
-          return pathParts.slice(pathParts.indexOf('product-images') + 1).join('/');
-        } catch {
-          return null;
-        }
-      }).filter(Boolean);
-
-      if (filePaths.length > 0) {
-        const { error: storageError } = await supabase.storage
-          .from('product-images')
-          .remove(filePaths);
-
-        if (storageError) {
-          console.error('Error deleting images from storage:', storageError);
-        }
-      }
-    }
-
-    // Delete product (cascades to product_images via FK)
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Supabase error deleting product:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // Delete product (cascades to images via FK)
+    await db.product.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
