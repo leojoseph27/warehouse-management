@@ -300,7 +300,7 @@ export function BarcodeScanner({ onScan, onClose }: ScannerProProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex flex-col safe-area-inset overscroll-none overflow-hidden" style={{ touchAction: 'none' }}>
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col safe-area-inset modal-overlay-ios-fix">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-black/80 text-white border-b border-white/10">
         <Button

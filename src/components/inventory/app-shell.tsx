@@ -107,9 +107,9 @@ export function AppShell() {
 
   return (
     <UploadQueueProvider>
-      <div className="min-h-[100dvh] sm:min-h-screen bg-background flex flex-col overscroll-contain">
+      <div className="bg-background flex flex-col h-full">
         {/* Top Navigation Bar */}
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b safe-area-inset overscroll-contain">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b safe-area-inset">
           <div className="mx-auto px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-3">
             {/* Logo / Home button */}
             <button
@@ -204,7 +204,7 @@ export function AppShell() {
         </main>
 
         {/* Bottom Navigation for Mobile */}
-        <nav className="md:hidden sticky bottom-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t safe-area-inset overscroll-contain">
+        <nav className="md:hidden sticky bottom-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t safe-area-inset">
           <div className="flex items-center justify-around h-14">
             <MobileNavButton
               active={currentView === 'dashboard'}

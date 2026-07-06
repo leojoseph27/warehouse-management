@@ -499,7 +499,7 @@ export function BarcodePhotoCapture({ onScan, onClose }: BarcodePhotoCaptureProp
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col safe-area-inset modal-overlay-ios-fix">
       {/* Hidden elements for html5-qrcode scanFileV2 */}
       <div id="barcode-photo-scan-element" style={{ display: 'none' }} />
       <div id="barcode-photo-scan-element-2" style={{ display: 'none' }} />

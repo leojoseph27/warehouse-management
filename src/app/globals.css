@@ -112,36 +112,89 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   iOS Safari Rubber-Band Prevention - ROOT FIX
+   
+   ROOT CAUSE: iOS Safari's elastic scrolling ("rubber-banding") occurs when:
+   1. The document height equals the viewport height (100vh/100dvh bug)
+   2. Touch events propagate through fixed overlays to underlying content
+   3. Multiple scroll containers compete for touch handling
+   
+   SOLUTION: Use a 3-layer approach:
+   - Layer 1 (html): Fixed position, no scroll - provides stable viewport
+   - Layer 2 (body): Positioned relative, handles ALL scrolling via overflow
+   - Layer 3 (content): No height/overflow declarations, flows naturally
+   
+   This ensures ONLY ONE scroll container (body) and prevents iOS Safari
+   from applying elastic scroll to the wrong element.
+   ═════════════════════════════════════════════════════════════════════════ */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html {
-    /* Prevent overscroll/bounce effect on mobile browsers */
+    /* Prevent all elements from being scroll containers by default */
     overscroll-behavior: none;
-    /* Enable momentum scrolling on iOS Safari */
-    -webkit-overflow-scrolling: touch;
-    /* Prevent iOS Safari address bar from causing layout shifts */
-    height: 100%;
-    /* Prevent rubber-banding by locking overflow */
-    overflow: hidden;
   }
+
+  /* ── Layer 1: html element ──
+     Fixed to viewport, no scroll, provides stable anchor for iOS Safari */
+  html {
+    /* Fix iOS Safari viewport height bug - use fixed positioning */
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    /* No overflow on html - prevents it from being a scroll container */
+    overflow: hidden;
+    /* Prevent overscroll from ever starting at html level */
+    overscroll-behavior: none;
+    /* Enable smooth text rendering */
+    -webkit-font-smoothing: antialiased;
+    /* Prevent iOS Safari address bar from triggering layout recalcs */
+    -webkit-overflow-scrolling: auto;
+  }
+
+  /* ── Layer 2: body element ──
+     THE ONLY scroll container in the entire app */
   body {
     @apply bg-background text-foreground;
-    /* Use dynamic viewport height that accounts for mobile browser UI */
-    height: 100%;
-    min-height: 100dvh;
-    /* Support browsers without dvh */
-    min-height: -webkit-fill-available;
-    /* Prevent overscroll propagation */
-    overscroll-behavior: none;
-    /* Enable smooth touch scrolling */
-    -webkit-overflow-scrolling: touch;
-    /* Body handles the scrolling */
+    /* Position relative to html's fixed viewport */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Body handles ALL scrolling - overflow must be here */
     overflow-y: auto;
     overflow-x: hidden;
-    /* Prevent touch-action issues */
+    /* Prevent iOS Safari elastic bounce from propagating */
+    overscroll-behavior: none;
+    /* Critical for iOS Safari: use auto, NOT touch (touch enables rubber-band) */
+    -webkit-overflow-scrolling: auto;
+    /* Allow vertical pan gestures only */
     touch-action: pan-y;
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: contain;
+  }
+
+  /* ── All other containers must NOT have overflow ──
+     Override any accidental scroll containers */
+  main, 
+  [role="main"],
+  .app-content,
+  .main-content {
+    /* Content flows naturally, no height/overflow declarations */
+    overflow: visible;
+    overscroll-behavior: none;
+  }
+
+  /* ── Sticky elements: prevent scroll propagation ── */
+  header[style*="sticky"],
+  nav[style*="sticky"],
+  .sticky,
+  [data-sticky] {
+    overscroll-behavior: none;
+    /* Sticky elements should NOT be scroll containers */
+    overflow: visible;
   }
 
   /* Responsive touch-friendly targets */
@@ -156,6 +209,51 @@
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   Full-screen Modal/Overlay Fix for iOS Safari
+   
+   When a modal opens (scanner, camera, dialog), it must:
+   1. Prevent body scroll completely
+   2. Capture ALL touch events
+   3. Not allow touch to propagate to underlying content
+   
+   This class should be applied to all fixed full-screen overlays.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.modal-overlay-ios-fix {
+  /* Fixed to viewport, covers everything */
+  position: fixed;
+  inset: 0;
+  /* Prevent ANY scroll from happening on this layer */
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* Capture ALL touch events - nothing propagates through */
+  touch-action: none;
+  /* High z-index to be above everything */
+  z-index: 100;
+  /* Prevent iOS Safari from treating this as scrollable */
+  -webkit-overflow-scrolling: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ScrollArea component fix for iOS Safari
+   
+   Radix ScrollArea creates nested scroll viewports which can
+   cause rubber-banding on iOS. Apply containment to prevent.
+   ───────────────────────────────────────────────────────────── */
+
+[data-slot="scroll-area"] {
+  /* Contain overscroll within ScrollArea, don't propagate to body */
+  overscroll-behavior: contain;
+}
+
+[data-slot="scroll-area-viewport"] {
+  /* Use auto scrolling, not touch (touch enables rubber-band) */
+  -webkit-overflow-scrolling: auto;
+  /* Prevent overscroll */
+  overscroll-behavior: contain;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -298,19 +396,6 @@
   /* Stack form fields vertically on very small screens */
   .form-stack-xs {
     flex-direction: column;
-  }
-
-  /* Ensure main content area is scrollable on mobile */
-  main {
-    /* Prevent sticky headers from causing scroll issues */
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Sticky elements should not interfere with body scroll */
-  header[style*="sticky"], nav[style*="sticky"] {
-    /* Prevent overscroll from propagating through sticky elements */
-    overscroll-behavior: contain;
   }
 }
 
