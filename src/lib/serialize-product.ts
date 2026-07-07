@@ -27,6 +27,12 @@ interface ProductImageRow {
   displayOrder: number;
   isPrimary: boolean;
   createdAt: Date;
+  // Google Drive storage fields (null for legacy base64 images)
+  driveFileId: string | null;
+  thumbnailUrl: string | null;
+  filename: string | null;
+  mimeType: string | null;
+  fileSize: number | null;
 }
 
 interface ProductOriginalRow {
@@ -246,6 +252,11 @@ export function serializeProduct(p: ProductRow) {
       displayOrder: img.displayOrder,
       isPrimary: img.isPrimary,
       createdAt: img.createdAt.toISOString(),
+      driveFileId: img.driveFileId,
+      thumbnailUrl: img.thumbnailUrl,
+      filename: img.filename,
+      mimeType: img.mimeType,
+      fileSize: img.fileSize,
     })),
     // Change Tracking - Original values
     original: p.original ? {

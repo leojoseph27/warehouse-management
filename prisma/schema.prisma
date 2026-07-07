@@ -223,6 +223,14 @@ model ProductImage {
   createdAt    DateTime @default(now())
   product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  // Google Drive storage fields (added when migrating from base64 to Drive)
+  driveFileId  String?  // Google Drive file ID
+  thumbnailUrl String?  // https://drive.google.com/thumbnail?id={FILE_ID}&sz=w1000
+  filename     String?  // Original filename
+  mimeType     String?  // image/jpeg, image/png, etc.
+  fileSize     Int?     // File size in bytes
+  // Note: drivePageUrl can be derived from driveFileId, so we don't store it.
+
   @@index([productId])
   @@map("product_images")
 }

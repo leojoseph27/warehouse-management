@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import {
+  uploadToDrive,
+  deleteFromDrive,
+  isDriveConfigured,
+} from '@/lib/google-drive';
 
 export async function DELETE(
   request: NextRequest,
@@ -8,17 +13,54 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    const image = await db.productImage.findUnique({ where: { id } });
+    const image = await db.productImage.findUnique({
+      where: { id },
+      include: { product: { select: { id: true } } },
+    });
     if (!image) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
     }
 
+    // Delete the Google Drive file (if it has a driveFileId)
+    // Delete BEFORE the DB record so we don't get orphaned Drive files if the
+    // DB delete fails. If Drive delete fails, we keep the DB record so the
+    // user can retry.
+    if (image.driveFileId) {
+      try {
+        await deleteFromDrive(image.driveFileId);
+      } catch (driveErr: any) {
+        console.error(`[images/delete] Failed to delete Drive file ${image.driveFileId}:`, driveErr?.message);
+        // Continue with DB delete anyway — the user wants the image gone.
+        // The Drive file may become orphaned, but that's better than leaving
+        // a broken DB record. We log it for manual cleanup.
+      }
+    }
+
+    // Delete the DB record
     await db.productImage.delete({ where: { id } });
 
+    // If the deleted image was primary, auto-assign a new primary
+    // (the first remaining image by displayOrder)
+    if (image.isPrimary) {
+      const nextPrimary = await db.productImage.findFirst({
+        where: { productId: image.productId },
+        orderBy: { displayOrder: 'asc' },
+      });
+      if (nextPrimary) {
+        await db.productImage.update({
+          where: { id: nextPrimary.id },
+          data: { isPrimary: true },
+        });
+      }
+    }
+
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting image:', error);
-    return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete image', details: error?.message },
+      { status: 500 }
+    );
   }
 }
 
@@ -54,24 +96,32 @@ export async function PATCH(
       id: updatedImage.id,
       productId: updatedImage.productId,
       imageUrl: updatedImage.imageUrl,
+      thumbnailUrl: updatedImage.thumbnailUrl,
+      driveFileId: updatedImage.driveFileId,
       displayOrder: updatedImage.displayOrder,
       isPrimary: updatedImage.isPrimary,
       createdAt: updatedImage.createdAt.toISOString(),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating image:', error);
-    return NextResponse.json({ error: 'Failed to update image' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update image', details: error?.message },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * PUT /api/images/[id] — Replace an existing image with a new file.
  *
- * Accepts multipart/form-data with:
- *   - file: the new image file
+ * Flow:
+ *   1. Find the existing image record
+ *   2. Upload the new file to Google Drive (preserves isPrimary + displayOrder)
+ *   3. Delete the old Google Drive file
+ *   4. Update the DB record with new driveFileId + URLs + metadata
+ *   5. Return the updated image object
  *
- * Replaces the imageUrl (and preserves isPrimary + displayOrder) of the
- * existing image record. This allows "Replace" UX without delete-then-upload.
+ * Preserves: isPrimary, displayOrder (these are NOT changed during replace)
  */
 export async function PUT(
   request: NextRequest,
@@ -80,7 +130,17 @@ export async function PUT(
   try {
     const { id } = await params;
 
-    const existing = await db.productImage.findUnique({ where: { id } });
+    if (!isDriveConfigured()) {
+      return NextResponse.json(
+        { error: 'Google Drive is not configured. Set GOOGLE_* environment variables.' },
+        { status: 500 }
+      );
+    }
+
+    const existing = await db.productImage.findUnique({
+      where: { id },
+      include: { product: { select: { ndNumber: true } } },
+    });
     if (!existing) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
     }
@@ -91,29 +151,59 @@ export async function PUT(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Convert to base64 data URL (same storage strategy as upload route)
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString('base64');
-    const mimeType = file.type || 'image/jpeg';
-    const newImageUrl = `data:${mimeType};base64,${base64}`;
+    // Step 1: Upload the new file to Drive (into the same ND folder)
+    const driveResult = await uploadToDrive(file, existing.product.ndNumber);
 
-    // Update in place — preserve isPrimary and displayOrder
+    // Step 2: Delete the OLD Drive file (now that the new one is safely uploaded)
+    const oldDriveFileId = existing.driveFileId;
+    if (oldDriveFileId) {
+      try {
+        await deleteFromDrive(oldDriveFileId);
+      } catch (err: any) {
+        // Don't fail the replace if old file cleanup fails — log for manual cleanup
+        console.error(`[images/replace] Failed to delete old Drive file ${oldDriveFileId}:`, err?.message);
+      }
+    }
+
+    // Step 3: Update the DB record (preserve isPrimary + displayOrder)
     const updated = await db.productImage.update({
       where: { id },
-      data: { imageUrl: newImageUrl },
+      data: {
+        imageUrl: driveResult.imageUrl,
+        driveFileId: driveResult.driveFileId,
+        thumbnailUrl: driveResult.thumbnailUrl,
+        filename: driveResult.filename,
+        mimeType: driveResult.mimeType,
+        fileSize: driveResult.fileSize,
+        // isPrimary and displayOrder are NOT updated — preserved as-is
+      },
     });
 
     return NextResponse.json({
       id: updated.id,
       productId: updated.productId,
       imageUrl: updated.imageUrl,
+      thumbnailUrl: updated.thumbnailUrl,
+      driveFileId: updated.driveFileId,
+      filename: updated.filename,
+      mimeType: updated.mimeType,
+      fileSize: updated.fileSize,
       displayOrder: updated.displayOrder,
       isPrimary: updated.isPrimary,
       createdAt: updated.createdAt.toISOString(),
     });
-  } catch (error) {
-    console.error('Error replacing image:', error);
-    return NextResponse.json({ error: 'Failed to replace image' }, { status: 500 });
+  } catch (error: any) {
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error('  /api/images/[id] PUT (replace) — FAILED');
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error(`  Error message: ${error?.message || 'Unknown error'}`);
+    if (error?.stack) {
+      error.stack.split('\n').forEach((line: string) => console.error(`    ${line}`));
+    }
+    console.error('═══════════════════════════════════════════════════════════');
+    return NextResponse.json(
+      { error: 'Failed to replace image', details: error?.message },
+      { status: 500 }
+    );
   }
 }

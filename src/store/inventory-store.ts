@@ -119,6 +119,12 @@ export interface ProductImage {
   displayOrder: number;
   isPrimary: boolean;
   createdAt: string;
+  // Google Drive storage fields (null for legacy base64 images)
+  driveFileId?: string | null;
+  thumbnailUrl?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
 }
 
 export interface Product {

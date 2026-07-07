@@ -859,10 +859,11 @@ function ImageCardInner({
           onClick can swallow touch events from overlapping absolutely-positioned
           elements. Preview is now a dedicated button in the action bar instead. */}
       <img
-        src={image.imageUrl}
+        src={image.thumbnailUrl || image.imageUrl}
         alt="Product"
         className="w-full h-full object-cover pointer-events-none select-none"
         draggable={false}
+        loading="lazy"
       />
 
       {/* Primary badge (always visible, top-left, above image) */}
