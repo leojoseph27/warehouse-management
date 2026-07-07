@@ -120,6 +120,7 @@ export function ImageGallery({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isLoadingFromServer, setIsLoadingFromServer] = useState(false);
   const [recentlyCompleted, setRecentlyCompleted] = useState<Set<string>>(new Set());
+  const [isRefreshingGallery, setIsRefreshingGallery] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -139,32 +140,24 @@ export function ImageGallery({
   const rawUploadItems = useBackgroundUpload ? getItemsForProduct(productId) : [];
   const uploadItems = Array.isArray(rawUploadItems) ? rawUploadItems : [];
 
+  // Only pending and failed uploads are rendered as progress cards.
+  // Completed uploads are NOT rendered here — the real image arrives from
+  // the server via onRefreshImages and is rendered as a normal ProductImage.
+  // This prevents the "duplicate card" bug where a completed upload appears
+  // both as a fake ProductImage AND as a real one from the server.
   const pendingUploads = uploadItems.filter(
     i => i && (i.status === 'queued' || i.status === 'uploading' || i.status === 'processing')
   );
   const failedUploads = uploadItems.filter(i => i && i.status === 'failed');
   const completedUploads = uploadItems.filter(i => i && i.status === 'completed');
 
-  // Combine existing images with completed uploads (avoid duplicates)
-  // Defensive: ensure images is always an array (parent could pass undefined
-  // during initial load).
+  // The gallery renders ONLY real ProductImages from the server.
+  // Upload queue items are NEVER mixed into this array.
   const allImages: ProductImage[] = [...(images ?? [])];
-  for (const upload of completedUploads) {
-    if (upload.imageId && !allImages.some(img => img.id === upload.imageId)) {
-      allImages.push({
-        id: upload.imageId,
-        productId: upload.productId,
-        imageUrl: upload.imageUrl || '',
-        isPrimary: upload.isPrimary,
-        displayOrder: allImages.length,
-        createdAt: new Date(upload.completedAt || Date.now()).toISOString(),
-      });
-    }
-  }
 
-  // Track when uploads transition to completed so we can show a small success
-  // checkmark badge for ~1.5 seconds. After that, the badge disappears and
-  // the image is indistinguishable from any other image in the gallery.
+  // Track when uploads transition to completed so we can:
+  // 1. Fire onRefreshImages immediately (to fetch the real image from server)
+  // 2. Show a brief success badge on the newly-arrived image
   useEffect(() => {
     const newlyCompleted = completedUploads.filter(u => !recentlyCompleted.has(u.id));
     if (newlyCompleted.length === 0) return;
@@ -175,19 +168,23 @@ export function ImageGallery({
       return next;
     });
 
-    // After 1.5 seconds, remove the completed items from the "recently
-    // completed" set. The image is already in the gallery as a real image
-    // (via onRefreshImages which fires immediately on completion).
+    // IMMEDIATELY refresh images from the server so the real ProductImage
+    // appears in the gallery. This replaces the upload progress card with
+    // the actual image — no duplicate cards.
+    if (onRefreshImages) {
+      onRefreshImages();
+    }
+
+    // After 1.5 seconds, clean up the completed upload items from the store
+    // and remove them from the "recently completed" set. The real image is
+    // already in the gallery from the server refresh above.
     const timer = setTimeout(() => {
       setRecentlyCompleted(prev => {
         const next = new Set(prev);
         newlyCompleted.forEach(u => next.delete(u.id));
         return next;
       });
-      // Clean up the completed upload items from the store so they don't pile up
       removeCompletedForProduct(productId);
-      // Refresh images from server to get the canonical state
-      if (onRefreshImages) onRefreshImages();
     }, 1500);
 
     return () => clearTimeout(timer);
@@ -374,7 +371,10 @@ export function ImageGallery({
       ? `Primary + ${additionalCount} additional image${additionalCount !== 1 ? 's' : ''}`
       : `${allImages.length} image${allImages.length !== 1 ? 's' : ''}`;
 
-  const isUploadDisabled = readOnly || (totalUploading > 0 && useBackgroundUpload);
+  // Upload is NEVER disabled by ongoing uploads. The user can upload multiple
+  // images concurrently — each gets its own queue item and progress card.
+  // Only readOnly mode disables the upload button.
+  const isUploadDisabled = readOnly;
 
   // ── Upload card for pending/failed/completed uploads ──
   const renderUploadCard = (item: UploadItem) => {
@@ -555,6 +555,33 @@ export function ImageGallery({
                   </>
                 )}
               </Button>
+              {/* Manual gallery refresh button — reloads only the image gallery
+                  from the server. Does NOT reload the page. Preserves scroll
+                  position and unsaved form edits. */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setIsRefreshingGallery(true);
+                  try {
+                    if (onRefreshImages) await onRefreshImages();
+                  } finally {
+                    setIsRefreshingGallery(false);
+                  }
+                }}
+                className="h-11 px-3 flex-1 sm:flex-none"
+                disabled={isRefreshingGallery}
+                aria-label="Refresh image gallery"
+                title="Refresh Gallery"
+              >
+                {isRefreshingGallery ? (
+                  <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 sm:mr-1" />
+                )}
+                <span className="text-xs sm:text-sm">{isRefreshingGallery ? 'Refreshing...' : 'Refresh'}</span>
+              </Button>
             </div>
           )}
         </div>
@@ -625,12 +652,16 @@ export function ImageGallery({
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-              {/* Pending uploads first */}
+              {/* Pending upload progress cards (queued + uploading).
+                  These are NOT ProductImages — they're upload queue items
+                  showing progress. When the upload completes, the card
+                  disappears and the real image arrives from the server. */}
               {pendingUploads.sort((a, b) => a.queuePosition - b.queuePosition).map(renderUploadCard)}
-              {/* Failed uploads */}
+              {/* Failed upload cards (show retry/remove) */}
               {failedUploads.map(renderUploadCard)}
-              {/* Recently completed uploads (still showing success state) */}
-              {completedUploads.filter(u => recentlyCompleted.has(u.id)).map(renderUploadCard)}
+              {/* NOTE: Completed uploads are NOT rendered here. The real image
+                  arrives from the server via onRefreshImages and is rendered
+                  below as a normal ProductImage with full action buttons. */}
 
               {/* Existing images with drag-and-drop reordering */}
               {!readOnly && onReorder ? (
