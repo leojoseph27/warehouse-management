@@ -512,7 +512,20 @@ export function resolveImageLinks(product: { images?: { imageUrl: string; isPrim
     if (!a.isPrimary && b.isPrimary) return 1;
     return a.displayOrder - b.displayOrder;
   });
-  return sorted.map(img => img.imageUrl).join('\n');
+  // Convert each imageUrl to a sensible export value:
+  //   - Real URLs (http://, https://, /path) → kept as-is
+  //   - Base64 data URLs → replaced with "[base64 image — N chars]" placeholder
+  //     because Excel cells have a 32,767 char limit and a 3MB+ base64 string
+  //     would crash the export (Error: Text length must not exceed 32767
+  //     characters). The full data URL is still in the database; the Excel
+  //     export is for catalog reference, not image storage.
+  return sorted.map(img => {
+    const url = img.imageUrl || '';
+    if (url.startsWith('data:')) {
+      return `[base64 image — ${url.length} chars]`;
+    }
+    return url;
+  }).join('\n');
 }
 
 /** Get dropdown options for a given lookup name */

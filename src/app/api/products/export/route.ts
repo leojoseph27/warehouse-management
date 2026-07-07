@@ -84,11 +84,26 @@ function isFieldModified(product: any, field: string): boolean {
 }
 
 /**
- * Create styled cell - red font for modified values
+ * Create styled cell - red font for modified values.
+ *
+ * SAFETY NET: Excel cells have a hard limit of 32,767 characters. Any value
+ * longer than that would throw "Error: Text length must not exceed 32767
+ * characters" and crash the entire export. We truncate to 32,767 chars as a
+ * defense-in-depth measure — even if a field somehow contains a huge string
+ * (e.g. a base64 data URL that slipped through resolveImageLinks), the export
+ * still succeeds instead of failing with a 500.
  */
+const EXCEL_CELL_MAX_CHARS = 32767;
+
 function createStyledCell(value: any, isModified: boolean): XLSX.CellObject {
-  const cellValue = value === null || value === undefined || value === '' ? '' : value;
-  
+  let cellValue = value === null || value === undefined || value === '' ? '' : value;
+
+  // Truncate to Excel's cell limit (32767 chars). Append an ellipsis marker
+  // so the user can see the value was truncated.
+  if (typeof cellValue === 'string' && cellValue.length > EXCEL_CELL_MAX_CHARS) {
+    cellValue = cellValue.slice(0, EXCEL_CELL_MAX_CHARS - 20) + '... [truncated]';
+  }
+
   const cell: XLSX.CellObject = {
     t: typeof cellValue === 'number' ? 'n' : 's',
     v: cellValue,
@@ -98,7 +113,7 @@ function createStyledCell(value: any, isModified: boolean): XLSX.CellObject {
       },
     } : undefined,
   };
-  
+
   return cell;
 }
 
@@ -240,8 +255,46 @@ export async function GET(request: NextRequest) {
         'Content-Disposition': 'attachment; filename="alnassim_catalog_export.xlsx"',
       },
     });
-  } catch (error) {
-    console.error('Error exporting Excel:', error);
-    return NextResponse.json({ error: 'Failed to export Excel file' }, { status: 500 });
+  } catch (error: any) {
+    // COMPREHENSIVE ERROR LOGGING — do not return only HTTP 500.
+    // Log: error message, stack trace, request parameters, and Prisma query
+    // context so the root cause can be diagnosed without reproducing.
+    const { searchParams } = new URL(request.url);
+    const sourceRowFrom = searchParams.get('sourceRowFrom');
+    const sourceRowTo = searchParams.get('sourceRowTo');
+    const whereClause = (sourceRowFrom !== null && sourceRowTo !== null)
+      ? { sourceRow: { gte: Number(sourceRowFrom), lte: Number(sourceRowTo) } }
+      : {};
+
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error('  /api/products/export — FAILED');
+    console.error('═══════════════════════════════════════════════════════════');
+    console.error(`  Error message: ${error?.message || 'Unknown error'}`);
+    console.error(`  Error name:    ${error?.name || 'Error'}`);
+    console.error(`  Request params:`, {
+      sourceRowFrom,
+      sourceRowTo,
+      where: whereClause,
+    });
+    console.error(`  Prisma query context:`, {
+      model: 'product',
+      operation: 'findMany',
+      include: ['images', 'original', 'variantMemberships'],
+      orderBy: { sourceRow: 'asc' },
+      where: whereClause,
+    });
+    if (error?.stack) {
+      console.error('  Stack trace:');
+      error.stack.split('\n').forEach((line: string) => console.error(`    ${line}`));
+    }
+    console.error('═══════════════════════════════════════════════════════════');
+
+    // Return a detailed error response (not just "Failed to export Excel file")
+    // so the client can see what went wrong without checking server logs.
+    return NextResponse.json({
+      error: 'Failed to export Excel file',
+      details: error?.message || 'Unknown error',
+      requestParams: { sourceRowFrom, sourceRowTo },
+    }, { status: 500 });
   }
 }

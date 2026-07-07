@@ -839,19 +839,29 @@ export function ProductForm({ mode }: ProductFormProps) {
   };
 
   const handleSetPrimary = async (imageId: string) => {
-    const res = await fetch(`/api/images/${imageId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isPrimary: true }),
-    });
-    if (res.ok && currentProduct) {
-      setCurrentProduct({
-        ...currentProduct,
-        images: currentProduct.images.map((img) => ({
-          ...img,
-          isPrimary: img.id === imageId,
-        })),
+    if (!currentProduct) return;
+    // OPTIMISTIC UI: Update immediately, revert on failure.
+    const previousImages = currentProduct.images;
+    const optimisticProduct = {
+      ...currentProduct,
+      images: currentProduct.images.map((img) => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })),
+    };
+    setCurrentProduct(optimisticProduct);
+
+    try {
+      const res = await fetch(`/api/images/${imageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPrimary: true }),
       });
+      if (!res.ok) throw new Error('Failed to set primary');
+    } catch (err) {
+      // Revert on failure
+      setCurrentProduct({ ...currentProduct, images: previousImages });
+      toast.error('Failed to set primary image. Reverted.');
     }
   };
 

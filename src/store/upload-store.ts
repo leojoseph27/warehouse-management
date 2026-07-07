@@ -195,18 +195,22 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
   
   addToQueue: async (file, productId, productName, options) => {
     const id = uuidv4();
-    const thumbnail = await generateThumbnail(file);
     
     const state = get();
     const nextPosition = state.items.filter(i => i.status === 'queued').length + 1;
     
+    // CRITICAL: Add the item to the store SYNCHRONOUSLY first, so the upload
+    // card appears immediately in the UI (fixes iOS Safari BUG 1 where the
+    // user sees no feedback after selecting an image). The thumbnail is
+    // generated and backfilled below — the card shows a placeholder icon
+    // until the thumbnail is ready (usually <100ms).
     const newItem: UploadItem = {
       id,
       file,
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
-      thumbnail,
+      thumbnail: undefined, // Backfilled after generation
       productId,
       productName,
       variantId: options?.variantId,
@@ -226,6 +230,16 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     
     // Persist state
     get().persistState();
+    
+    // Generate thumbnail asynchronously and backfill into the item
+    generateThumbnail(file).then((thumbnail) => {
+      set((state) => ({
+        items: state.items.map(item =>
+          item.id === id ? { ...item, thumbnail } : item
+        ),
+      }));
+      get().persistState();
+    });
     
     // Start processing if not already
     if (!state.isProcessing && !state.isPaused) {
@@ -467,17 +481,57 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
         formData.append('isPrimary', 'true');
       }
       
-      // Use XHR for progress tracking
+      // Use XHR for progress tracking (fetch() does NOT support upload progress
+      // on iOS Safari or any browser).
       const xhr = new XMLHttpRequest();
       
+      // iOS SAFARI WORKAROUND: iOS Safari often does not fire upload.onprogress
+      // for small files or compressed uploads, leaving the progress bar stuck at
+      // 0%. To ensure the user always sees progress, we run a synthetic progress
+      // timer that increments slowly. If real XHR progress events arrive, they
+      // override the synthetic value (we stop the timer when progress > 0 from
+      // real events). The synthetic timer never reaches 100% — it caps at 90%
+      // so the final 10% only fills when the server actually responds.
+      let syntheticTimer: ReturnType<typeof setInterval> | null = null;
+      let receivedRealProgress = false;
+      let syntheticProgress = 0;
+      
+      const startSyntheticProgress = () => {
+        if (syntheticTimer) return;
+        syntheticTimer = setInterval(() => {
+          if (receivedRealProgress) {
+            if (syntheticTimer) { clearInterval(syntheticTimer); syntheticTimer = null; }
+            return;
+          }
+          // Increment slowly, cap at 90% (final 10% = server response)
+          if (syntheticProgress < 90) {
+            // Faster at the start, slower as it approaches 90
+            const increment = syntheticProgress < 30 ? 5 : syntheticProgress < 60 ? 3 : 1;
+            syntheticProgress = Math.min(90, syntheticProgress + increment);
+            get().updateProgress(nextItem.id, syntheticProgress);
+          }
+        }, 200);
+      };
+      
       xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
+        if (event.lengthComputable && event.total > 0) {
+          receivedRealProgress = true;
           const progress = Math.round((event.loaded / event.total) * 100);
           get().updateProgress(nextItem.id, progress);
         }
+        // If lengthComputable is false (iOS Safari sometimes does this for
+        // small/compressed files), the synthetic timer keeps things moving.
+      };
+      
+      xhr.upload.onloadstart = () => {
+        // Upload started — begin synthetic progress in case real events don't fire
+        startSyntheticProgress();
       };
       
       xhr.onload = () => {
+        if (syntheticTimer) { clearInterval(syntheticTimer); syntheticTimer = null; }
+        // Set to 100% on completion
+        get().updateProgress(nextItem.id, 100);
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = JSON.parse(xhr.responseText);
@@ -499,6 +553,7 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
       };
       
       xhr.onerror = () => {
+        if (syntheticTimer) { clearInterval(syntheticTimer); syntheticTimer = null; }
         get().markFailed(nextItem.id, 'Network error');
       };
       

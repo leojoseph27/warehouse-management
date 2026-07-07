@@ -34,12 +34,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { ProductImage } from '@/store/inventory-store';
 import { useUploadStore, UploadItem } from '@/store/upload-store';
 import { cn } from '@/lib/utils';
@@ -492,7 +486,50 @@ export function ImageGallery({
   };
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <div className="space-y-3">
+      {/* Full-screen loading overlay during upload (BUG 8 fix).
+          Shows live progress so the user never wonders if anything is happening.
+          Uses fixed inset-0 with high z-index to cover the entire viewport on
+          mobile. On iOS Safari, this prevents the user from tapping other
+          controls while an upload is in progress. */}
+      {pendingUploads.length > 0 && (
+        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-label="Uploading image" aria-modal="true">
+          <div className="bg-background rounded-xl shadow-2xl p-5 max-w-sm w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-500/10 rounded-full p-2">
+                <Upload className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">
+                  {pendingUploads.length === 1 ? 'Uploading image...' : `Uploading ${pendingUploads.length} images...`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {pendingUploads[0]?.fileName}
+                  {pendingUploads.length > 1 && ` +${pendingUploads.length - 1} more`}
+                </p>
+              </div>
+            </div>
+            {/* Live progress bar for the currently-uploading item */}
+            {(() => {
+              const uploading = pendingUploads.find(u => u.status === 'uploading') || pendingUploads[0];
+              const pct = uploading?.progress ?? 0;
+              return (
+                <div className="space-y-1.5">
+                  <Progress value={pct} className="h-2.5" />
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{getStatusLabel(uploading?.status || 'queued')}</span>
+                    <span className="font-medium">{pct}%</span>
+                  </div>
+                </div>
+              );
+            })()}
+            <p className="text-[10px] text-muted-foreground mt-3 text-center">
+              You can continue using the app — uploads run in the background.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-3">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -750,7 +787,7 @@ export function ImageGallery({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
 
@@ -812,120 +849,118 @@ function ImageCardInner({
   return (
     <div
       className={cn(
-        'relative group aspect-square rounded-lg overflow-hidden border bg-muted',
+        'relative aspect-square rounded-lg overflow-hidden border bg-muted',
         image.isPrimary ? 'border-amber-400 border-2 ring-2 ring-amber-400/30' : 'border-border',
         isDragging && 'shadow-lg ring-2 ring-primary'
       )}
     >
+      {/* Image — pointer-events:none so it NEVER intercepts taps meant for the
+          action buttons below. iOS Safari has a bug where an <img> with
+          onClick can swallow touch events from overlapping absolutely-positioned
+          elements. Preview is now a dedicated button in the action bar instead. */}
       <img
         src={image.imageUrl}
         alt="Product"
-        className="w-full h-full object-cover cursor-pointer"
-        onClick={onPreview}
+        className="w-full h-full object-cover pointer-events-none select-none"
+        draggable={false}
       />
 
-      {/* Primary badge (always visible) */}
-      <div className="absolute top-1 left-1">
-        {image.isPrimary ? (
+      {/* Primary badge (always visible, top-left, above image) */}
+      {image.isPrimary && (
+        <div className="absolute top-1 left-1 z-20 pointer-events-none">
           <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 shadow-sm">
             <Star className="h-3 w-3 mr-0.5 fill-current" />
             Primary
           </Badge>
-        ) : null}
-      </div>
+        </div>
+      )}
 
-      {/* Drag handle (desktop hover, always visible on touch) */}
+      {/* Drag handle (top-right, always visible, 44px touch target) */}
       {!readOnly && dragHandleProps && (
         <div
           {...dragHandleProps}
-          className="absolute top-1 right-1 bg-black/50 text-white rounded p-1 cursor-grab active:cursor-grabbing touch-none"
+          className="absolute top-0 right-0 z-30 bg-black/60 text-white rounded-bl-lg cursor-grab active:cursor-grabbing touch-none flex items-center justify-center"
+          style={{ width: 44, height: 44 }}
           aria-label="Drag to reorder"
           role="button"
           tabIndex={0}
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className="h-5 w-5" />
         </div>
       )}
 
-      {/* Action buttons — always visible, large touch targets */}
+      {/* Action buttons — ALWAYS visible (not hover-only), 44px touch targets
+          (Apple HIG minimum), z-20 so they're above the image. No Tooltip
+          wrappers because Radix Tooltip's Trigger wrapper can intercept touch
+          events on iOS Safari. We use native title + aria-label instead. */}
       {!readOnly && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1.5 flex items-center justify-around gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1',
-                  image.isPrimary && 'text-amber-400'
-                )}
-                onClick={onSetPrimary}
-                disabled={image.isPrimary}
-                aria-label={image.isPrimary ? 'Already primary image' : 'Set as primary image'}
-                title={image.isPrimary ? 'Primary' : 'Set as Primary'}
-              >
-                <Star className={cn('h-4 w-4', image.isPrimary && 'fill-current')} />
-                <span className="ml-0.5 hidden sm:inline">{image.isPrimary ? 'Primary' : 'Set Primary'}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{image.isPrimary ? 'Primary image' : 'Set as primary'}</TooltipContent>
-          </Tooltip>
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/75 flex items-stretch">
+          {/* Set Primary */}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onSetPrimary(); }}
+            disabled={image.isPrimary}
+            aria-label={image.isPrimary ? 'Already primary image' : 'Set as primary image'}
+            title={image.isPrimary ? 'Primary' : 'Set as Primary'}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-0.5 text-white active:bg-white/25 transition-colors disabled:opacity-60',
+              image.isPrimary && 'text-amber-400'
+            )}
+            style={{ minHeight: 44 }}
+          >
+            <Star className={cn('h-4 w-4', image.isPrimary && 'fill-current')} />
+            <span className="text-[9px] leading-none">{image.isPrimary ? 'Primary' : 'Set Primary'}</span>
+          </button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1"
-                onClick={onPreview}
-                aria-label="Preview image"
-                title="Preview"
-              >
-                <Eye className="h-4 w-4" />
-                <span className="ml-0.5 hidden sm:inline">Preview</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Preview image</TooltipContent>
-          </Tooltip>
+          {/* Preview */}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPreview(); }}
+            aria-label="Preview image"
+            title="Preview"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-white active:bg-white/25 transition-colors border-l border-white/10"
+            style={{ minHeight: 44 }}
+          >
+            <Eye className="h-4 w-4" />
+            <span className="text-[9px] leading-none">Preview</span>
+          </button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1"
-                onClick={onReplace}
-                aria-label="Replace image"
-                title="Replace"
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="ml-0.5 hidden sm:inline">Replace</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Replace image</TooltipContent>
-          </Tooltip>
+          {/* Replace */}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onReplace(); }}
+            aria-label="Replace image"
+            title="Replace"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-white active:bg-white/25 transition-colors border-l border-white/10"
+            style={{ minHeight: 44 }}
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="text-[9px] leading-none">Replace</span>
+          </button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 flex-1 text-[10px] text-red-400 hover:bg-red-500/20 px-1"
-                onClick={onDelete}
-                aria-label="Delete image"
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="ml-0.5 hidden sm:inline">Delete</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Delete image</TooltipContent>
-          </Tooltip>
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(); }}
+            aria-label="Delete image"
+            title="Delete"
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-red-400 active:bg-red-500/30 transition-colors border-l border-white/10"
+            style={{ minHeight: 44 }}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="text-[9px] leading-none">Delete</span>
+          </button>
         </div>
+      )}
+
+      {/* Read-only preview tap target (when readOnly, the image itself is tappable) */}
+      {readOnly && (
+        <button
+          type="button"
+          onClick={onPreview}
+          aria-label="Preview image"
+          className="absolute inset-0 z-10 cursor-pointer"
+        />
       )}
     </div>
   );

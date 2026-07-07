@@ -196,21 +196,34 @@ export function ProductDetail() {
   };
 
   const handleSetPrimary = async (imageId: string) => {
-    const res = await fetch(`/api/images/${imageId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isPrimary: true }),
-    });
-    if (res.ok) {
-      const updatedProduct = {
-        ...product,
-        images: product.images.map(img => ({
-          ...img,
-          isPrimary: img.id === imageId,
-        })),
-      };
-      setProduct(updatedProduct);
-      setCurrentProduct(updatedProduct);
+    // OPTIMISTIC UI: Update the local state immediately so the user sees the
+    // primary badge move instantly. If the API fails, revert to the previous
+    // state and show an error toast. This is critical on iOS Safari where
+    // network latency can make a non-optimistic UI feel broken.
+    const previousImages = product.images;
+    const optimisticProduct = {
+      ...product,
+      images: product.images.map(img => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })),
+    };
+    setProduct(optimisticProduct);
+    setCurrentProduct(optimisticProduct);
+
+    try {
+      const res = await fetch(`/api/images/${imageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPrimary: true }),
+      });
+      if (!res.ok) throw new Error('Failed to set primary');
+    } catch (err) {
+      // Revert on failure
+      const revertedProduct = { ...product, images: previousImages };
+      setProduct(revertedProduct);
+      setCurrentProduct(revertedProduct);
+      toast.error('Failed to set primary image. Reverted.');
     }
   };
 
@@ -366,6 +379,7 @@ export function ProductDetail() {
             onSetPrimary={handleSetPrimary}
             onReplace={handleImageReplace}
             onReorder={handleReorder}
+            useBackgroundUpload={true}
           />
         </CardContent>
       </Card>
