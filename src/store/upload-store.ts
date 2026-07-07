@@ -686,19 +686,25 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
 // This will catch the EXACT moment the store loses its action functions.
 if (typeof window !== 'undefined') {
   let renderCount = 0;
-  useUploadStore.subscribe((newState, prevState) => {
+  useUploadStore.subscribe((newState: any, prevState: any) => {
     renderCount++;
-    const prevHadAddToQueue = typeof (prevState as any).addToQueue === 'function';
-    const newHasAddToQueue = typeof (newState as any).addToQueue === 'function';
+    const prevHadAddToQueue = typeof prevState?.addToQueue === 'function';
+    const newHasAddToQueue = typeof newState?.addToQueue === 'function';
     if (prevHadAddToQueue && !newHasAddToQueue) {
-      console.error('[upload-store] ⚠️ FUNCTIONS DISAPPEARED on state change #' + renderCount, {
-        prevHadAddToQueue,
-        newHasAddToQueue,
-        prevKeys: Object.keys(prevState),
-        newKeys: Object.keys(newState),
-        newState,
-        stack: new Error().stack,
-      });
+      // Log each field separately so the console shows actual values, not
+      // collapsed object references.
+      console.error('[upload-store] ⚠️ FUNCTIONS DISAPPEARED on state change #' + renderCount);
+      console.error('  prevHadAddToQueue:', prevHadAddToQueue);
+      console.error('  newHasAddToQueue:', newHasAddToQueue);
+      console.error('  prevKeys:', JSON.stringify(Object.keys(prevState || {})));
+      console.error('  newKeys:', JSON.stringify(Object.keys(newState || {})));
+      console.error('  newState type:', typeof newState);
+      console.error('  newState is null?', newState === null);
+      console.error('  newState is array?', Array.isArray(newState));
+      console.error('  newState JSON:', JSON.stringify(newState, null, 2));
+      console.error('  newState items length:', newState?.items?.length);
+      console.error('  STACK TRACE:');
+      console.error(new Error().stack);
     }
   });
 }
