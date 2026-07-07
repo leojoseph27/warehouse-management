@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [],
   },
+  // Enable production source maps so minified stack traces can be mapped
+  // back to the original TypeScript source.
+  productionBrowserSourceMaps: true,
 };
 
 export default nextConfig;

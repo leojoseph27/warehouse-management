@@ -135,11 +135,50 @@ export function ImageGallery({
     totalUploading,
   } = useUploadStore();
 
-  // Get uploads for this product — with defensive fallback.
-  // getItemsForProduct can return undefined if the store's items array is
-  // corrupted during IndexedDB persistence load. Always ensure uploadItems
-  // is an array to prevent "Cannot read properties of undefined (reading
-  // 'filter'/'map'/'length')" runtime errors.
+  // ── RUNTIME DIAGNOSTIC: log typeof every callable + full store state ──
+  // This runs on EVERY render, before any upload starts.
+  if (typeof window !== 'undefined') {
+    const storeState = useUploadStore.getState();
+    console.log('[ImageGallery diagnostic] store functions:', {
+      typeofAddToQueue: typeof addToQueue,
+      typeofGetItemsForProduct: typeof getItemsForProduct,
+      typeofRemoveCompletedForProduct: typeof removeCompletedForProduct,
+      typeofRetryUpload: typeof retryUpload,
+      typeofRemoveFromQueue: typeof removeFromQueue,
+      typeofTotalUploading: typeof totalUploading,
+    });
+    console.log('[ImageGallery diagnostic] useUploadStore.getState():', {
+      hasAddToQueue: typeof storeState.addToQueue === 'function',
+      hasGetItemsForProduct: typeof storeState.getItemsForProduct === 'function',
+      hasRemoveCompletedForProduct: typeof storeState.removeCompletedForProduct === 'function',
+      hasRetryUpload: typeof storeState.retryUpload === 'function',
+      hasRemoveFromQueue: typeof storeState.removeFromQueue === 'function',
+      hasStartProcessing: typeof storeState.startProcessing === 'function',
+      hasPersistState: typeof storeState.persistState === 'function',
+      hasProcessNextItem: typeof storeState.processNextItem === 'function',
+      hasLoadPersistedState: typeof storeState.loadPersistedState === 'function',
+      itemsIsArray: Array.isArray(storeState.items),
+      itemsLength: Array.isArray(storeState.items) ? storeState.items.length : 'NOT ARRAY',
+      totalUploading: storeState.totalUploading,
+      isProcessing: storeState.isProcessing,
+    });
+    console.log('[ImageGallery diagnostic] ImageGallery props:', {
+      typeofOnUpload: typeof onUpload,
+      typeofOnDelete: typeof onDelete,
+      typeofOnSetPrimary: typeof onSetPrimary,
+      typeofOnRefreshImages: typeof onRefreshImages,
+      typeofOnReplace: typeof onReplace,
+      typeofOnReorder: typeof onReorder,
+      productId,
+      useBackgroundUpload,
+      imagesIsArray: Array.isArray(images),
+      imagesLength: Array.isArray(images) ? images.length : 'NOT ARRAY',
+    });
+  }
+
+  // ── THE CRASH LINE (line 143) ──
+  // If getItemsForProduct is not a function, this throws "O is not a function"
+  // (where O is the minified name for getItemsForProduct).
   const rawUploadItems = useBackgroundUpload ? getItemsForProduct(productId) : [];
   const uploadItems = Array.isArray(rawUploadItems) ? rawUploadItems : [];
 
