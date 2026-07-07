@@ -175,8 +175,15 @@ export async function GET(request: NextRequest) {
     const validationStatus = searchParams.get('validationStatus') || '';
     const unit = searchParams.get('unit') || '';
     const ndNumber = searchParams.get('ndNumber') || '';
+    const nameEn = searchParams.get('nameEn') || '';
+    const sourceRowMin = searchParams.get('sourceRowMin');
+    const sourceRowMax = searchParams.get('sourceRowMax');
     const priceMin = searchParams.get('priceMin');
     const priceMax = searchParams.get('priceMax');
+    // Recently Updated: onlyModified=1 → only products where updatedAt > createdAt
+    const onlyModified = searchParams.get('onlyModified') === '1';
+    // Recently Added: recentlyAddedDays=N → only products with createdAt within last N days
+    const recentlyAddedDays = parseInt(searchParams.get('recentlyAddedDays') || '0', 10);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const sortBy = searchParams.get('sortBy') || 'sourceRow';
@@ -217,11 +224,19 @@ export async function GET(request: NextRequest) {
 
     // Direct column filters
     if (ndNumber) where.ndNumber = { ...where.ndNumber, contains: ndNumber, mode: 'insensitive' };
+    // Dedicated Name EN filter — case-insensitive partial match on nameEn only
+    // (the general `search` param searches across 11 fields; this one is scoped to nameEn)
+    if (nameEn) where.nameEn = { ...where.nameEn, contains: nameEn, mode: 'insensitive' };
     if (department) where.department = { contains: department, mode: 'insensitive' };
     if (category) where.category = { contains: category, mode: 'insensitive' };
     if (subcategory) where.subcategory = { contains: subcategory, mode: 'insensitive' };
-    if (productFamily) where.productFamily = { contains: productFamily, mode: 'insensitive' };
-    if (productType) where.productType = { contains: productType, mode: 'insensitive' };
+    // Product Family / Product Type: EXACT match (equals), not substring.
+    // The previous `contains` meant "Kitchen" matched both "Kitchen" and "Kitchenware",
+    // and the UI's lookup-table suggestions didn't match DB values, so the filter
+    // silently returned 0 results. Switching to `equals` makes the dropdown values
+    // match DB values exactly.
+    if (productFamily) where.productFamily = { equals: productFamily, mode: 'insensitive' };
+    if (productType) where.productType = { equals: productType, mode: 'insensitive' };
     if (brand) where.brand = { contains: brand, mode: 'insensitive' };
     if (color) where.color = { contains: color, mode: 'insensitive' };
     if (material) where.material = { contains: material, mode: 'insensitive' };
@@ -229,6 +244,58 @@ export async function GET(request: NextRequest) {
     if (shape) where.shape = { contains: shape, mode: 'insensitive' };
     if (validationStatus) where.validationStatus = { equals: validationStatus };
     if (unit) where.unit = { equals: unit };
+
+    // Source Row range filter — supports exact, >N, <N, and range (min-max).
+    // The UI parses the user's input string and sends sourceRowMin / sourceRowMax.
+    if (sourceRowMin) {
+      const n = parseInt(sourceRowMin, 10);
+      if (!Number.isNaN(n)) where.sourceRow = { ...where.sourceRow, gte: n };
+    }
+    if (sourceRowMax) {
+      const n = parseInt(sourceRowMax, 10);
+      if (!Number.isNaN(n)) where.sourceRow = { ...where.sourceRow, lte: n };
+    }
+
+    // Recently Updated filter — only show products that were actually modified
+    // after creation (updatedAt > createdAt). Prisma's raw comparison: we use
+    // $queryRaw-friendly approach via `where` with a custom filter.
+    // Since Prisma doesn't support column-to-column comparison in `where`, we
+    // filter in the DB by using a raw SQL id filter is not feasible at scale;
+    // instead we use Prisma's approach: query with a raw WHERE clause appended.
+    // Implementation: fetch matching IDs via $queryRaw, then filter the main
+    // query by those IDs. For modest datasets (<= 10k products) this is fast.
+    if (onlyModified) {
+      const modifiedIds: { id: string }[] = await db.$queryRaw`
+        SELECT id FROM products WHERE "updatedAt" > "createdAt"
+      `;
+      const idList = modifiedIds.map(r => r.id);
+      where.id = { ...where.id, in: idList };
+      // Sort by updatedAt DESC when onlyModified is on, so the most recently
+      // edited product appears first (the user's modification sequence).
+      // Override sortColumn/orderDir here:
+    }
+
+    // Recently Added filter — only products added within the last N days
+    if (recentlyAddedDays > 0) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - recentlyAddedDays);
+      where.createdAt = { ...where.createdAt, gte: cutoff };
+    }
+
+    // Override sort: when onlyModified is on, ALWAYS sort by updatedAt DESC
+    // (most recent edit first) regardless of the user's sortBy/sortOrder, so
+    // the modification sequence is preserved: if A was edited, then B, then C,
+    // the list shows C, B, A.
+    let finalSortColumn = sortColumn;
+    let finalOrderDir = orderDir;
+    if (onlyModified) {
+      finalSortColumn = 'updatedAt';
+      finalOrderDir = 'desc';
+    } else if (recentlyAddedDays > 0) {
+      // Recently Added: sort by createdAt DESC (newest addition first)
+      finalSortColumn = 'createdAt';
+      finalOrderDir = 'desc';
+    }
 
     // Price range filters
     if (priceMin) {
@@ -247,7 +314,7 @@ export async function GET(request: NextRequest) {
           original: true,
           variantMemberships: true,
         },
-        orderBy: { [sortColumn]: orderDir },
+        orderBy: { [finalSortColumn]: finalOrderDir },
         skip: (page - 1) * limit,
         take: limit,
       }),

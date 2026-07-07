@@ -321,6 +321,17 @@ interface InventoryState {
   filterShape: string;
   filterValidationStatus: string;
   filterUnit: string;
+  // Dedicated field filters (added to fix broken filtering engine)
+  filterSourceRow: string;      // supports: exact "100", range "100-500", ">100", "<500"
+  filterNdNumber: string;       // case-insensitive partial: "ND-6605", "6605", "ND-66"
+  filterNameEn: string;         // case-insensitive partial: "knife", "food storage"
+  // Recently Updated / Recently Added — these are FILTERS, not just sort orders.
+  //   filterOnlyModified: when true, only show products where updatedAt > createdAt
+  //     (i.e. products actually edited after creation), sorted by updatedAt DESC.
+  //   filterRecentlyAddedDays: when > 0, only show products added within the last
+  //     N days, sorted by createdAt DESC. 0 = disabled (show all).
+  filterOnlyModified: boolean;
+  filterRecentlyAddedDays: number;
 
   // Sort
   sortBy: SortBy;
@@ -404,6 +415,13 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   filterShape: '',
   filterValidationStatus: '',
   filterUnit: '',
+  // Dedicated field filters
+  filterSourceRow: '',
+  filterNdNumber: '',
+  filterNameEn: '',
+  // Recently Updated / Recently Added filters
+  filterOnlyModified: false,
+  filterRecentlyAddedDays: 0,
 
   // Sort
   sortBy: 'sourceRow',
@@ -452,6 +470,16 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     filterShape: '',
     filterValidationStatus: '',
     filterUnit: '',
+    filterSourceRow: '',
+    filterNdNumber: '',
+    filterNameEn: '',
+    filterOnlyModified: false,
+    filterRecentlyAddedDays: 0,
+    searchQuery: '',
+    sortBy: 'sourceRow',
+    sortOrder: 'asc',
+    currentPage: 1,
+    selectedNdNumber: '',
   }),
   setLoading: (loading) => set({ isLoading: loading }),
   setSaving: (saving) => set({ isSaving: saving }),

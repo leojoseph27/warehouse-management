@@ -134,6 +134,11 @@ export function ProductTable() {
     filterShape,
     filterPriceMin,
     filterPriceMax,
+    filterSourceRow,
+    filterNdNumber,
+    filterNameEn,
+    filterOnlyModified,
+    filterRecentlyAddedDays,
     sortBy,
     sortOrder,
     groupByNd,
@@ -173,6 +178,64 @@ export function ProductTable() {
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const columnMenuRef = useRef<HTMLDivElement>(null);
+  // Local raw input for the smart Default Price filter. The user types things
+  // like ">5", "<0.5", "1-2", or "1"; we parse it into min/max and write those
+  // to the store (filterPriceMin / filterPriceMax) which the API actually reads.
+  const [localPriceInput, setLocalPriceInput] = useState('');
+  const [localSourceRowInput, setLocalSourceRowInput] = useState('');
+  // DB-backed suggestions for Product Type / Product Family dropdowns.
+  // These merge actual DB values with the hardcoded lookup tables so the
+  // dropdown always shows values that exist in the database (fixes the
+  // "Product Type filter returns 0 results" bug where lookup values didn't
+  // match DB values).
+  const [dbSuggestions, setDbSuggestions] = useState<{
+    productTypes: string[];
+    productFamilies: string[];
+  }>({ productTypes: [], productFamilies: [] });
+
+  // ── Parse a Source Row input string into { min, max } ──
+  // Supports:  "100" (exact), "100-500" (range), ">100" (min), "<500" (max)
+  const parseSourceRowInput = useCallback((raw: string): { min?: number; max?: number } => {
+    const trimmed = raw.trim();
+    if (!trimmed) return {};
+    // Range: "100-500" or "100 - 500"
+    const rangeMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (rangeMatch) {
+      const a = parseInt(rangeMatch[1], 10);
+      const b = parseInt(rangeMatch[2], 10);
+      return { min: Math.min(a, b), max: Math.max(a, b) };
+    }
+    // Greater than: ">100" or ">=100"
+    const gtMatch = trimmed.match(/^>\s*=?\s*(\d+)$/);
+    if (gtMatch) return { min: parseInt(gtMatch[1], 10) };
+    // Less than: "<100" or "<=100"
+    const ltMatch = trimmed.match(/^<\s*=?\s*(\d+)$/);
+    if (ltMatch) return { max: parseInt(ltMatch[1], 10) };
+    // Exact value: "100"
+    const exactMatch = trimmed.match(/^(\d+)$/);
+    if (exactMatch) return { min: parseInt(exactMatch[1], 10), max: parseInt(exactMatch[1], 10) };
+    return {};
+  }, []);
+
+  // ── Parse a Default Price input string into { min, max } ──
+  // Supports:  "1" (exact), "1-2" (range), ">5" (min), "<0.5" (max)
+  const parsePriceInput = useCallback((raw: string): { min?: number; max?: number } => {
+    const trimmed = raw.trim();
+    if (!trimmed) return {};
+    const rangeMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+    if (rangeMatch) {
+      const a = parseFloat(rangeMatch[1]);
+      const b = parseFloat(rangeMatch[2]);
+      return { min: Math.min(a, b), max: Math.max(a, b) };
+    }
+    const gtMatch = trimmed.match(/^>\s*=?\s*(\d+(?:\.\d+)?)$/);
+    if (gtMatch) return { min: parseFloat(gtMatch[1]) };
+    const ltMatch = trimmed.match(/^<\s*=?\s*(\d+(?:\.\d+)?)$/);
+    if (ltMatch) return { max: parseFloat(ltMatch[1]) };
+    const exactMatch = trimmed.match(/^(\d+(?:\.\d+)?)$/);
+    if (exactMatch) return { min: parseFloat(exactMatch[1]), max: parseFloat(exactMatch[1]) };
+    return {};
+  }, []);
   
   const totalPages = Math.ceil(totalProducts / 50);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,7 +243,70 @@ export function ProductTable() {
   // ── Dependent filter options ──
   const categoryOptions = useMemo(() => getCategoriesForDepartment(filterDepartment), [filterDepartment]);
   const subcategoryOptions = useMemo(() => getSubcategoriesForCategory(filterDepartment, filterCategory), [filterDepartment, filterCategory]);
-  const productTypeOptions = useMemo(() => getTypesForFamily(filterProductFamily), [filterProductFamily]);
+  // Product Type suggestions: prefer DB-backed values (so dropdown matches DB),
+  // fall back to lookup-table values for the selected family.
+  const productTypeOptions = useMemo(() => {
+    if (dbSuggestions.productTypes.length > 0) return dbSuggestions.productTypes;
+    return getTypesForFamily(filterProductFamily);
+  }, [dbSuggestions.productTypes, filterProductFamily]);
+  // Product Family suggestions: prefer DB-backed values.
+  const productFamilyOptions = useMemo(() => {
+    if (dbSuggestions.productFamilies.length > 0) return dbSuggestions.productFamilies;
+    return [...PRODUCT_FAMILIES];
+  }, [dbSuggestions.productFamilies]);
+
+  // ── Fetch DB-backed suggestions once on mount ──
+  // This merges actual DB distinct values with lookup tables, so the Product
+  // Type / Product Family dropdowns show values that actually exist in the DB
+  // (fixes the "filter returns 0 results" bug).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/products?mode=suggestions');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setDbSuggestions({
+          productTypes: data.productTypes || [],
+          productFamilies: data.productFamilies || [],
+        });
+      } catch {
+        // Network error — silently fall back to lookup-table values
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Debounce the smart Price input → filterPriceMin / filterPriceMax ──
+  // User types freely (e.g. ">5", "1-2", "<0.5"); 300ms after they stop, we
+  // parse it and write the numeric min/max to the store. The load effect then
+  // picks up the change and refetches from the API.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const { min, max } = parsePriceInput(localPriceInput);
+      const newMin = min != null ? String(min) : '';
+      const newMax = max != null ? String(max) : '';
+      // Only update store if changed, to avoid infinite loops
+      if (filterPriceMin !== newMin) setFilter('filterPriceMin', newMin);
+      if (filterPriceMax !== newMax) setFilter('filterPriceMax', newMax);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [localPriceInput, parsePriceInput, filterPriceMin, filterPriceMax, setFilter]);
+
+  // ── Debounce the smart Source Row input → filterSourceRow ──
+  // The raw input string IS what we store (loadProducts parses it into min/max
+  // when building the API request), but we still debounce so rapid typing
+  // doesn't fire one API request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (filterSourceRow !== localSourceRowInput) {
+        setFilter('filterSourceRow', localSourceRowInput);
+        setCurrentPage(1);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [localSourceRowInput, filterSourceRow, setFilter]);
 
   // ── Reset dependent filters when parent changes ──
   useEffect(() => {
@@ -209,7 +335,7 @@ export function ProductTable() {
     } else if (!groupByNd) {
       loadProducts();
     }
-  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, sortBy, sortOrder, selectedNdNumber, groupByNd]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterSourceRow, filterNdNumber, filterNameEn, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, selectedNdNumber, groupByNd]);
 
   // ── Load ND groups when grouping is enabled ──
   useEffect(() => {
@@ -242,6 +368,20 @@ export function ProductTable() {
       if (filterShape) params.set('shape', filterShape);
       if (filterPriceMin) params.set('priceMin', filterPriceMin);
       if (filterPriceMax) params.set('priceMax', filterPriceMax);
+      // Dedicated ND Number filter (case-insensitive partial)
+      if (filterNdNumber) params.set('ndNumber', filterNdNumber);
+      // Dedicated Name EN filter (case-insensitive partial, scoped to nameEn only)
+      if (filterNameEn) params.set('nameEn', filterNameEn);
+      // Source Row range filter — parse the raw input string into min/max
+      if (filterSourceRow) {
+        const { min, max } = parseSourceRowInput(filterSourceRow);
+        if (min != null) params.set('sourceRowMin', String(min));
+        if (max != null) params.set('sourceRowMax', String(max));
+      }
+      // Recently Updated filter — only show products where updatedAt > createdAt
+      if (filterOnlyModified) params.set('onlyModified', '1');
+      // Recently Added filter — only show products added within last N days
+      if (filterRecentlyAddedDays > 0) params.set('recentlyAddedDays', String(filterRecentlyAddedDays));
 
       const res = await fetch(`/api/products?${params}`);
       if (res.ok) {
@@ -253,7 +393,7 @@ export function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, sortBy, sortOrder]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterNdNumber, filterNameEn, filterSourceRow, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, parseSourceRowInput]);
 
   const loadProductsByNdNumber = useCallback(async (ndNumber: string) => {
     setLoading(true);
@@ -357,6 +497,10 @@ export function ProductTable() {
   };
 
   // ── Sort options ──
+  // NOTE: "Recently Added" and "Recently Updated" are NOT sort options here.
+  // They are FILTER toggles (see the main toolbar buttons below). Sorting by
+  // updatedAt/createdAt alone would show ALL products, not just the modified
+  // ones — which is why they were moved out of this dropdown.
   const sortOptions: { value: SortBy; label: string }[] = [
     { value: 'sourceRow', label: 'Source Row' },
     { value: 'ndNumber', label: 'ND Number' },
@@ -364,16 +508,23 @@ export function ProductTable() {
     { value: 'productType', label: 'Product Type' },
     { value: 'productFamily', label: 'Product Family' },
     { value: 'defaultPrice', label: 'Default Price' },
-    { value: 'recentlyAdded', label: 'Recently Added' },
-    { value: 'recentlyUpdated', label: 'Recently Updated' },
   ];
 
   // ── Column visibility toggle ──
+  // Every column is toggleable — there are no fixed columns. The user can
+  // hide any column (including Source Row, ND Number, Barcode, Name EN) and
+  // show any column. We only prevent hiding the LAST visible column so the
+  // table never becomes completely empty.
   const toggleColumn = (key: string) => {
-    if (DEFAULT_COLUMNS.find(c => c.key === key)?.alwaysVisible) return;
-    setVisibleColumns(prev => 
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
+    setVisibleColumns(prev => {
+      // If currently visible, hide it — unless it's the only visible column
+      if (prev.includes(key)) {
+        if (prev.length <= 1) return prev; // keep at least 1 column
+        return prev.filter(k => k !== key);
+      }
+      // If currently hidden, show it
+      return [...prev, key];
+    });
   };
 
   // ── Export handlers ──
@@ -440,7 +591,8 @@ export function ProductTable() {
   const handleClearFilters = () => {
     clearFilters();
     setLocalSearch('');
-    setSearchQuery('');
+    setLocalPriceInput('');
+    setLocalSourceRowInput('');
     setSelectedNdNumber('');
     setCurrentPage(1);
   };
@@ -450,9 +602,14 @@ export function ProductTable() {
       filterDepartment, filterCategory, filterSubcategory, filterProductFamily,
       filterProductType, filterBrand, filterColor, filterMaterial,
       filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape,
-      filterPriceMin, filterPriceMax
+      filterPriceMin, filterPriceMax,
+      // New dedicated field filters
+      filterSourceRow, filterNdNumber, filterNameEn,
+      // Recently Updated / Recently Added toggles
+      filterOnlyModified ? '1' : '',
+      filterRecentlyAddedDays > 0 ? String(filterRecentlyAddedDays) : '',
     ].filter(v => v && v.trim() !== '').length;
-  }, [filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax]);
+  }, [filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterSourceRow, filterNdNumber, filterNameEn, filterOnlyModified, filterRecentlyAddedDays]);
 
   // Close menus on outside click
   useEffect(() => {
@@ -709,36 +866,43 @@ export function ProductTable() {
           </Button>
           
           {showColumnMenu && (
-            <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-popover border rounded-lg shadow-lg p-2">
-              <p className="text-xs font-medium px-2 py-1.5 text-muted-foreground">Visible Columns</p>
+            <div className="absolute left-0 top-full mt-1 z-50 w-56 bg-popover border rounded-lg shadow-lg p-2">
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Visible Columns</p>
+                <span className="text-[10px] text-muted-foreground">{visibleColumns.length}/{DEFAULT_COLUMNS.length}</span>
+              </div>
               <div className="border-t" />
               <div className="py-1 max-h-[300px] overflow-y-auto">
-                {DEFAULT_COLUMNS.map(col => (
-                  <button
-                    key={col.key}
-                    onClick={() => toggleColumn(col.key)}
-                    disabled={col.alwaysVisible}
-                    className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded transition-colors ${
-                      col.alwaysVisible 
-                        ? 'text-muted-foreground cursor-default' 
-                        : 'hover:bg-accent'
-                    }`}
-                  >
-                    <div className={`h-4 w-4 rounded border flex items-center justify-center ${
-                      visibleColumns.includes(col.key) 
-                        ? 'bg-primary border-primary text-primary-foreground' 
-                        : 'border-input'
-                    }`}>
-                      {visibleColumns.includes(col.key) && (
-                        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      )}
-                    </div>
-                    <span>{col.label}</span>
-                    {col.alwaysVisible && <span className="text-muted-foreground ml-auto">(fixed)</span>}
-                  </button>
-                ))}
+                {DEFAULT_COLUMNS.map(col => {
+                  const isVisible = visibleColumns.includes(col.key);
+                  const isLastVisible = isVisible && visibleColumns.length <= 1;
+                  return (
+                    <button
+                      key={col.key}
+                      onClick={() => toggleColumn(col.key)}
+                      disabled={isLastVisible}
+                      className={`flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded transition-colors ${
+                        isLastVisible
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:bg-accent'
+                      }`}
+                      title={isLastVisible ? 'Cannot hide the last visible column' : undefined}
+                    >
+                      <div className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 ${
+                        isVisible
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-input'
+                      }`}>
+                        {isVisible && (
+                          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <span>{col.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -756,6 +920,55 @@ export function ProductTable() {
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
               {activeFiltersCount}
+            </Badge>
+          )}
+        </Button>
+
+        {/* Recently Updated — FILTER toggle (not a sort).
+            When ON: only shows products where updatedAt > createdAt (actually
+            edited after creation), sorted by updatedAt DESC. So if you edit
+            A, then B, then C, the list shows C, B, A (most recent edit first). */}
+        <Button
+          variant={filterOnlyModified ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            setFilter('filterOnlyModified', !filterOnlyModified);
+            if (!filterOnlyModified && filterRecentlyAddedDays > 0) {
+              setFilter('filterRecentlyAddedDays', 0);
+            }
+            setCurrentPage(1);
+          }}
+          className="h-11 text-xs px-3"
+        >
+          Recently Updated
+          {filterOnlyModified && <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">ON</Badge>}
+        </Button>
+
+        {/* Recently Added — FILTER (not a sort).
+            Cycles through: off → 1 day → 7 days → 30 days → off.
+            When ON: only shows products added within the last N days, sorted
+            by createdAt DESC (newest addition first). */}
+        <Button
+          variant={filterRecentlyAddedDays > 0 ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => {
+            // Cycle: 0 → 1 → 7 → 30 → 0
+            const next = filterRecentlyAddedDays === 0 ? 1
+                       : filterRecentlyAddedDays === 1 ? 7
+                       : filterRecentlyAddedDays === 7 ? 30
+                       : 0;
+            setFilter('filterRecentlyAddedDays', next);
+            if (next > 0 && filterOnlyModified) {
+              setFilter('filterOnlyModified', false);
+            }
+            setCurrentPage(1);
+          }}
+          className="h-11 text-xs px-3"
+        >
+          Recently Added
+          {filterRecentlyAddedDays > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+              {filterRecentlyAddedDays}d
             </Badge>
           )}
         </Button>
@@ -778,34 +991,80 @@ export function ProductTable() {
               </Button>
             </div>
             
+            {/* Field Filters — Source Row / ND Number / Name EN / Default Price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Source Row</label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="100  or  100-500  or  >100  or  <500"
+                  value={localSourceRowInput}
+                  onChange={(e) => setLocalSourceRowInput(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">ND Number</label>
+                <Input
+                  type="text"
+                  placeholder="ND-6605  or  6605  (partial)"
+                  value={filterNdNumber}
+                  onChange={(e) => { setFilter('filterNdNumber', e.target.value); setCurrentPage(1); }}
+                  className="h-11"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Name EN</label>
+                <Input
+                  type="text"
+                  placeholder="knife, container, rolling pin..."
+                  value={filterNameEn}
+                  onChange={(e) => { setFilter('filterNameEn', e.target.value); setCurrentPage(1); }}
+                  className="h-11"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Default Price (KD)</label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="1  or  1-2  or  >5  or  <0.5"
+                  value={localPriceInput}
+                  onChange={(e) => setLocalPriceInput(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            </div>
+
             {/* Taxonomy Filters - responsive grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <SearchableSingleSelect
                 label="Department"
                 value={filterDepartment}
-                onChange={(v) => setFilter('filterDepartment', v)}
+                onChange={(v) => { setFilter('filterDepartment', v); setCurrentPage(1); }}
                 suggestions={DEPARTMENTS}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Category"
                 value={filterCategory}
-                onChange={(v) => setFilter('filterCategory', v)}
+                onChange={(v) => { setFilter('filterCategory', v); setCurrentPage(1); }}
                 suggestions={categoryOptions}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Subcategory"
                 value={filterSubcategory}
-                onChange={(v) => setFilter('filterSubcategory', v)}
+                onChange={(v) => { setFilter('filterSubcategory', v); setCurrentPage(1); }}
                 suggestions={subcategoryOptions}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Product Family"
                 value={filterProductFamily}
-                onChange={(v) => setFilter('filterProductFamily', v)}
-                suggestions={[...PRODUCT_FAMILIES]}
+                onChange={(v) => { setFilter('filterProductFamily', v); setCurrentPage(1); }}
+                suggestions={productFamilyOptions}
                 placeholder="All"
               />
             </div>
@@ -815,28 +1074,28 @@ export function ProductTable() {
               <SearchableSingleSelect
                 label="Product Type"
                 value={filterProductType}
-                onChange={(v) => setFilter('filterProductType', v)}
+                onChange={(v) => { setFilter('filterProductType', v); setCurrentPage(1); }}
                 suggestions={productTypeOptions}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Brand"
                 value={filterBrand}
-                onChange={(v) => setFilter('filterBrand', v)}
+                onChange={(v) => { setFilter('filterBrand', v); setCurrentPage(1); }}
                 suggestions={BRAND_OPTIONS}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Color"
                 value={filterColor}
-                onChange={(v) => setFilter('filterColor', v)}
+                onChange={(v) => { setFilter('filterColor', v); setCurrentPage(1); }}
                 suggestions={COLOR_OPTIONS}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Material"
                 value={filterMaterial}
-                onChange={(v) => setFilter('filterMaterial', v)}
+                onChange={(v) => { setFilter('filterMaterial', v); setCurrentPage(1); }}
                 suggestions={MATERIAL_OPTIONS}
                 placeholder="All"
               />
@@ -847,62 +1106,32 @@ export function ProductTable() {
               <SearchableSingleSelect
                 label="Origin"
                 value={filterCountryOfOrigin}
-                onChange={(v) => setFilter('filterCountryOfOrigin', v)}
+                onChange={(v) => { setFilter('filterCountryOfOrigin', v); setCurrentPage(1); }}
                 suggestions={[...COUNTRY_OPTIONS]}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Unit"
                 value={filterUnit}
-                onChange={(v) => setFilter('filterUnit', v)}
+                onChange={(v) => { setFilter('filterUnit', v); setCurrentPage(1); }}
                 suggestions={[...UNIT_OPTIONS]}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Status"
                 value={filterValidationStatus}
-                onChange={(v) => setFilter('filterValidationStatus', v)}
+                onChange={(v) => { setFilter('filterValidationStatus', v); setCurrentPage(1); }}
                 suggestions={[...VALIDATION_STATUS_OPTIONS]}
                 placeholder="All"
               />
               <SearchableSingleSelect
                 label="Shape"
                 value={filterShape}
-                onChange={(v) => setFilter('filterShape', v)}
+                onChange={(v) => { setFilter('filterShape', v); setCurrentPage(1); }}
                 suggestions={[...SHAPE_OPTIONS]}
                 placeholder="All"
               />
             </div>
-
-            {/* Price Range - responsive layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Min Price (KD)</label>
-                <Input
-                  type="number"
-                  step="0.001"
-                  placeholder="0.000"
-                  value={filterPriceMin}
-                  onChange={(e) => setFilter('filterPriceMin', e.target.value)}
-                  className="h-11"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Max Price (KD)</label>
-                <Input
-                  type="number"
-                  step="0.001"
-                  placeholder="999.999"
-                  value={filterPriceMax}
-                  onChange={(e) => setFilter('filterPriceMax', e.target.value)}
-                  className="h-11"
-                />
-              </div>
-            </div>
-
-            <Button onClick={() => setCurrentPage(1)} className="w-full h-11">
-              Apply Filters
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -1282,9 +1511,15 @@ function ProductRow({
 
   return (
     <tr className="hover:bg-muted/30 transition-colors">
-      {visibleColumns.map(key => (
-        <td key={key} className="py-3 px-3">
-          {renderCell(key)}
+      {/* IMPORTANT: iterate columns in DEFAULT_COLUMNS order (filtered by
+          visibleColumns), NOT in visibleColumns array order. The <th> headers
+          above use DEFAULT_COLUMNS.filter(...).map(...), so the cells MUST use
+          the same ordering — otherwise headers and values misalign (e.g. the
+          "Price" header ends up above "Product Family" values) when the user
+          toggles columns on in a different order than DEFAULT_COLUMNS. */}
+      {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
+        <td key={col.key} className="py-3 px-3">
+          {renderCell(col.key)}
         </td>
       ))}
       <td className="py-3 px-3">
