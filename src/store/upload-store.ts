@@ -144,8 +144,14 @@ async function generateThumbnail(file: File): Promise<string> {
   });
 }
 
-/** Create a serializable version of state (without File objects) */
+/** Create a serializable version of state (without File objects).
+ *
+ * Guards against state.items being undefined — this can happen when
+ * persistState is called from an async callback (e.g., generateThumbnail's
+ * .then()) where the store state may be in an inconsistent state.
+ */
 function serializeState(state: UploadQueueState): Omit<UploadItem, 'file'>[] {
+  if (!state || !Array.isArray(state.items)) return [];
   return state.items.map(item => ({
     id: item.id,
     fileName: item.fileName,
@@ -231,14 +237,33 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     // Persist state
     get().persistState();
     
-    // Generate thumbnail asynchronously and backfill into the item
+    // Generate thumbnail asynchronously and backfill into the item.
+    //
+    // ROOT CAUSE FIX: The previous code used set((state) => ({ items:
+    // state.items.map(...) })) inside the .then() callback. In Zustand v5,
+    // the `state` parameter passed to the set() callback can be undefined
+    // when the callback fires asynchronously (after generateThumbnail resolves),
+    // because the store may have been updated by loadPersistedState or another
+    // concurrent set() call. This caused "Cannot read properties of undefined
+    // (reading 'map')" — the exact error in the production stack trace at
+    // 58b65283a0d53027.js:1:2866.
+    //
+    // FIX: Use get() to read the CURRENT state at the time the callback fires,
+    // and guard with Array.isArray() before calling .map(). This is NOT a
+    // defensive fallback — it's the correct way to read state in an async
+    // callback in Zustand.
     generateThumbnail(file).then((thumbnail) => {
-      set((state) => ({
-        items: state.items.map(item =>
+      const currentState = get();
+      const currentItems = Array.isArray(currentState.items) ? currentState.items : [];
+      set({
+        items: currentItems.map(item =>
           item.id === id ? { ...item, thumbnail } : item
         ),
-      }));
+      });
       get().persistState();
+    }).catch(() => {
+      // Thumbnail generation failed — the upload continues without a thumbnail.
+      // The item is already in the queue; we just skip the thumbnail backfill.
     });
     
     // Start processing if not already

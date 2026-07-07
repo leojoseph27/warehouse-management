@@ -166,40 +166,6 @@ export function ImageGallery({
     }
   }
 
-  // ── DIAGNOSTIC LOG: capture exact state of every array variable ──
-  // Remove this once the root cause of the .length/.map undefined error is
-  // identified and fixed.
-  if (process.env.NODE_ENV !== 'production') {
-    if (
-      !Array.isArray(uploadItems) ||
-      !Array.isArray(pendingUploads) ||
-      !Array.isArray(failedUploads) ||
-      !Array.isArray(completedUploads) ||
-      !Array.isArray(allImages) ||
-      !Array.isArray(images)
-    ) {
-      console.error('[ImageGallery] ARRAY UNDEFINED DETECTED', {
-        images,
-        imagesType: typeof images,
-        imagesIsArray: Array.isArray(images),
-        uploadItems,
-        uploadItemsType: typeof uploadItems,
-        uploadItemsIsArray: Array.isArray(uploadItems),
-        pendingUploads,
-        pendingUploadsIsArray: Array.isArray(pendingUploads),
-        failedUploads,
-        failedUploadsIsArray: Array.isArray(failedUploads),
-        completedUploads,
-        completedUploadsIsArray: Array.isArray(completedUploads),
-        allImages,
-        allImagesIsArray: Array.isArray(allImages),
-        productId,
-        useBackgroundUpload,
-        stack: new Error().stack,
-      });
-    }
-  }
-
   // Track when uploads transition to completed so we can show the success state
   // for 2-3 seconds before the card disappears.
   useEffect(() => {

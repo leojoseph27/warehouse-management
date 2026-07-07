@@ -251,17 +251,6 @@ export function UploadQueuePanel() {
       initializeUploadStore();
     });
   }, []);
-
-  // ── DIAGNOSTIC LOG: capture when items is undefined ──
-  if (process.env.NODE_ENV !== 'production') {
-    if (!Array.isArray(items)) {
-      console.error('[UploadQueuePanel] items is NOT an array', {
-        items,
-        itemsType: typeof items,
-        stack: new Error().stack,
-      });
-    }
-  }
   
   // Don't show if no uploads
   if (!Array.isArray(items) || items.length === 0) {
