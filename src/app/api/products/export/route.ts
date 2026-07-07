@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { COLUMN_DEFS, COLUMN_GROUPS } from '@/lib/lookups';
+import { COLUMN_DEFS, COLUMN_GROUPS, resolveImageLinks } from '@/lib/lookups';
 import * as XLSX from 'xlsx-js-style';
 
 // Excel export fetches ALL products and builds a workbook in memory — can take
@@ -27,11 +27,12 @@ export const runtime = 'nodejs';
  *     - Commercial (col 38, 1 col)
  *     - SEO (cols 39–43, 5 cols)
  *     - Internal (cols 44–51, 8 cols)
+ *     - Media (col 52, 1 col — Image Links)
  *   Row 2: Actual column headers from COLUMN_DEFS
  *   Row 3+: Data rows
  */
 
-// Column widths for each of the 52 columns (approximate)
+// Column widths for each of the 53 columns (52 original + 1 Image Links)
 const COL_WIDTHS = [
   // Product Identity (10)
   10, 14, 14, 14, 16, 12, 18, 16, 10, 14,
@@ -49,6 +50,8 @@ const COL_WIDTHS = [
   30, 30, 35, 35, 30,
   // Internal (8)
   24, 16, 14, 8, 10, 14, 14, 22,
+  // Media (1) — Image Links (newline-separated URLs, needs a wide column)
+  50,
 ];
 
 // Fields that should be compared for change detection
@@ -169,7 +172,12 @@ export async function GET(request: NextRequest) {
         const colDef = COLUMN_DEFS[c];
         const cellRef = XLSX.utils.encode_cell({ r: r + 2, c });
 
-        const value = product[colDef.field];
+        // The "imageLinks" field is NOT a direct Prisma product field — it's
+        // derived from the product.images relation. Resolve it specially.
+        // All other fields are read directly from the product object.
+        const value = colDef.field === 'imageLinks'
+          ? resolveImageLinks(product)
+          : product[colDef.field];
         const isModified = isFieldModified(product, colDef.field);
 
         worksheet[cellRef] = createStyledCell(value, isModified);
