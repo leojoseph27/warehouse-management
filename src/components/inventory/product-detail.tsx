@@ -214,6 +214,59 @@ export function ProductDetail() {
     }
   };
 
+  // Replace an existing image with a new file (PUT /api/images/[id])
+  const handleImageReplace = async (imageId: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`/api/images/${imageId}`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const updatedImage = await res.json();
+      const updatedProduct = {
+        ...product,
+        images: product.images.map(img =>
+          img.id === imageId ? { ...img, imageUrl: updatedImage.imageUrl } : img
+        ),
+      };
+      setProduct(updatedProduct);
+      setCurrentProduct(updatedProduct);
+      toast.success('Image replaced successfully');
+    } else {
+      toast.error('Failed to replace image');
+      throw new Error('Failed to replace image');
+    }
+  };
+
+  // Reorder images via drag-and-drop (PATCH each image with new displayOrder)
+  const handleReorder = async (orderedImageIds: string[]) => {
+    // Optimistically update local state
+    const orderMap = new Map(orderedImageIds.map((id, idx) => [id, idx]));
+    const updatedProduct = {
+      ...product,
+      images: product.images.map(img => ({
+        ...img,
+        displayOrder: orderMap.get(img.id) ?? img.displayOrder,
+      })),
+    };
+    setProduct(updatedProduct);
+    setCurrentProduct(updatedProduct);
+
+    // Persist new order to the server (fire-and-forget PATCH for each)
+    await Promise.all(
+      orderedImageIds.map((id, idx) =>
+        fetch(`/api/images/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayOrder: idx }),
+        })
+      )
+    );
+  };
+
   // Check for modifications
   const modifications = product ? getFieldChanges(product) : [];
   const hasMods = modifications.length > 0;
@@ -311,6 +364,8 @@ export function ProductDetail() {
             onUpload={handleImageUpload}
             onDelete={handleImageDelete}
             onSetPrimary={handleSetPrimary}
+            onReplace={handleImageReplace}
+            onReorder={handleReorder}
           />
         </CardContent>
       </Card>

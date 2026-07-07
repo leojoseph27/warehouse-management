@@ -855,6 +855,57 @@ export function ProductForm({ mode }: ProductFormProps) {
     }
   };
 
+  // Replace an existing image with a new file (PUT /api/images/[id])
+  const handleImageReplace = async (imageId: string, file: File) => {
+    if (!currentProduct) return;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`/api/images/${imageId}`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const updatedImage = await res.json();
+      setCurrentProduct({
+        ...currentProduct,
+        images: currentProduct.images.map((img) =>
+          img.id === imageId ? { ...img, imageUrl: updatedImage.imageUrl } : img
+        ),
+      });
+      toast.success('Image replaced successfully');
+    } else {
+      toast.error('Failed to replace image');
+      throw new Error('Failed to replace image');
+    }
+  };
+
+  // Reorder images via drag-and-drop (PATCH each image with new displayOrder)
+  const handleReorder = async (orderedImageIds: string[]) => {
+    if (!currentProduct) return;
+    // Optimistically update local state
+    const orderMap = new Map(orderedImageIds.map((id, idx) => [id, idx]));
+    setCurrentProduct({
+      ...currentProduct,
+      images: currentProduct.images.map((img) => ({
+        ...img,
+        displayOrder: orderMap.get(img.id) ?? img.displayOrder,
+      })),
+    });
+
+    // Persist new order to the server
+    await Promise.all(
+      orderedImageIds.map((id, idx) =>
+        fetch(`/api/images/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayOrder: idx }),
+        })
+      )
+    );
+  };
+
   // ── Duplicate warnings ─────────────────────────────────────
   const hasDuplicates = duplicates && (duplicates.ndNumber || duplicates.barcode || duplicates.productId || duplicates.sku);
 
@@ -938,6 +989,8 @@ export function ProductForm({ mode }: ProductFormProps) {
               onUpload={handleImageUpload}
               onDelete={handleImageDelete}
               onSetPrimary={handleSetPrimary}
+              onReplace={handleImageReplace}
+              onReorder={handleReorder}
               useBackgroundUpload={true}
             />
           </CardContent>

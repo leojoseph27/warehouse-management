@@ -1,8 +1,22 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, Upload, Trash2, Star, Image as ImageIcon, RefreshCw, Loader2 } from 'lucide-react';
+import {
+  Camera,
+  Upload,
+  Trash2,
+  Star,
+  Image as ImageIcon,
+  RefreshCw,
+  Loader2,
+  Check,
+  AlertCircle,
+  Eye,
+  Pencil,
+  GripVertical,
+  X,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -10,9 +24,43 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ProductImage } from '@/store/inventory-store';
 import { useUploadStore, UploadItem } from '@/store/upload-store';
 import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  TouchSensor,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ImageGalleryProps {
   images: ProductImage[];
@@ -22,9 +70,37 @@ interface ImageGalleryProps {
   onDelete: (imageId: string) => Promise<void>;
   onSetPrimary: (imageId: string) => Promise<void>;
   onRefreshImages?: () => Promise<void>;
+  onReplace?: (imageId: string, file: File) => Promise<void>;
+  onReorder?: (orderedImageIds: string[]) => Promise<void>;
   readOnly?: boolean;
   useBackgroundUpload?: boolean;
   variantId?: string;
+  maxImages?: number;
+  maxFileSizeMB?: number;
+}
+
+// ── Validation constants ──
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+const DEFAULT_MAX_IMAGES = 10;
+const DEFAULT_MAX_FILE_SIZE_MB = 10;
+
+/** Format bytes into a human-readable string */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+/** Status label for an upload item */
+function getStatusLabel(status: UploadItem['status']): string {
+  switch (status) {
+    case 'queued': return 'Preparing...';
+    case 'uploading': return 'Uploading...';
+    case 'processing': return 'Processing...';
+    case 'completed': return 'Completed';
+    case 'failed': return 'Failed';
+    default: return status;
+  }
 }
 
 export function ImageGallery({
@@ -35,38 +111,47 @@ export function ImageGallery({
   onDelete,
   onSetPrimary,
   onRefreshImages,
+  onReplace,
+  onReorder,
   readOnly,
   useBackgroundUpload = false,
   variantId,
+  maxImages = DEFAULT_MAX_IMAGES,
+  maxFileSizeMB = DEFAULT_MAX_FILE_SIZE_MB,
 }: ImageGalleryProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProductImage | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [isLoadingFromServer, setIsLoadingFromServer] = useState(false);
+  const [recentlyCompleted, setRecentlyCompleted] = useState<Set<string>>(new Set());
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  
-  const { 
-    addToQueue, 
-    getItemsForProduct, 
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const replaceTargetRef = useRef<ProductImage | null>(null);
+
+  const {
+    addToQueue,
+    getItemsForProduct,
     removeCompletedForProduct,
     retryUpload,
     removeFromQueue,
     totalUploading,
   } = useUploadStore();
-  
+
   // Get uploads for this product
   const uploadItems = useBackgroundUpload ? getItemsForProduct(productId) : [];
-  
-  // Separate into pending (uploading/queued) and completed uploads
+
   const pendingUploads = uploadItems.filter(
     i => i.status === 'queued' || i.status === 'uploading' || i.status === 'processing'
   );
   const failedUploads = uploadItems.filter(i => i.status === 'failed');
   const completedUploads = uploadItems.filter(i => i.status === 'completed');
-  
+
   // Combine existing images with completed uploads (avoid duplicates)
-  // This ensures existing images are preserved when new ones are added
-  const allImages = [...images];
-  
-  // Add completed uploads that aren't already in the images array
+  const allImages: ProductImage[] = [...images];
   for (const upload of completedUploads) {
     if (upload.imageId && !allImages.some(img => img.id === upload.imageId)) {
       allImages.push({
@@ -79,307 +164,769 @@ export function ImageGallery({
       });
     }
   }
-  
-  // Handle file selection
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, isCamera: boolean = false) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    
-    // Determine if first image (for primary)
+
+  // Track when uploads transition to completed so we can show the success state
+  // for 2-3 seconds before the card disappears.
+  useEffect(() => {
+    const newlyCompleted = completedUploads.filter(u => !recentlyCompleted.has(u.id));
+    if (newlyCompleted.length === 0) return;
+
+    setRecentlyCompleted(prev => {
+      const next = new Set(prev);
+      newlyCompleted.forEach(u => next.add(u.id));
+      return next;
+    });
+
+    // After 3 seconds, remove the completed items from the "recently completed"
+    // set. They'll still be in the gallery as real images (via onRefreshImages).
+    const timer = setTimeout(() => {
+      setRecentlyCompleted(prev => {
+        const next = new Set(prev);
+        newlyCompleted.forEach(u => next.delete(u.id));
+        return next;
+      });
+      // Clean up the completed upload items from the store so they don't pile up
+      removeCompletedForProduct(productId);
+      // Refresh images from server to get the canonical state
+      if (onRefreshImages) onRefreshImages();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [completedUploads, recentlyCompleted, removeCompletedForProduct, productId, onRefreshImages]);
+
+  // ── Validation ──
+  const validateFile = useCallback((file: File, existingImages: ProductImage[]): string | null => {
+    // Type check
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return `"${file.name}" is not a supported image type. Use JPG, PNG, WebP, or GIF.`;
+    }
+    // Size check
+    const maxBytes = maxFileSizeMB * 1024 * 1024;
+    if (file.size > maxBytes) {
+      return `"${file.name}" is ${formatFileSize(file.size)}. Maximum is ${maxFileSizeMB} MB.`;
+    }
+    // Duplicate filename check
+    const duplicateName = [...existingImages, ...uploadItems].some(
+      img => 'fileName' in img && (img as any).fileName === file.name
+    );
+    if (duplicateName) {
+      return `"${file.name}" is already in the upload queue.`;
+    }
+    return null;
+  }, [uploadItems, maxFileSizeMB]);
+
+  // ── File selection handler (used by both input and drag-drop) ──
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    setValidationError(null);
+    const fileArray = Array.from(files);
+
+    // Capacity check
+    if (allImages.length + fileArray.length > maxImages) {
+      setValidationError(`Cannot upload ${fileArray.length} image(s). Maximum ${maxImages} images per product (currently ${allImages.length}).`);
+      return;
+    }
+
+    // Validate each file
+    for (const file of fileArray) {
+      const err = validateFile(file, allImages);
+      if (err) {
+        setValidationError(err);
+        return;
+      }
+    }
+
     const isFirstImage = allImages.length === 0 && pendingUploads.length === 0;
-    
+
     if (useBackgroundUpload) {
-      // Add to background upload queue (sequential FIFO)
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
         const willBePrimary = isFirstImage && i === 0;
-        
         await addToQueue(file, productId, productName, {
           isPrimary: willBePrimary,
           variantId,
         });
       }
-      e.target.value = '';
     } else {
-      // Direct upload (blocking)
-      for (const file of Array.from(files)) {
+      for (const file of fileArray) {
         await onUpload(file, allImages.length === 0);
       }
-      e.target.value = '';
     }
-  }, [onUpload, allImages.length, pendingUploads.length, useBackgroundUpload, addToQueue, productId, productName, variantId]);
-  
-  // Handle delete
-  const handleDelete = async (imageId: string) => {
-    await onDelete(imageId);
-    if (onRefreshImages) {
-      await onRefreshImages();
+  }, [allImages, pendingUploads.length, useBackgroundUpload, addToQueue, onUpload, productId, productName, variantId, maxImages, validateFile]);
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, isCamera: boolean = false) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await handleFiles(files);
+    e.target.value = '';
+  }, [handleFiles]);
+
+  // ── Drag & drop upload ──
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) setIsDragOver(true);
+  }, [isDragOver]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (readOnly) return;
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      await handleFiles(files);
+    }
+  }, [handleFiles, readOnly]);
+
+  // ── Delete with confirmation ──
+  const handleDeleteClick = (image: ProductImage) => {
+    setDeleteTarget(image);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(deleteTarget.id);
+      if (onRefreshImages) await onRefreshImages();
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
-  
-  // Handle set primary
+
+  // ── Set primary ──
   const handleSetPrimary = async (imageId: string) => {
     await onSetPrimary(imageId);
-    if (onRefreshImages) {
-      await onRefreshImages();
-    }
+    if (onRefreshImages) await onRefreshImages();
   };
-  
-  // Clear completed uploads for this product after viewing
-  useEffect(() => {
-    // Optional: Clear completed uploads when component unmounts
-    // This keeps the UI clean while preserving the actual images
-  }, [productId]);
-  
-  // Render upload item card for pending/failed uploads
-  const renderUploadCard = (item: UploadItem) => (
-    <div 
-      key={item.id} 
-      className="relative group aspect-square rounded-lg overflow-hidden border bg-muted"
-    >
-      {/* Thumbnail or placeholder */}
-      {item.thumbnail ? (
-        <img 
-          src={item.thumbnail} 
-          alt={item.fileName}
-          className="w-full h-full object-cover opacity-70"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <ImageIcon className="h-8 w-8 text-muted-foreground opacity-50" />
-        </div>
-      )}
-      
-      {/* Progress overlay */}
-      {item.status === 'uploading' && (
-        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
-          <div className="w-3/4 space-y-2">
-            <Progress value={item.progress} className="h-2" />
-            <div className="text-white text-xs text-center font-medium">
-              {item.progress}%
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Status badge */}
-      <div className="absolute top-1 right-1">
-        {item.status === 'queued' && (
-          <Badge variant="secondary" className="text-xs px-1.5">
-            <Loader2 className="h-3 w-3 mr-0.5" />
-            #{item.queuePosition}
-          </Badge>
-        )}
-        {item.status === 'uploading' && (
-          <Badge className="text-xs px-1.5 bg-blue-500 text-white">
-            <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
-            Up
-          </Badge>
-        )}
-        {item.status === 'failed' && (
-          <Badge variant="destructive" className="text-xs px-1.5">
-            Failed
-          </Badge>
-        )}
-      </div>
-      
-      {/* Failed upload actions */}
-      {item.status === 'failed' && !readOnly && (
-        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2">
-          {item.retryCount < item.maxRetries && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="h-9 w-9 p-0"
-              onClick={() => retryUpload(item.id)}
-              title="Retry upload"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          )}
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="h-9 w-9 p-0"
-            onClick={() => removeFromQueue(item.id)}
-            title="Remove"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-      
-      {/* File name at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
-        <p className="text-white text-xs truncate">{item.fileName}</p>
-      </div>
-    </div>
+
+  // ── Replace image ──
+  const handleReplaceClick = (image: ProductImage) => {
+    replaceTargetRef.current = image;
+    replaceInputRef.current?.click();
+  };
+
+  const handleReplaceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const target = replaceTargetRef.current;
+    if (!file || !target) return;
+
+    // Validate the replacement file
+    const err = validateFile(file, allImages);
+    if (err) {
+      setValidationError(err);
+      e.target.value = '';
+      replaceTargetRef.current = null;
+      return;
+    }
+
+    if (onReplace) {
+      await onReplace(target.id, file);
+      if (onRefreshImages) await onRefreshImages();
+    }
+    e.target.value = '';
+    replaceTargetRef.current = null;
+  };
+
+  // ── Drag-and-drop reordering (dnd-kit) ──
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  return (
-    <div className="space-y-3">
-      {/* Header row with responsive layout */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-foreground">
-            Product Images
-          </label>
-          {pendingUploads.length > 0 && (
-            <Badge className="text-xs bg-blue-500 text-white">
-              {pendingUploads.length} uploading
-            </Badge>
-          )}
-          {failedUploads.length > 0 && (
-            <Badge variant="destructive" className="text-xs">
-              {failedUploads.length} failed
-            </Badge>
-          )}
-          {allImages.length > 0 && (
-            <Badge variant="outline" className="text-xs">
-              {allImages.length} images
-            </Badge>
-          )}
-        </div>
-        {!readOnly && (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => cameraInputRef.current?.click()}
-              className="h-11 px-3 flex-1 sm:flex-none"
-              disabled={totalUploading > 0}
-            >
-              <Camera className="h-4 w-4 sm:mr-1" />
-              <span className="text-xs sm:text-sm">Photo</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-11 px-3 flex-1 sm:flex-none"
-              disabled={totalUploading > 0}
-            >
-              <Upload className="h-4 w-4 sm:mr-1" />
-              <span className="text-xs sm:text-sm">Upload</span>
-            </Button>
+  // Sorted images for display (primary first, then by displayOrder)
+  const sortedImages = useMemo(() => {
+    return [...allImages].sort((a, b) => {
+      if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+      return a.displayOrder - b.displayOrder;
+    });
+  }, [allImages]);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortedImages.findIndex(img => img.id === active.id);
+    const newIndex = sortedImages.findIndex(img => img.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(sortedImages, oldIndex, newIndex);
+    const orderedIds = newOrder.map(img => img.id);
+
+    if (onReorder) {
+      await onReorder(orderedIds);
+    }
+  };
+
+  // ── Image counter ──
+  const primaryCount = allImages.filter(i => i.isPrimary).length;
+  const additionalCount = allImages.length - primaryCount;
+  const counterText = allImages.length === 0
+    ? 'No images'
+    : primaryCount > 0
+      ? `Primary + ${additionalCount} additional image${additionalCount !== 1 ? 's' : ''}`
+      : `${allImages.length} image${allImages.length !== 1 ? 's' : ''}`;
+
+  const isUploadDisabled = readOnly || (totalUploading > 0 && useBackgroundUpload);
+
+  // ── Upload card for pending/failed/completed uploads ──
+  const renderUploadCard = (item: UploadItem) => {
+    const isCompleted = item.status === 'completed';
+    const isFailed = item.status === 'failed';
+    const showSuccess = isCompleted && recentlyCompleted.has(item.id);
+
+    return (
+      <div
+        key={item.id}
+        className={cn(
+          'relative aspect-square rounded-lg overflow-hidden border bg-muted',
+          isFailed && 'border-destructive',
+          showSuccess && 'border-green-500'
+        )}
+      >
+        {/* Thumbnail */}
+        {item.thumbnail ? (
+          <img
+            src={item.thumbnail}
+            alt={item.fileName}
+            className={cn('w-full h-full object-cover', (isCompleted || isFailed) && 'opacity-50')}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-muted-foreground opacity-50" />
           </div>
         )}
-      </div>
-      
-      {/* Hidden inputs */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={(e) => handleFileSelect(e, true)}
-        className="hidden"
-        disabled={totalUploading > 0}
-      />
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={(e) => handleFileSelect(e, false)}
-        className="hidden"
-        disabled={totalUploading > 0}
-      />
-      
-      {/* Combined grid: pending uploads + existing images */}
-      {(pendingUploads.length > 0 || failedUploads.length > 0 || allImages.length > 0) ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-          {/* Pending uploads first (show uploading state) */}
-          {pendingUploads.sort((a, b) => a.queuePosition - b.queuePosition).map(renderUploadCard)}
-          
-          {/* Failed uploads (show retry option) */}
-          {failedUploads.map(renderUploadCard)}
-          
-          {/* Existing/completed images */}
-          {allImages
-            .sort((a, b) => {
-              if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-              return a.displayOrder - b.displayOrder;
-            })
-            .map((image) => (
-              <div key={image.id} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={image.imageUrl}
-                  alt="Product"
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => setPreviewImage(image.imageUrl)}
-                />
-                {image.isPrimary && (
-                  <div className="absolute top-1 left-1">
-                    <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5">
-                      <Star className="h-3 w-3 mr-0.5" />
-                      Primary
-                    </Badge>
-                  </div>
-                )}
-                {!readOnly && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                    {!image.isPrimary && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-9 w-9 p-0"
-                        onClick={() => handleSetPrimary(image.id)}
-                        title="Set as primary"
-                      >
-                        <Star className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="h-9 w-9 p-0"
-                      onClick={() => handleDelete(image.id)}
-                      title="Delete image"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+
+        {/* Progress overlay (uploading) */}
+        {item.status === 'uploading' && (
+          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center px-3">
+            <div className="w-full space-y-1.5">
+              <Progress value={item.progress} className="h-2" />
+              <div className="text-white text-xs text-center font-medium">
+                {item.progress}%
               </div>
-            ))}
+            </div>
+          </div>
+        )}
+
+        {/* Queued overlay */}
+        {item.status === 'queued' && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="h-6 w-6 text-white animate-spin mx-auto mb-1" />
+              <p className="text-white text-[10px]">Queued #{item.queuePosition}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Success overlay (shown for 2-3s before fade) */}
+        {showSuccess && (
+          <div className="absolute inset-0 bg-green-500/30 flex flex-col items-center justify-center">
+            <div className="bg-green-600 rounded-full p-2 mb-1">
+              <Check className="h-5 w-5 text-white" />
+            </div>
+            <p className="text-white text-[10px] font-medium">Upload Complete</p>
+          </div>
+        )}
+
+        {/* Failed overlay */}
+        {isFailed && (
+          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-2">
+            <AlertCircle className="h-6 w-6 text-destructive mb-1" />
+            <p className="text-white text-[10px] text-center mb-2 line-clamp-2">
+              {item.error || 'Upload failed'}
+            </p>
+            <div className="flex gap-1">
+              {item.retryCount < item.maxRetries && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 px-2 text-[10px]"
+                  onClick={() => retryUpload(item.id)}
+                  title="Retry upload"
+                  aria-label={`Retry upload of ${item.fileName}`}
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-8 px-2 text-[10px]"
+                onClick={() => removeFromQueue(item.id)}
+                title="Remove from queue"
+                aria-label={`Remove ${item.fileName} from queue`}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Filename + size + status at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-2 py-1">
+          <p className="text-white text-[10px] truncate font-medium">{item.fileName}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-white/70 text-[9px]">{formatFileSize(item.fileSize)}</p>
+            <p className={cn(
+              'text-[9px] font-medium',
+              isCompleted ? 'text-green-400' : isFailed ? 'text-red-400' : 'text-blue-300'
+            )}>
+              {getStatusLabel(item.status)}
+            </p>
+          </div>
         </div>
-      ) : (
-        <div className="border-2 border-dashed rounded-lg p-6 sm:p-8 text-center text-muted-foreground">
-          <ImageIcon className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No images yet</p>
+      </div>
+    );
+  };
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <div className="space-y-3">
+        {/* Header row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-sm font-medium text-foreground">
+              Product Images
+            </label>
+            <Badge variant="outline" className="text-xs">
+              {counterText} · {allImages.length}/{maxImages}
+            </Badge>
+            {pendingUploads.length > 0 && (
+              <Badge className="text-xs bg-blue-500 text-white">
+                <Loader2 className="h-3 w-3 mr-0.5 animate-spin" />
+                {pendingUploads.length} uploading
+              </Badge>
+            )}
+            {failedUploads.length > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                {failedUploads.length} failed
+              </Badge>
+            )}
+          </div>
           {!readOnly && (
-            <p className="text-xs mt-1">Take a photo or upload images</p>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => cameraInputRef.current?.click()}
+                className="h-11 px-3 flex-1 sm:flex-none"
+                disabled={isUploadDisabled}
+                aria-label="Take a photo with camera"
+              >
+                <Camera className="h-4 w-4 sm:mr-1" />
+                <span className="text-xs sm:text-sm">Photo</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-11 px-3 flex-1 sm:flex-none"
+                disabled={isUploadDisabled}
+                aria-label="Upload images from device"
+              >
+                {totalUploading > 0 ? (
+                  <>
+                    <Loader2 className="h-4 w-4 sm:mr-1 animate-spin" />
+                    <span className="text-xs sm:text-sm">Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 sm:mr-1" />
+                    <span className="text-xs sm:text-sm">Upload</span>
+                  </>
+                )}
+              </Button>
+            </div>
           )}
         </div>
+
+        {/* Validation error banner */}
+        {validationError && (
+          <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span className="flex-1">{validationError}</span>
+            <button
+              onClick={() => setValidationError(null)}
+              className="text-destructive/70 hover:text-destructive"
+              aria-label="Dismiss error"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Hidden inputs */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => handleFileSelect(e, true)}
+          className="hidden"
+          disabled={isUploadDisabled}
+          aria-hidden="true"
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
+          multiple
+          onChange={(e) => handleFileSelect(e, false)}
+          className="hidden"
+          disabled={isUploadDisabled}
+          aria-hidden="true"
+        />
+        <input
+          ref={replaceInputRef}
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
+          onChange={handleReplaceFile}
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        {/* Drag-drop zone + image grid */}
+        {(pendingUploads.length > 0 || failedUploads.length > 0 || allImages.length > 0) ? (
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'rounded-lg border-2 border-dashed transition-colors p-2 sm:p-3',
+              isDragOver ? 'border-primary bg-primary/5' : 'border-transparent'
+            )}
+          >
+            {isDragOver && (
+              <div className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg pointer-events-none z-10">
+                <div className="bg-background rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">Drop images to upload</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+              {/* Pending uploads first */}
+              {pendingUploads.sort((a, b) => a.queuePosition - b.queuePosition).map(renderUploadCard)}
+              {/* Failed uploads */}
+              {failedUploads.map(renderUploadCard)}
+              {/* Recently completed uploads (still showing success state) */}
+              {completedUploads.filter(u => recentlyCompleted.has(u.id)).map(renderUploadCard)}
+
+              {/* Existing images with drag-and-drop reordering */}
+              {!readOnly && onReorder ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={sortedImages.map(i => i.id)} strategy={rectSortingStrategy}>
+                    {sortedImages.map((image) => (
+                      <SortableImageCard
+                        key={image.id}
+                        image={image}
+                        readOnly={readOnly}
+                        onPreview={() => setPreviewImage(image.imageUrl)}
+                        onSetPrimary={() => handleSetPrimary(image.id)}
+                        onReplace={() => handleReplaceClick(image)}
+                        onDelete={() => handleDeleteClick(image)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                sortedImages.map((image) => (
+                  <ImageCard
+                    key={image.id}
+                    image={image}
+                    readOnly={readOnly}
+                    onPreview={() => setPreviewImage(image.imageUrl)}
+                    onSetPrimary={() => handleSetPrimary(image.id)}
+                    onReplace={() => handleReplaceClick(image)}
+                    onDelete={() => handleDeleteClick(image)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        ) : isLoadingFromServer ? (
+          // Skeleton loading state
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="aspect-square rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          // Empty state — also a drop target
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              'border-2 border-dashed rounded-lg p-6 sm:p-8 text-center text-muted-foreground transition-colors',
+              isDragOver ? 'border-primary bg-primary/5' : '',
+              !readOnly && 'cursor-pointer'
+            )}
+            onClick={() => !readOnly && fileInputRef.current?.click()}
+          >
+            <ImageIcon className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">
+              {isDragOver ? 'Drop images here to upload' : 'No images yet'}
+            </p>
+            {!readOnly && (
+              <p className="text-xs mt-1">Take a photo, upload, or drag & drop images here</p>
+            )}
+          </div>
+        )}
+
+        {/* Upload note for background uploads */}
+        {useBackgroundUpload && pendingUploads.length > 0 && (
+          <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2 flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>
+              Images are uploading in background. You can save the product and continue working.
+              Uploads will continue automatically.
+            </span>
+          </div>
+        )}
+
+        {/* Image preview dialog (large view) */}
+        <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+          <DialogContent className="max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-3xl p-2 sm:p-3">
+            <DialogTitle className="sr-only">Image Preview</DialogTitle>
+            {previewImage && (
+              <div className="overflow-auto max-h-[80vh] flex items-center justify-center">
+                <img
+                  src={previewImage}
+                  alt="Product preview"
+                  className="w-full h-auto rounded-md max-h-[80vh] object-contain"
+                  style={{ touchAction: 'pinch-zoom' }}
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this image?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. The image will be permanently removed from the product.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// SortableImageCard — image card with drag handle + action buttons
+// ─────────────────────────────────────────────────────────────
+
+interface ImageCardProps {
+  image: ProductImage;
+  readOnly?: boolean;
+  onPreview: () => void;
+  onSetPrimary: () => void;
+  onReplace: () => void;
+  onDelete: () => void;
+}
+
+function SortableImageCard(props: ImageCardProps) {
+  const { image } = props;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: image.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <ImageCardInner {...props} dragHandleProps={{ ...attributes, ...listeners }} isDragging={isDragging} />
+    </div>
+  );
+}
+
+function ImageCard({ ...props }: ImageCardProps) {
+  return (
+    <div className="relative">
+      <ImageCardInner {...props} />
+    </div>
+  );
+}
+
+function ImageCardInner({
+  image,
+  readOnly,
+  onPreview,
+  onSetPrimary,
+  onReplace,
+  onDelete,
+  dragHandleProps,
+  isDragging,
+}: ImageCardProps & { dragHandleProps?: any; isDragging?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'relative group aspect-square rounded-lg overflow-hidden border bg-muted',
+        image.isPrimary ? 'border-amber-400 border-2 ring-2 ring-amber-400/30' : 'border-border',
+        isDragging && 'shadow-lg ring-2 ring-primary'
       )}
-      
-      {/* Upload note for background uploads */}
-      {useBackgroundUpload && pendingUploads.length > 0 && (
-        <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2 flex items-center gap-2">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>
-            Images are uploading in background. You can save product and continue working.
-            Uploads will continue automatically.
-          </span>
+    >
+      <img
+        src={image.imageUrl}
+        alt="Product"
+        className="w-full h-full object-cover cursor-pointer"
+        onClick={onPreview}
+      />
+
+      {/* Primary badge (always visible) */}
+      <div className="absolute top-1 left-1">
+        {image.isPrimary ? (
+          <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 shadow-sm">
+            <Star className="h-3 w-3 mr-0.5 fill-current" />
+            Primary
+          </Badge>
+        ) : null}
+      </div>
+
+      {/* Drag handle (desktop hover, always visible on touch) */}
+      {!readOnly && dragHandleProps && (
+        <div
+          {...dragHandleProps}
+          className="absolute top-1 right-1 bg-black/50 text-white rounded p-1 cursor-grab active:cursor-grabbing touch-none"
+          aria-label="Drag to reorder"
+          role="button"
+          tabIndex={0}
+        >
+          <GripVertical className="h-4 w-4" />
         </div>
       )}
-      
-      {/* Image preview dialog */}
-      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="max-w-sm sm:max-w-lg md:max-w-xl p-2 sm:p-3">
-          <DialogTitle className="sr-only">Image Preview</DialogTitle>
-          {previewImage && (
-            <img src={previewImage} alt="Product preview" className="w-full rounded-md" />
-          )}
-        </DialogContent>
-      </Dialog>
+
+      {/* Action buttons — always visible, large touch targets */}
+      {!readOnly && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1.5 flex items-center justify-around gap-0.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1',
+                  image.isPrimary && 'text-amber-400'
+                )}
+                onClick={onSetPrimary}
+                disabled={image.isPrimary}
+                aria-label={image.isPrimary ? 'Already primary image' : 'Set as primary image'}
+                title={image.isPrimary ? 'Primary' : 'Set as Primary'}
+              >
+                <Star className={cn('h-4 w-4', image.isPrimary && 'fill-current')} />
+                <span className="ml-0.5 hidden sm:inline">{image.isPrimary ? 'Primary' : 'Set Primary'}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{image.isPrimary ? 'Primary image' : 'Set as primary'}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1"
+                onClick={onPreview}
+                aria-label="Preview image"
+                title="Preview"
+              >
+                <Eye className="h-4 w-4" />
+                <span className="ml-0.5 hidden sm:inline">Preview</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Preview image</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9 flex-1 text-[10px] text-white hover:bg-white/20 px-1"
+                onClick={onReplace}
+                aria-label="Replace image"
+                title="Replace"
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="ml-0.5 hidden sm:inline">Replace</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Replace image</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9 flex-1 text-[10px] text-red-400 hover:bg-red-500/20 px-1"
+                onClick={onDelete}
+                aria-label="Delete image"
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="ml-0.5 hidden sm:inline">Delete</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete image</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 }
