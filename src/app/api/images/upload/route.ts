@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!isDriveConfigured()) {
       logStep('❌ step 1 failed: Drive not configured');
       return NextResponse.json(
-        { error: 'Google Drive is not configured. Set GOOGLE_PROJECT_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, and GOOGLE_DRIVE_FOLDER_ID environment variables.' },
+        { error: 'Google Drive is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, and GOOGLE_DRIVE_FOLDER_ID environment variables.' },
         { status: 500 }
       );
     }

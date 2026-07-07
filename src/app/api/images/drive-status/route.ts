@@ -7,19 +7,19 @@ export const runtime = 'nodejs';
  * GET /api/images/drive-status
  *
  * Returns the Google Drive configuration status and verifies that the
- * service account can access the root folder.
+ * OAuth 2.0 credentials can access the root folder.
  *
  * Response:
  *   200 { configured: true, accessible: true, folderId, folderName }
  *   200 { configured: true, accessible: false, error: "..." }
- *   200 { configured: false, missing: ["GOOGLE_PROJECT_ID", ...] }
+ *   200 { configured: false, missing: ["GOOGLE_CLIENT_ID", ...] }
  */
 export async function GET() {
   if (!isDriveConfigured()) {
     const missing = [
-      !process.env.GOOGLE_PROJECT_ID && 'GOOGLE_PROJECT_ID',
-      !process.env.GOOGLE_CLIENT_EMAIL && 'GOOGLE_CLIENT_EMAIL',
-      !process.env.GOOGLE_PRIVATE_KEY && 'GOOGLE_PRIVATE_KEY',
+      !process.env.GOOGLE_CLIENT_ID && 'GOOGLE_CLIENT_ID',
+      !process.env.GOOGLE_CLIENT_SECRET && 'GOOGLE_CLIENT_SECRET',
+      !process.env.GOOGLE_REFRESH_TOKEN && 'GOOGLE_REFRESH_TOKEN',
       !process.env.GOOGLE_DRIVE_FOLDER_ID && 'GOOGLE_DRIVE_FOLDER_ID',
     ].filter(Boolean);
     return NextResponse.json({ configured: false, missing });

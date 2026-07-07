@@ -7,12 +7,18 @@
  *   - Delete files from Drive
  *   - Create/reuse per-ND-Number subfolders
  *
+ * Authentication: OAuth 2.0 (NOT Service Account).
+ * Service Accounts don't have storage quota on personal Gmail accounts —
+ * they require Google Workspace or shared drives. OAuth 2.0 authenticates
+ * as the real Gmail user (leojoseph861@gmail.com) who owns the Drive
+ * folder and has storage quota.
+ *
  * Credentials are read from environment variables (NEVER hardcoded, NEVER
  * committed). Required env vars:
- *   GOOGLE_PROJECT_ID      — GCP project ID
- *   GOOGLE_CLIENT_EMAIL    — service account email (...@...iam.gserviceaccount.com)
- *   GOOGLE_PRIVATE_KEY     — service account private key (PEM, with \n escapes)
- *   GOOGLE_DRIVE_FOLDER_ID — root Drive folder ID where images go
+ *   GOOGLE_CLIENT_ID        — OAuth 2.0 client ID
+ *   GOOGLE_CLIENT_SECRET    — OAuth 2.0 client secret
+ *   GOOGLE_REFRESH_TOKEN    — OAuth 2.0 refresh token (long-lived)
+ *   GOOGLE_DRIVE_FOLDER_ID  — root Drive folder ID where images go
  *
  * Folder organization:
  *   Root folder (GOOGLE_DRIVE_FOLDER_ID)/
@@ -44,9 +50,9 @@ export interface DriveUploadResult {
 }
 
 export interface DriveConfig {
-  projectId: string;
-  clientEmail: string;
-  privateKey: string;
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
   rootFolderId: string;
 }
 
@@ -58,32 +64,28 @@ let _driveClient: drive_v3.Drive | null = null;
 const _ndFolderCache = new Map<string, string>(); // ndNumber → folderId
 
 /**
- * Read Google Drive config from environment variables.
+ * Read Google Drive OAuth config from environment variables.
  * Throws a clear error if any required var is missing.
  */
 export function getDriveConfig(): DriveConfig {
-  const projectId = process.env.GOOGLE_PROJECT_ID;
-  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKeyRaw = process.env.GOOGLE_PRIVATE_KEY;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
   const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-  if (!projectId || !clientEmail || !privateKeyRaw || !rootFolderId) {
+  if (!clientId || !clientSecret || !refreshToken || !rootFolderId) {
     throw new Error(
       'Google Drive not configured. Missing env vars: ' +
       [
-        !projectId && 'GOOGLE_PROJECT_ID',
-        !clientEmail && 'GOOGLE_CLIENT_EMAIL',
-        !privateKeyRaw && 'GOOGLE_PRIVATE_KEY',
+        !clientId && 'GOOGLE_CLIENT_ID',
+        !clientSecret && 'GOOGLE_CLIENT_SECRET',
+        !refreshToken && 'GOOGLE_REFRESH_TOKEN',
         !rootFolderId && 'GOOGLE_DRIVE_FOLDER_ID',
       ].filter(Boolean).join(', ')
     );
   }
 
-  // The private key env var usually has \n escapes that need to be converted
-  // to actual newlines for the JWT auth to work.
-  const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
-
-  return { projectId, clientEmail, privateKey, rootFolderId };
+  return { clientId, clientSecret, refreshToken, rootFolderId };
 }
 
 /**
@@ -101,19 +103,26 @@ export function isDriveConfigured(): boolean {
 
 /**
  * Get an authenticated Google Drive client (singleton).
- * Uses JWT auth with the service account credentials.
+ * Uses OAuth 2.0 with a refresh token — authenticates as the real Gmail
+ * user (leojoseph861@gmail.com) who owns the Drive folder and has storage
+ * quota. The googleapis library automatically refreshes the access token
+ * using the refresh token when the current access token expires.
  */
 export function getDriveClient(): drive_v3.Drive {
   if (_driveClient) return _driveClient;
 
   const config = getDriveConfig();
-  const auth = new google.auth.JWT({
-    email: config.clientEmail,
-    key: config.privateKey,
-    scopes: ['https://www.googleapis.com/auth/drive'],
+
+  const oauth2Client = new google.auth.OAuth2(
+    config.clientId,
+    config.clientSecret
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: config.refreshToken,
   });
 
-  _driveClient = google.drive({ version: 'v3', auth });
+  _driveClient = google.drive({ version: 'v3', auth: oauth2Client });
   return _driveClient;
 }
 
