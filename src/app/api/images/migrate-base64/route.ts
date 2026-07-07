@@ -112,7 +112,8 @@ export async function POST(request: NextRequest) {
           buffer,
           filename,
           mimeType,
-          image.product.ndNumber
+          image.product.ndNumber,
+          image.productId
         );
 
         // Update the DB record with Drive metadata (replaces base64)

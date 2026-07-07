@@ -162,8 +162,9 @@ export function ImageGallery({
     }
   }
 
-  // Track when uploads transition to completed so we can show the success state
-  // for 2-3 seconds before the card disappears.
+  // Track when uploads transition to completed so we can show a small success
+  // checkmark badge for ~1.5 seconds. After that, the badge disappears and
+  // the image is indistinguishable from any other image in the gallery.
   useEffect(() => {
     const newlyCompleted = completedUploads.filter(u => !recentlyCompleted.has(u.id));
     if (newlyCompleted.length === 0) return;
@@ -174,8 +175,9 @@ export function ImageGallery({
       return next;
     });
 
-    // After 3 seconds, remove the completed items from the "recently completed"
-    // set. They'll still be in the gallery as real images (via onRefreshImages).
+    // After 1.5 seconds, remove the completed items from the "recently
+    // completed" set. The image is already in the gallery as a real image
+    // (via onRefreshImages which fires immediately on completion).
     const timer = setTimeout(() => {
       setRecentlyCompleted(prev => {
         const next = new Set(prev);
@@ -186,7 +188,7 @@ export function ImageGallery({
       removeCompletedForProduct(productId);
       // Refresh images from server to get the canonical state
       if (onRefreshImages) onRefreshImages();
-    }, 3000);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [completedUploads, recentlyCompleted, removeCompletedForProduct, productId, onRefreshImages]);
@@ -385,16 +387,15 @@ export function ImageGallery({
         key={item.id}
         className={cn(
           'relative aspect-square rounded-lg overflow-hidden border bg-muted',
-          isFailed && 'border-destructive',
-          showSuccess && 'border-green-500'
+          isFailed && 'border-destructive'
         )}
       >
-        {/* Thumbnail */}
+        {/* Thumbnail — fully visible even when completed (no opacity dim) */}
         {item.thumbnail ? (
           <img
             src={item.thumbnail}
             alt={item.fileName}
-            className={cn('w-full h-full object-cover', (isCompleted || isFailed) && 'opacity-50')}
+            className={cn('w-full h-full object-cover', isFailed && 'opacity-50')}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -424,13 +425,13 @@ export function ImageGallery({
           </div>
         )}
 
-        {/* Success overlay (shown for 2-3s before fade) */}
+        {/* Success indicator — small corner badge, does NOT cover the image
+            or block any action buttons. Shows for ~1.5s then disappears.
+            The image is immediately usable (Set Primary, Preview, Replace,
+            Delete) even while this badge is visible. */}
         {showSuccess && (
-          <div className="absolute inset-0 bg-green-500/30 flex flex-col items-center justify-center">
-            <div className="bg-green-600 rounded-full p-2 mb-1">
-              <Check className="h-5 w-5 text-white" />
-            </div>
-            <p className="text-white text-[10px] font-medium">Upload Complete</p>
+          <div className="absolute top-1 right-1 z-10 bg-green-600 rounded-full p-0.5 shadow-sm pointer-events-none">
+            <Check className="h-3 w-3 text-white" />
           </div>
         )}
 
@@ -490,48 +491,12 @@ export function ImageGallery({
 
   return (
     <div className="space-y-3">
-      {/* Full-screen loading overlay during upload (BUG 8 fix).
-          Shows live progress so the user never wonders if anything is happening.
-          Uses fixed inset-0 with high z-index to cover the entire viewport on
-          mobile. On iOS Safari, this prevents the user from tapping other
-          controls while an upload is in progress. */}
-      {pendingUploads.length > 0 && (
-        <div className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4" role="dialog" aria-label="Uploading image" aria-modal="true">
-          <div className="bg-background rounded-xl shadow-2xl p-5 max-w-sm w-full">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-blue-500/10 rounded-full p-2">
-                <Upload className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  {pendingUploads.length === 1 ? 'Uploading image...' : `Uploading ${pendingUploads.length} images...`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {pendingUploads[0]?.fileName}
-                  {pendingUploads.length > 1 && ` +${pendingUploads.length - 1} more`}
-                </p>
-              </div>
-            </div>
-            {/* Live progress bar for the currently-uploading item */}
-            {(() => {
-              const uploading = pendingUploads.find(u => u.status === 'uploading') || pendingUploads[0];
-              const pct = uploading?.progress ?? 0;
-              return (
-                <div className="space-y-1.5">
-                  <Progress value={pct} className="h-2.5" />
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{getStatusLabel(uploading?.status || 'queued')}</span>
-                    <span className="font-medium">{pct}%</span>
-                  </div>
-                </div>
-              );
-            })()}
-            <p className="text-[10px] text-muted-foreground mt-3 text-center">
-              You can continue using the app — uploads run in the background.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* NOTE: The blocking full-screen upload overlay has been REMOVED.
+          Uploads now run completely in the background. The bottom-right
+          UploadQueuePanel (rendered in AppShell) shows progress without
+          blocking any interaction. The user can continue editing the
+          product, scroll, change details, upload more images, set primary,
+          delete, preview, and reorder — all while uploads are running. */}
 
       <div className="space-y-3">
         {/* Header row */}

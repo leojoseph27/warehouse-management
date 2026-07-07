@@ -150,52 +150,75 @@ export function buildDrivePageUrl(fileId: string): string {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Create or reuse a subfolder for a given ND Number.
+ * Create or reuse a subfolder for a given product.
+ *
+ * Folder naming priority:
+ *   1. ND Number (preferred) — e.g. "ND-6601", "ND-36029-18"
+ *   2. Product ID (fallback) — e.g. "102000000126"
  *
  * Folder structure:
  *   {rootFolderId}/ND-6601/
+ *   {rootFolderId}/102000000126/   (when no ND Number)
  *
  * If the folder already exists, returns its ID (cached in memory for the
  * lifetime of the process to avoid repeated list calls).
  *
- * If ndNumber is null/empty, returns the root folder ID (no subfolder).
+ * If both ndNumber and productId are null/empty, returns the root folder ID
+ * (no subfolder) — but this should never happen in practice.
  */
-export async function createOrGetNdFolder(ndNumber: string | null | undefined): Promise<string> {
+export async function createOrGetNdFolder(
+  ndNumber: string | null | undefined,
+  productId?: string | null
+): Promise<string> {
   const config = getDriveConfig();
 
-  // No ND number → use root folder
-  if (!ndNumber || ndNumber.trim() === '') {
+  // Determine the folder name: ND Number preferred, Product ID fallback
+  const cleanNd = ndNumber?.trim();
+  const cleanProductId = productId?.trim();
+  const folderName = cleanNd || cleanProductId || null;
+
+  // No folder name available → use root folder (should not happen in practice)
+  if (!folderName) {
+    console.log('[google-drive] No ND Number or Product ID — uploading to root folder');
     return config.rootFolderId;
   }
 
-  const cleanNd = ndNumber.trim();
+  console.log('[google-drive] Product folder lookup', {
+    productId: cleanProductId || '(none)',
+    ndNumber: cleanNd || '(none)',
+    targetFolder: folderName,
+  });
 
   // Check cache first
-  if (_ndFolderCache.has(cleanNd)) {
-    return _ndFolderCache.get(cleanNd)!;
+  if (_ndFolderCache.has(folderName)) {
+    const cachedId = _ndFolderCache.get(folderName)!;
+    console.log('[google-drive] Folder cache hit', { targetFolder: folderName, folderId: cachedId });
+    return cachedId;
   }
 
   const drive = getDriveClient();
 
-  // Search for existing folder with this name inside the root folder
+  // Search for existing folder with this name inside the root folder only
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const listRes: any = await drive.files.list({
-    q: `name='${cleanNd}' and mimeType='application/vnd.google-apps.folder' and '${config.rootFolderId}' in parents and trashed=false`,
+    q: `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and '${config.rootFolderId}' in parents and trashed=false`,
     fields: 'files(id, name)',
     spaces: 'drive',
   });
 
   if (listRes.data.files && listRes.data.files.length > 0) {
     const folderId = listRes.data.files[0].id!;
-    _ndFolderCache.set(cleanNd, folderId);
+    _ndFolderCache.set(folderName, folderId);
+    console.log('[google-drive] Found existing folder', { targetFolder: folderName, folderId });
     return folderId;
   }
 
-  // Folder doesn't exist — create it
+  // Folder doesn't exist — create it inside the root folder
+  console.log('[google-drive] Folder not found, creating', { targetFolder: folderName });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createRes: any = await drive.files.create({
     requestBody: {
-      name: cleanNd,
+      name: folderName,
       mimeType: 'application/vnd.google-apps.folder',
       parents: [config.rootFolderId],
     },
@@ -203,7 +226,8 @@ export async function createOrGetNdFolder(ndNumber: string | null | undefined): 
   });
 
   const newFolderId = createRes.data.id!;
-  _ndFolderCache.set(cleanNd, newFolderId);
+  _ndFolderCache.set(folderName, newFolderId);
+  console.log('[google-drive] Created new folder', { targetFolder: folderName, folderId: newFolderId });
   return newFolderId;
 }
 
@@ -214,19 +238,22 @@ export async function createOrGetNdFolder(ndNumber: string | null | undefined): 
 /**
  * Upload a file to Google Drive, set public permission, and return metadata.
  *
- * @param file     The file to upload (from FormData)
- * @param ndNumber ND Number for folder organization (null = root folder)
- * @returns        DriveUploadResult with file ID and URLs
+ * @param file      The file to upload (from FormData)
+ * @param ndNumber  ND Number for folder organization (preferred folder name)
+ * @param productId Product ID for folder organization (fallback folder name)
+ * @returns         DriveUploadResult with file ID and URLs
  */
 export async function uploadToDrive(
   file: File,
-  ndNumber: string | null | undefined
+  ndNumber: string | null | undefined,
+  productId?: string | null
 ): Promise<DriveUploadResult> {
   console.log('[google-drive] uploadToDrive START', {
     fileName: file.name,
     fileSize: file.size,
     fileType: file.type,
     ndNumber,
+    productId,
   });
 
   // ── Step A: Get Drive client (auth) ──
@@ -244,7 +271,7 @@ export async function uploadToDrive(
   console.log('[google-drive] step B: creating/getting ND folder', { ndNumber });
   let folderId: string;
   try {
-    folderId = await createOrGetNdFolder(ndNumber);
+    folderId = await createOrGetNdFolder(ndNumber, productId);
     console.log('[google-drive] ✓ step B: folder resolved', { folderId });
   } catch (err) {
     console.error('[google-drive] ❌ step B FAILED (createOrGetNdFolder):', {
@@ -367,10 +394,11 @@ export async function uploadBufferToDrive(
   buffer: Buffer,
   filename: string,
   mimeType: string,
-  ndNumber: string | null | undefined
+  ndNumber: string | null | undefined,
+  productId?: string | null
 ): Promise<DriveUploadResult> {
   const drive = getDriveClient();
-  const folderId = await createOrGetNdFolder(ndNumber);
+  const folderId = await createOrGetNdFolder(ndNumber, productId);
 
   // googleapis expects media.body to be a Readable stream (it calls .pipe()
   // on it). Convert the Buffer to a stream.

@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     });
     let driveResult;
     try {
-      driveResult = await uploadToDrive(file, product.ndNumber);
+      driveResult = await uploadToDrive(file, product.ndNumber, product.id);
       logStep('✓ step 4 passed', {
         driveFileId: driveResult.driveFileId,
         imageUrl: driveResult.imageUrl?.slice(0, 80),

@@ -151,8 +151,8 @@ export async function PUT(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Step 1: Upload the new file to Drive (into the same ND folder)
-    const driveResult = await uploadToDrive(file, existing.product.ndNumber);
+    // Step 1: Upload the new file to Drive (into the same product folder)
+    const driveResult = await uploadToDrive(file, existing.product.ndNumber, existing.productId);
 
     // Step 2: Delete the OLD Drive file (now that the new one is safely uploaded)
     const oldDriveFileId = existing.driveFileId;
