@@ -27,6 +27,7 @@
  */
 
 import { google, drive_v3 } from 'googleapis';
+import { Readable } from 'stream';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -267,6 +268,9 @@ export async function uploadToDrive(
   console.log('[google-drive] step D: uploading file to Drive', { filename, mimeType, folderId });
   let fileId: string;
   try {
+    // googleapis expects media.body to be a Readable stream (it calls
+    // .pipe() on it). A Buffer doesn't have .pipe(), so we must convert.
+    const stream = Readable.from(buffer);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uploadRes: any = await drive.files.create({
       requestBody: {
@@ -275,7 +279,7 @@ export async function uploadToDrive(
       },
       media: {
         mimeType,
-        body: buffer,
+        body: stream,
       },
       fields: 'id, name, size, mimeType',
     });
@@ -359,6 +363,9 @@ export async function uploadBufferToDrive(
   const drive = getDriveClient();
   const folderId = await createOrGetNdFolder(ndNumber);
 
+  // googleapis expects media.body to be a Readable stream (it calls .pipe()
+  // on it). Convert the Buffer to a stream.
+  const stream = Readable.from(buffer);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uploadRes: any = await drive.files.create({
     requestBody: {
@@ -367,7 +374,7 @@ export async function uploadBufferToDrive(
     },
     media: {
       mimeType,
-      body: buffer,
+      body: stream,
     },
     fields: 'id, name, size, mimeType',
   });
