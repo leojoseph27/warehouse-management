@@ -162,6 +162,13 @@ export function ImageGallery({
     const newlyCompleted = completedUploads.filter(u => !recentlyCompleted.has(u.id));
     if (newlyCompleted.length === 0) return;
 
+    console.log('[ImageGallery] Upload completed!', {
+      newlyCompletedIds: newlyCompleted.map(u => u.id),
+      newlyCompletedImageIds: newlyCompleted.map(u => u.imageId),
+      hasOnRefreshImages: typeof onRefreshImages === 'function',
+      currentImagesCount: images?.length,
+    });
+
     setRecentlyCompleted(prev => {
       const next = new Set(prev);
       newlyCompleted.forEach(u => next.add(u.id));
@@ -172,7 +179,10 @@ export function ImageGallery({
     // appears in the gallery. This replaces the upload progress card with
     // the actual image — no duplicate cards.
     if (onRefreshImages) {
+      console.log('[ImageGallery] Calling onRefreshImages()');
       onRefreshImages();
+    } else {
+      console.error('[ImageGallery] ⚠️ onRefreshImages is NOT defined — gallery will NOT update!');
     }
 
     // After 1.5 seconds, clean up the completed upload items from the store

@@ -916,6 +916,30 @@ export function ProductForm({ mode }: ProductFormProps) {
     );
   };
 
+  // Refresh images from the server — called after upload, delete, replace,
+  // set primary, and by the manual "Refresh" button. Fetches the product
+  // (which includes images) and updates Zustand state. Does NOT reload the
+  // page. Does NOT reset the form fields — only updates images.
+  const handleRefreshImages = async () => {
+    if (!currentProduct?.id) return;
+    console.log('[product-form] handleRefreshImages: fetching fresh images');
+    try {
+      const res = await fetch(`/api/products/${currentProduct.id}`);
+      if (!res.ok) {
+        console.error('[product-form] handleRefreshImages: fetch failed', res.status);
+        return;
+      }
+      const freshProduct = await res.json();
+      console.log('[product-form] handleRefreshImages: got', freshProduct.images?.length, 'images');
+      setCurrentProduct({
+        ...currentProduct,
+        images: freshProduct.images || [],
+      });
+    } catch (err) {
+      console.error('[product-form] handleRefreshImages: error', err);
+    }
+  };
+
   // ── Duplicate warnings ─────────────────────────────────────
   const hasDuplicates = duplicates && (duplicates.ndNumber || duplicates.barcode || duplicates.productId || duplicates.sku);
 
@@ -1001,6 +1025,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               onSetPrimary={handleSetPrimary}
               onReplace={handleImageReplace}
               onReorder={handleReorder}
+              onRefreshImages={handleRefreshImages}
               useBackgroundUpload={true}
             />
           </CardContent>

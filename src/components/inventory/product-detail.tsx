@@ -280,6 +280,27 @@ export function ProductDetail() {
     );
   };
 
+  // Refresh images from the server — called after upload, delete, replace,
+  // set primary, and by the manual "Refresh" button. Fetches the product
+  // (which includes images) and updates local state. Does NOT reload the page.
+  const handleRefreshImages = async () => {
+    if (!product?.id) return;
+    console.log('[product-detail] handleRefreshImages: fetching fresh images');
+    try {
+      const res = await fetch(`/api/products/${product.id}`);
+      if (!res.ok) {
+        console.error('[product-detail] handleRefreshImages: fetch failed', res.status);
+        return;
+      }
+      const freshProduct = await res.json();
+      console.log('[product-detail] handleRefreshImages: got', freshProduct.images?.length, 'images');
+      setProduct(freshProduct);
+      setCurrentProduct(freshProduct);
+    } catch (err) {
+      console.error('[product-detail] handleRefreshImages: error', err);
+    }
+  };
+
   // Check for modifications
   const modifications = product ? getFieldChanges(product) : [];
   const hasMods = modifications.length > 0;
@@ -379,6 +400,7 @@ export function ProductDetail() {
             onSetPrimary={handleSetPrimary}
             onReplace={handleImageReplace}
             onReorder={handleReorder}
+            onRefreshImages={handleRefreshImages}
             useBackgroundUpload={true}
           />
         </CardContent>
