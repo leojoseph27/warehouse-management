@@ -212,58 +212,129 @@ export async function uploadToDrive(
   file: File,
   ndNumber: string | null | undefined
 ): Promise<DriveUploadResult> {
-  const drive = getDriveClient();
-  const folderId = await createOrGetNdFolder(ndNumber);
+  console.log('[google-drive] uploadToDrive START', {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    ndNumber,
+  });
 
-  // Convert File to Buffer for upload
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  // ── Step A: Get Drive client (auth) ──
+  console.log('[google-drive] step A: getting authenticated Drive client');
+  let drive;
+  try {
+    drive = getDriveClient();
+    console.log('[google-drive] ✓ step A: Drive client created');
+  } catch (err) {
+    console.error('[google-drive] ❌ step A FAILED (getDriveClient):', err);
+    throw err;
+  }
 
-  // Determine the filename to use on Drive. Use the original filename if
-  // present, otherwise generate one.
+  // ── Step B: Create or get ND-Number folder ──
+  console.log('[google-drive] step B: creating/getting ND folder', { ndNumber });
+  let folderId: string;
+  try {
+    folderId = await createOrGetNdFolder(ndNumber);
+    console.log('[google-drive] ✓ step B: folder resolved', { folderId });
+  } catch (err) {
+    console.error('[google-drive] ❌ step B FAILED (createOrGetNdFolder):', {
+      message: (err as any)?.message,
+      code: (err as any)?.code,
+      status: (err as any)?.status,
+      errors: (err as any)?.errors,
+      stack: (err as any)?.stack,
+    });
+    throw err;
+  }
+
+  // ── Step C: Convert File to Buffer ──
+  console.log('[google-drive] step C: converting File to Buffer');
+  let buffer: Buffer;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    buffer = Buffer.from(arrayBuffer);
+    console.log('[google-drive] ✓ step C: buffer created', { bufferSize: buffer.length });
+  } catch (err) {
+    console.error('[google-drive] ❌ step C FAILED (arrayBuffer):', err);
+    throw err;
+  }
+
   const filename = file.name || `image-${Date.now()}.jpg`;
   const mimeType = file.type || 'image/jpeg';
   const fileSize = file.size;
 
-  // Upload the file
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uploadRes: any = await drive.files.create({
-    requestBody: {
-      name: filename,
-      parents: [folderId],
-    },
-    media: {
-      mimeType,
-      body: buffer,
-    },
-    fields: 'id, name, size, mimeType',
-  });
-
-  const fileId = uploadRes.data.id;
-  if (!fileId) {
-    throw new Error('Google Drive upload succeeded but no file ID returned');
+  // ── Step D: Upload file to Drive ──
+  console.log('[google-drive] step D: uploading file to Drive', { filename, mimeType, folderId });
+  let fileId: string;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const uploadRes: any = await drive.files.create({
+      requestBody: {
+        name: filename,
+        parents: [folderId],
+      },
+      media: {
+        mimeType,
+        body: buffer,
+      },
+      fields: 'id, name, size, mimeType',
+    });
+    console.log('[google-drive] ✓ step D: Drive API response', {
+      status: uploadRes?.status,
+      statusText: uploadRes?.statusText,
+      hasData: !!uploadRes?.data,
+      dataId: uploadRes?.data?.id,
+      dataName: uploadRes?.data?.name,
+    });
+    fileId = uploadRes.data.id;
+    if (!fileId) {
+      throw new Error(`Google Drive upload returned no file ID. Response: ${JSON.stringify(uploadRes?.data)}`);
+    }
+  } catch (err) {
+    console.error('[google-drive] ❌ step D FAILED (drive.files.create):', {
+      message: (err as any)?.message,
+      code: (err as any)?.code,
+      status: (err as any)?.status,
+      errors: (err as any)?.errors,
+      response: (err as any)?.response?.data,
+      stack: (err as any)?.stack,
+    });
+    throw err;
   }
 
-  // Set public permission: anyone with the link → viewer
+  // ── Step E: Set public permission ──
+  console.log('[google-drive] step E: setting public permission (anyone:reader)', { fileId });
   try {
-    await drive.permissions.create({
+    const permRes = await drive.permissions.create({
       fileId,
       requestBody: {
         role: 'reader',
         type: 'anyone',
       },
     });
+    console.log('[google-drive] ✓ step E: permission set', {
+      status: permRes?.status,
+      permissionId: permRes?.data?.id,
+    });
   } catch (permErr) {
-    // If permission setting fails, the file exists but isn't public.
-    // Try to clean up the orphaned file, then rethrow.
-    console.error(`[google-drive] Failed to set public permission for ${fileId}:`, permErr);
+    console.error('[google-drive] ❌ step E FAILED (permissions.create):', {
+      message: (permErr as any)?.message,
+      code: (permErr as any)?.code,
+      status: (permErr as any)?.status,
+      errors: (permErr as any)?.errors,
+      stack: (permErr as any)?.stack,
+    });
+    // Clean up the orphaned file
     try {
       await drive.files.delete({ fileId });
-    } catch {}
-    throw new Error('Failed to set public permission on uploaded file');
+      console.log('[google-drive] cleaned up orphaned file', { fileId });
+    } catch (delErr) {
+      console.error('[google-drive] failed to clean up orphaned file', { fileId, error: (delErr as any)?.message });
+    }
+    throw new Error(`Failed to set public permission on uploaded file: ${(permErr as any)?.message}`);
   }
 
-  return {
+  const result: DriveUploadResult = {
     driveFileId: fileId,
     imageUrl: buildImageUrl(fileId),
     thumbnailUrl: buildThumbnailUrl(fileId),
@@ -272,6 +343,8 @@ export async function uploadToDrive(
     mimeType,
     fileSize,
   };
+  console.log('[google-drive] uploadToDrive SUCCESS', { driveFileId: fileId });
+  return result;
 }
 
 /**
