@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Fetch all base64 images (with their product's ndNumber for folder org)
     const images = await db.productImage.findMany({
       where,
-      include: { product: { select: { ndNumber: true } } },
+      include: { product: { select: { ndNumber: true, productId: true } } },
       orderBy: { createdAt: 'asc' },
       ...(limit ? { take: limit } : {}),
     });
@@ -108,12 +108,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Upload to Drive
+        // Pass image.product.productId (business ERP ID) — NOT image.productId
+        // (which is the ProductImage.productId foreign key = Prisma CUID).
         const driveResult = await uploadBufferToDrive(
           buffer,
           filename,
           mimeType,
           image.product.ndNumber,
-          image.productId
+          image.product.productId
         );
 
         // Update the DB record with Drive metadata (replaces base64)

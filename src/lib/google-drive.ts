@@ -184,15 +184,15 @@ export async function createOrGetNdFolder(
   }
 
   console.log('[google-drive] Product folder lookup', {
-    productId: cleanProductId || '(none)',
+    businessProductId: cleanProductId || '(none)',
     ndNumber: cleanNd || '(none)',
-    targetFolder: folderName,
+    chosenFolderName: folderName,
   });
 
   // Check cache first
   if (_ndFolderCache.has(folderName)) {
     const cachedId = _ndFolderCache.get(folderName)!;
-    console.log('[google-drive] Folder cache hit', { targetFolder: folderName, folderId: cachedId });
+    console.log('[google-drive] Folder cache hit', { chosenFolderName: folderName, folderId: cachedId });
     return cachedId;
   }
 
@@ -209,12 +209,12 @@ export async function createOrGetNdFolder(
   if (listRes.data.files && listRes.data.files.length > 0) {
     const folderId = listRes.data.files[0].id!;
     _ndFolderCache.set(folderName, folderId);
-    console.log('[google-drive] Found existing folder', { targetFolder: folderName, folderId });
+    console.log('[google-drive] Found existing folder', { chosenFolderName: folderName, folderId });
     return folderId;
   }
 
   // Folder doesn't exist — create it inside the root folder
-  console.log('[google-drive] Folder not found, creating', { targetFolder: folderName });
+  console.log('[google-drive] Folder not found, creating', { chosenFolderName: folderName });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createRes: any = await drive.files.create({
     requestBody: {
@@ -227,7 +227,7 @@ export async function createOrGetNdFolder(
 
   const newFolderId = createRes.data.id!;
   _ndFolderCache.set(folderName, newFolderId);
-  console.log('[google-drive] Created new folder', { targetFolder: folderName, folderId: newFolderId });
+  console.log('[google-drive] Created new folder', { chosenFolderName: folderName, folderId: newFolderId });
   return newFolderId;
 }
 
@@ -248,12 +248,19 @@ export async function uploadToDrive(
   ndNumber: string | null | undefined,
   productId?: string | null
 ): Promise<DriveUploadResult> {
+  // Determine the folder name for logging: ND Number preferred, business
+  // Product ID fallback. NEVER use the Prisma CUID (product.id).
+  const cleanNd = ndNumber?.trim() || null;
+  const cleanBusinessProductId = productId?.trim() || null;
+  const chosenFolderName = cleanNd || cleanBusinessProductId || '(none)';
+
   console.log('[google-drive] uploadToDrive START', {
     fileName: file.name,
     fileSize: file.size,
     fileType: file.type,
-    ndNumber,
-    productId,
+    ndNumber: cleanNd || '(none)',
+    businessProductId: cleanBusinessProductId || '(none)',
+    chosenFolderName,
   });
 
   // ── Step A: Get Drive client (auth) ──
@@ -383,7 +390,13 @@ export async function uploadToDrive(
     mimeType,
     fileSize,
   };
-  console.log('[google-drive] uploadToDrive SUCCESS', { driveFileId: fileId });
+  console.log('[google-drive] uploadToDrive SUCCESS', {
+    businessProductId: cleanBusinessProductId || '(none)',
+    ndNumber: cleanNd || '(none)',
+    chosenFolderName,
+    googleFolderId: folderId,
+    driveFileId: fileId,
+  });
   return result;
 }
 

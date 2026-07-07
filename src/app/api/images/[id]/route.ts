@@ -139,7 +139,7 @@ export async function PUT(
 
     const existing = await db.productImage.findUnique({
       where: { id },
-      include: { product: { select: { ndNumber: true } } },
+      include: { product: { select: { ndNumber: true, productId: true } } },
     });
     if (!existing) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 });
@@ -152,7 +152,14 @@ export async function PUT(
     }
 
     // Step 1: Upload the new file to Drive (into the same product folder)
-    const driveResult = await uploadToDrive(file, existing.product.ndNumber, existing.productId);
+    // Pass existing.product.productId (business ERP ID) — NOT existing.productId
+    // (which is the ProductImage.productId foreign key = Prisma CUID).
+    console.log('[images/replace] folder lookup', {
+      dbId: existing.productId,
+      businessProductId: existing.product.productId,
+      ndNumber: existing.product.ndNumber,
+    });
+    const driveResult = await uploadToDrive(file, existing.product.ndNumber, existing.product.productId);
 
     // Step 2: Delete the OLD Drive file (now that the new one is safely uploaded)
     const oldDriveFileId = existing.driveFileId;

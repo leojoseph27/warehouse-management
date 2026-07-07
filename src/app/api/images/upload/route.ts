@@ -82,13 +82,18 @@ export async function POST(request: NextRequest) {
 
     // ── STEP 3: Verify product exists in database ──
     logStep('step 3: querying database for product', { productId });
-    let product: { id: string; ndNumber: string | null } | null;
+    let product: { id: string; ndNumber: string | null; productId: string | null } | null;
     try {
       product = await db.product.findUnique({
         where: { id: productId },
-        select: { id: true, ndNumber: true },
+        select: { id: true, ndNumber: true, productId: true },
       });
-      logStep('✓ step 3 passed', { productFound: !!product, ndNumber: product?.ndNumber });
+      logStep('✓ step 3 passed', {
+        productFound: !!product,
+        dbId: product?.id,
+        businessProductId: product?.productId,
+        ndNumber: product?.ndNumber,
+      });
     } catch (err) {
       logError('step 3 (Prisma findUnique product)', err);
       throw err;
@@ -100,15 +105,25 @@ export async function POST(request: NextRequest) {
     }
 
     // ── STEP 4: Upload to Google Drive ──
+    // Pass product.productId (business ERP ID like "102000005840") — NOT
+    // product.id (Prisma CUID like "cmra975240bscyxn51jw23sia"). The CUID
+    // must NEVER be used as a Drive folder name.
     logStep('step 4: uploading to Google Drive', {
       fileName: file.name,
       fileSize: file.size,
+      dbId: product.id,
+      businessProductId: product.productId,
       ndNumber: product.ndNumber,
     });
     let driveResult;
     try {
-      driveResult = await uploadToDrive(file, product.ndNumber, product.id);
-      logStep('✓ step 4 passed', {
+      driveResult = await uploadToDrive(file, product.ndNumber, product.productId);
+      logStep('✓ step 4 passed — Drive upload complete', {
+        productDbId: product.id,
+        businessProductId: product.productId,
+        ndNumber: product.ndNumber,
+        chosenFolderName: product.ndNumber || product.productId || '(none)',
+        googleFolderId: '(see google-drive logs above)',
         driveFileId: driveResult.driveFileId,
         imageUrl: driveResult.imageUrl?.slice(0, 80),
         thumbnailUrl: driveResult.thumbnailUrl?.slice(0, 80),
