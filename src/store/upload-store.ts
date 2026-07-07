@@ -682,6 +682,27 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
   },
 }));
 
+// ── DIAGNOSTIC: subscribe to EVERY state change and log when functions disappear ──
+// This will catch the EXACT moment the store loses its action functions.
+if (typeof window !== 'undefined') {
+  let renderCount = 0;
+  useUploadStore.subscribe((newState, prevState) => {
+    renderCount++;
+    const prevHadAddToQueue = typeof (prevState as any).addToQueue === 'function';
+    const newHasAddToQueue = typeof (newState as any).addToQueue === 'function';
+    if (prevHadAddToQueue && !newHasAddToQueue) {
+      console.error('[upload-store] ⚠️ FUNCTIONS DISAPPEARED on state change #' + renderCount, {
+        prevHadAddToQueue,
+        newHasAddToQueue,
+        prevKeys: Object.keys(prevState),
+        newKeys: Object.keys(newState),
+        newState,
+        stack: new Error().stack,
+      });
+    }
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // Initialize on app load
 // ─────────────────────────────────────────────────────────────
