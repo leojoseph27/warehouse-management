@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Image upload converts files to base64 data URLs — large images can take a
+// few seconds. Request max duration for Vercel.
+export const maxDuration = 60;
+export const runtime = 'nodejs';
+
 /**
  * POST /api/images/upload
  * Uploads an image for a product.

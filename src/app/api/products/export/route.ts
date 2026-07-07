@@ -3,6 +3,11 @@ import { db } from '@/lib/db';
 import { COLUMN_DEFS, COLUMN_GROUPS } from '@/lib/lookups';
 import * as XLSX from 'xlsx-js-style';
 
+// Excel export fetches ALL products and builds a workbook in memory — can take
+// 10-20s for 2,500+ products. Request max duration for Vercel.
+export const maxDuration = 300;
+export const runtime = 'nodejs';
+
 /**
  * Excel Export Route — Al-Nassim Master Catalog 52-Column Schema
  * 

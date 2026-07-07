@@ -4,6 +4,13 @@ import { COLUMN_DEFS } from '@/lib/lookups';
 import { applyAutoDerivations } from '@/lib/serialize-product';
 import * as XLSX from 'xlsx';
 
+// Vercel serverless functions timeout: 10s on Hobby, 60s on Pro, 300s on Enterprise.
+// Excel import of 2,500+ rows with createMany batches can take 15-30s, so we
+// request the maximum allowed duration. On Hobby this caps at 10s regardless —
+// if you need to import large files, upgrade to Vercel Pro.
+export const maxDuration = 300;
+export const runtime = 'nodejs';
+
 /**
  * Excel Import Route — Optimized for Performance
  *
