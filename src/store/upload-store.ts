@@ -242,8 +242,15 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     });
     
     // Start processing if not already
+    // Guard: check that startProcessing is a function before calling it.
+    // During store initialization or hot-reload, get() can return a partial
+    // state where actions aren't bound yet, causing "startProcessing is not
+    // a function" errors.
     if (!state.isProcessing && !state.isPaused) {
-      get().startProcessing();
+      const startProcessing = get().startProcessing;
+      if (typeof startProcessing === 'function') {
+        startProcessing();
+      }
     }
     
     return id;
@@ -346,9 +353,11 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     // Resume processing if paused
     const state = get();
     if (state.isPaused) {
-      get().resumeQueue();
+      const resumeQueue = get().resumeQueue;
+      if (typeof resumeQueue === 'function') resumeQueue();
     } else if (!state.isProcessing) {
-      get().startProcessing();
+      const startProcessing = get().startProcessing;
+      if (typeof startProcessing === 'function') startProcessing();
     }
   },
 
@@ -362,7 +371,8 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     get().persistState();
     
     if (!get().isProcessing) {
-      get().startProcessing();
+      const startProcessing = get().startProcessing;
+      if (typeof startProcessing === 'function') startProcessing();
     }
   },
 
@@ -398,7 +408,8 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     get().persistState();
     
     // Process next item
-    get().processNextItem();
+    const processNextItem = get().processNextItem;
+    if (typeof processNextItem === 'function') processNextItem();
   },
 
   markFailed: (id, error) => {
@@ -420,7 +431,8 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     get().persistState();
     
     // Continue with next item (don't stop queue on failure)
-    get().processNextItem();
+    const processNextItem = get().processNextItem;
+    if (typeof processNextItem === 'function') processNextItem();
   },
 
   // ── Processing ─────────────────────────────────────────────
@@ -618,19 +630,29 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
   // ── Getters ────────────────────────────────────────────────
 
   getItemsForProduct: (productId) => {
-    return get().items.filter(i => i.productId === productId);
+    // Defensive: ensure items is always an array. If IndexedDB persistence
+    // load fails or corrupts state, items could be undefined. Returning []
+    // prevents "Cannot read properties of undefined (reading 'filter')" in
+    // the gallery.
+    const items = get().items;
+    if (!Array.isArray(items)) return [];
+    return items.filter(i => i && i.productId === productId);
   },
 
   getPendingItemsForProduct: (productId) => {
-    return get().items.filter(
-      i => i.productId === productId && 
+    const items = get().items;
+    if (!Array.isArray(items)) return [];
+    return items.filter(
+      i => i && i.productId === productId &&
       (i.status === 'queued' || i.status === 'uploading' || i.status === 'processing')
     );
   },
 
   getCompletedItemsForProduct: (productId) => {
-    return get().items.filter(
-      i => i.productId === productId && i.status === 'completed'
+    const items = get().items;
+    if (!Array.isArray(items)) return [];
+    return items.filter(
+      i => i && i.productId === productId && i.status === 'completed'
     );
   },
 }));

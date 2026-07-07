@@ -135,17 +135,24 @@ export function ImageGallery({
     totalUploading,
   } = useUploadStore();
 
-  // Get uploads for this product
-  const uploadItems = useBackgroundUpload ? getItemsForProduct(productId) : [];
+  // Get uploads for this product — with defensive fallback.
+  // getItemsForProduct can return undefined if the store's items array is
+  // corrupted during IndexedDB persistence load. Always ensure uploadItems
+  // is an array to prevent "Cannot read properties of undefined (reading
+  // 'filter'/'map'/'length')" runtime errors.
+  const rawUploadItems = useBackgroundUpload ? getItemsForProduct(productId) : [];
+  const uploadItems = Array.isArray(rawUploadItems) ? rawUploadItems : [];
 
   const pendingUploads = uploadItems.filter(
-    i => i.status === 'queued' || i.status === 'uploading' || i.status === 'processing'
+    i => i && (i.status === 'queued' || i.status === 'uploading' || i.status === 'processing')
   );
-  const failedUploads = uploadItems.filter(i => i.status === 'failed');
-  const completedUploads = uploadItems.filter(i => i.status === 'completed');
+  const failedUploads = uploadItems.filter(i => i && i.status === 'failed');
+  const completedUploads = uploadItems.filter(i => i && i.status === 'completed');
 
   // Combine existing images with completed uploads (avoid duplicates)
-  const allImages: ProductImage[] = [...images];
+  // Defensive: ensure images is always an array (parent could pass undefined
+  // during initial load).
+  const allImages: ProductImage[] = [...(images ?? [])];
   for (const upload of completedUploads) {
     if (upload.imageId && !allImages.some(img => img.id === upload.imageId)) {
       allImages.push({
