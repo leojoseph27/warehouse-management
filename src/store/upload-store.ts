@@ -11,7 +11,7 @@
  */
 
 import { create } from 'zustand';
-import { get, set, del, clear } from 'idb-keyval';
+import { get as idbGet, set as idbSet, del as idbDel, clear as idbClear } from 'idb-keyval';
 import { v4 as uuidv4 } from 'uuid';
 
 // ─────────────────────────────────────────────────────────────
@@ -319,7 +319,7 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
 
   clearQueue: () => {
     set(initialState);
-    clear(); // Clear IndexedDB
+    idbClear(); // Clear IndexedDB
   },
 
   clearCompleted: () => {
@@ -606,7 +606,7 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
 
   loadPersistedState: async () => {
     try {
-      const persistedData = await get(PERSISTENCE_KEY);
+      const persistedData = await idbGet(PERSISTENCE_KEY);
       
       if (!persistedData || !Array.isArray(persistedData)) {
         return;
@@ -646,7 +646,7 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     try {
       const state = get();
       const serialized = serializeState(state);
-      await set(PERSISTENCE_KEY, serialized);
+      await idbSet(PERSISTENCE_KEY, serialized);
     } catch (error) {
       console.error('Failed to persist upload state:', error);
     }
@@ -681,33 +681,6 @@ export const useUploadStore = create<UploadQueueState & UploadStoreActions>((set
     );
   },
 }));
-
-// ── DIAGNOSTIC: subscribe to EVERY state change and log when functions disappear ──
-// This will catch the EXACT moment the store loses its action functions.
-if (typeof window !== 'undefined') {
-  let renderCount = 0;
-  useUploadStore.subscribe((newState: any, prevState: any) => {
-    renderCount++;
-    const prevHadAddToQueue = typeof prevState?.addToQueue === 'function';
-    const newHasAddToQueue = typeof newState?.addToQueue === 'function';
-    if (prevHadAddToQueue && !newHasAddToQueue) {
-      // Log each field separately so the console shows actual values, not
-      // collapsed object references.
-      console.error('[upload-store] ⚠️ FUNCTIONS DISAPPEARED on state change #' + renderCount);
-      console.error('  prevHadAddToQueue:', prevHadAddToQueue);
-      console.error('  newHasAddToQueue:', newHasAddToQueue);
-      console.error('  prevKeys:', JSON.stringify(Object.keys(prevState || {})));
-      console.error('  newKeys:', JSON.stringify(Object.keys(newState || {})));
-      console.error('  newState type:', typeof newState);
-      console.error('  newState is null?', newState === null);
-      console.error('  newState is array?', Array.isArray(newState));
-      console.error('  newState JSON:', JSON.stringify(newState, null, 2));
-      console.error('  newState items length:', newState?.items?.length);
-      console.error('  STACK TRACE:');
-      console.error(new Error().stack);
-    }
-  });
-}
 
 // ─────────────────────────────────────────────────────────────
 // Initialize on app load
