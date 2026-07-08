@@ -759,13 +759,43 @@ export function ProductForm({ mode }: ProductFormProps) {
 
   // ── Save handler ───────────────────────────────────────────
   const handleSave = async () => {
-    if (!validateForm()) {
-      toast.error('Please fix the validation errors before saving.');
-      // Expand sections that have errors
-      const errorFields = Object.keys(validationErrors);
-      // We can't perfectly map, but expand all sections to show errors
+    // Run validation but do NOT block the save. Validation errors are shown
+    // as reminders (red text under the field + a toast), but the user can
+    // still save the product with missing fields. This prevents the form
+    // from blocking product saves when non-critical fields are empty.
+    const errors: Record<string, string> = {};
+    // Inline validation (same logic as validateForm, but we capture the
+    // errors directly so we can count them before the state update)
+    if (!formData.productId.trim()) errors.productId = 'Product ID is required';
+    if (!formData.sku.trim()) errors.sku = 'SKU is required';
+    if (!formData.barcode.trim()) errors.barcode = 'Barcode is required';
+    if (!formData.brand) errors.brand = 'Brand is required';
+    if (!formData.department) errors.department = 'Department is required';
+    if (!formData.category) errors.category = 'Category is required';
+    if (!formData.productFamily) errors.productFamily = 'Product Family is required';
+    if (!formData.productType) errors.productType = 'Product Type is required';
+    if (!formData.nameAr.trim()) errors.nameAr = 'Name AR is required';
+    if (!formData.nameEn.trim()) errors.nameEn = 'Name EN is required';
+    if (!formData.unit) errors.unit = 'Unit is required';
+    if (!formData.minSalesMultiples) errors.minSalesMultiples = 'Min Sales Multiples is required';
+    if (!formData.validationStatus) errors.validationStatus = 'Validation Status is required';
+    if (formData.barcode && !/^\d{12,13}$/.test(formData.barcode)) {
+      errors.barcode = 'Barcode must be 12-13 digits';
+    }
+    if (formData.confidenceScore) {
+      const score = parseInt(formData.confidenceScore);
+      if (isNaN(score) || score < 0 || score > 100) {
+        errors.confidenceScore = 'Must be 0-100';
+      }
+    }
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      // Show a warning toast (not an error) and expand sections so the
+      // user can see which fields have reminders — but continue saving.
+      toast.warning(`${Object.keys(errors).length} field(s) need attention. Saving anyway.`);
       setExpandedSections(new Set(SECTION_ORDER));
-      return;
     }
 
     setSaving(true);
