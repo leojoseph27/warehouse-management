@@ -669,9 +669,10 @@ export function ProductForm({ mode }: ProductFormProps) {
     if (!formData.validationStatus) errors.validationStatus = 'Validation Status is required';
 
     // Format validations
-    if (formData.ndNumber && !/^ND-\d{4}(-[A-Z0-9-]+)?$/.test(formData.ndNumber)) {
-      errors.ndNumber = 'Format: ND-XXXX or ND-XXXX-SUFFIX';
-    }
+    // NOTE: ND Number pattern validation has been REMOVED. The previous regex
+    // (^ND-\d{4}(-[A-Z0-9-]+)?$) only allowed exactly 4 digits after "ND-",
+    // which rejected valid ND Numbers like "ND-36029-18" (5 digits) that exist
+    // in the imported catalog. ND Numbers are now accepted in any format.
     if (formData.barcode && !/^\d{12,13}$/.test(formData.barcode)) {
       errors.barcode = 'Barcode must be 12-13 digits';
     }
