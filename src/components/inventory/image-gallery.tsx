@@ -114,6 +114,8 @@ export function ImageGallery({
   maxFileSizeMB = DEFAULT_MAX_FILE_SIZE_MB,
 }: ImageGalleryProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProductImage | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -121,6 +123,46 @@ export function ImageGallery({
   const [isLoadingFromServer, setIsLoadingFromServer] = useState(false);
   const [recentlyCompleted, setRecentlyCompleted] = useState<Set<string>>(new Set());
   const [isRefreshingGallery, setIsRefreshingGallery] = useState(false);
+
+  // Open the preview dialog for an image. Uses the best available URL:
+  // 1. imageUrl (full-size, from Google Drive uc?export=view)
+  // 2. thumbnailUrl (from Google Drive thumbnail?id=...&sz=w1000)
+  // 3. If driveFileId is available, build a thumbnail URL with larger size
+  // The Google Drive "uc?export=view" URL sometimes doesn't load in <img>
+  // tags due to redirects, so we fall back to the thumbnail URL which is
+  // more reliable for direct image display.
+  const openPreview = useCallback((image: ProductImage) => {
+    console.log('[ImageGallery] Preview requested', {
+      imageUrl: image.imageUrl,
+      thumbnailUrl: image.thumbnailUrl,
+      driveFileId: image.driveFileId,
+      filename: image.filename,
+      mimeType: image.mimeType,
+    });
+
+    // Pick the best URL for display. Google Drive's uc?export=view URL
+    // can fail to load in <img> tags. The thumbnail URL is more reliable.
+    // If we have a driveFileId, build a large thumbnail URL.
+    let url: string | null = null;
+    if (image.driveFileId) {
+      // Use the thumbnail endpoint with a larger size for full preview
+      url = `https://drive.google.com/thumbnail?id=${image.driveFileId}&sz=w2000`;
+    } else if (image.thumbnailUrl) {
+      url = image.thumbnailUrl;
+    } else if (image.imageUrl) {
+      url = image.imageUrl;
+    }
+
+    if (!url) {
+      console.error('[ImageGallery] No image URL available for preview', image);
+      return;
+    }
+
+    console.log('[ImageGallery] Preview URL:', url);
+    setPreviewError(null);
+    setPreviewLoading(true);
+    setPreviewImage(url);
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -686,7 +728,7 @@ export function ImageGallery({
                         key={image.id}
                         image={image}
                         readOnly={readOnly}
-                        onPreview={() => setPreviewImage(image.imageUrl)}
+                        onPreview={() => openPreview(image)}
                         onSetPrimary={() => handleSetPrimary(image.id)}
                         onReplace={() => handleReplaceClick(image)}
                         onDelete={() => handleDeleteClick(image)}
@@ -751,17 +793,57 @@ export function ImageGallery({
         )}
 
         {/* Image preview dialog (large view) */}
-        <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <Dialog open={!!previewImage} onOpenChange={(open) => {
+          if (!open) {
+            setPreviewImage(null);
+            setPreviewLoading(false);
+            setPreviewError(null);
+          }
+        }}>
           <DialogContent className="max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-3xl p-2 sm:p-3">
             <DialogTitle className="sr-only">Image Preview</DialogTitle>
             {previewImage && (
-              <div className="overflow-auto max-h-[80vh] flex items-center justify-center">
-                <img
-                  src={previewImage}
-                  alt="Product preview"
-                  className="w-full h-auto rounded-md max-h-[80vh] object-contain"
-                  style={{ touchAction: 'pinch-zoom' }}
-                />
+              <div className="overflow-auto max-h-[80vh] flex items-center justify-center relative min-h-[200px]">
+                {/* Loading spinner */}
+                {previewLoading && !previewError && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {/* Error message */}
+                {previewError ? (
+                  <div className="text-center p-8">
+                    <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+                    <p className="text-sm text-destructive font-medium mb-1">
+                      Failed to load image
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {previewError}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70 break-all max-w-xs mx-auto">
+                      URL: {previewImage}
+                    </p>
+                  </div>
+                ) : (
+                  <img
+                    src={previewImage}
+                    alt="Product preview"
+                    className="w-full h-auto rounded-md max-h-[80vh] object-contain"
+                    style={{ touchAction: 'pinch-zoom' }}
+                    onLoad={() => {
+                      console.log('[ImageGallery] Preview image loaded successfully');
+                      setPreviewLoading(false);
+                    }}
+                    onError={(e) => {
+                      console.error('[ImageGallery] Preview image FAILED to load', {
+                        url: previewImage,
+                        event: e,
+                      });
+                      setPreviewLoading(false);
+                      setPreviewError('The image could not be loaded. The Google Drive URL may be inaccessible.');
+                    }}
+                  />
+                )}
               </div>
             )}
           </DialogContent>
