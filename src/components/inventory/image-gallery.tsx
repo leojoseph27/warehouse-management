@@ -211,13 +211,13 @@ export function ImageGallery({
     if (file.size > maxBytes) {
       return `"${file.name}" is ${formatFileSize(file.size)}. Maximum is ${maxFileSizeMB} MB.`;
     }
-    // Duplicate filename check
-    const duplicateName = [...existingImages, ...uploadItems].some(
-      img => 'fileName' in img && (img as any).fileName === file.name
-    );
-    if (duplicateName) {
-      return `"${file.name}" is already in the upload queue.`;
-    }
+    // NOTE: Duplicate filename check has been REMOVED.
+    // Mobile browsers (iOS Safari, Android Chrome) reuse the same temporary
+    // filename (e.g. "image.jpg") for every photo taken with the camera.
+    // Rejecting uploads based on filename alone prevents users from taking
+    // multiple photos of the same product. Each upload gets its own unique
+    // UUID from the upload store (crypto.randomUUID via uuidv4), so there
+    // is no risk of queue collisions even with identical filenames.
     return null;
   }, [uploadItems, maxFileSizeMB]);
 
