@@ -176,6 +176,7 @@ export async function GET(request: NextRequest) {
     const unit = searchParams.get('unit') || '';
     const ndNumber = searchParams.get('ndNumber') || '';
     const nameEn = searchParams.get('nameEn') || '';
+    const barcode = searchParams.get('barcode') || '';
     const sourceRowMin = searchParams.get('sourceRowMin');
     const sourceRowMax = searchParams.get('sourceRowMax');
     const priceMin = searchParams.get('priceMin');
@@ -227,6 +228,9 @@ export async function GET(request: NextRequest) {
     // Dedicated Name EN filter — case-insensitive partial match on nameEn only
     // (the general `search` param searches across 11 fields; this one is scoped to nameEn)
     if (nameEn) where.nameEn = { ...where.nameEn, contains: nameEn, mode: 'insensitive' };
+    // Barcode filter — exact match (used by the barcode scanner in the variant
+    // manager). The scanner reads the full barcode, so we match exactly.
+    if (barcode) where.barcode = { equals: barcode };
     if (department) where.department = { contains: department, mode: 'insensitive' };
     if (category) where.category = { contains: category, mode: 'insensitive' };
     if (subcategory) where.subcategory = { contains: subcategory, mode: 'insensitive' };
