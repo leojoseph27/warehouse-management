@@ -105,6 +105,10 @@ interface VariantMemberRow {
   displayOrder: number;
   createdAt: Date;
   updatedAt: Date;
+  variantGroup?: {
+    id: string;
+    primaryProductId: string;
+  } | null;
 }
 
 interface ProductRow {
@@ -327,6 +331,10 @@ export function serializeProduct(p: ProductRow) {
       displayOrder: vm.displayOrder,
       createdAt: vm.createdAt.toISOString(),
       updatedAt: vm.updatedAt.toISOString(),
+      variantGroup: vm.variantGroup ? {
+        id: vm.variantGroup.id,
+        primaryProductId: vm.variantGroup.primaryProductId,
+      } : null,
     })),
   };
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { COLUMN_DEFS, COLUMN_GROUPS, resolveImageLinks } from '@/lib/lookups';
+import { COLUMN_DEFS, COLUMN_GROUPS, resolveImageLinks, resolveVariants } from '@/lib/lookups';
 import * as XLSX from 'xlsx-js-style';
 
 // Excel export fetches ALL products and builds a workbook in memory — can take
@@ -52,6 +52,8 @@ const COL_WIDTHS = [
   24, 16, 14, 8, 10, 14, 14, 22,
   // Media (1) — Image Links (newline-separated URLs, needs a wide column)
   50,
+  // Media (1) — Variants (newline-separated ND Numbers or barcodes)
+  30,
 ];
 
 // Fields that should be compared for change detection
@@ -187,12 +189,14 @@ export async function GET(request: NextRequest) {
         const colDef = COLUMN_DEFS[c];
         const cellRef = XLSX.utils.encode_cell({ r: r + 2, c });
 
-        // The "imageLinks" field is NOT a direct Prisma product field — it's
-        // derived from the product.images relation. Resolve it specially.
+        // The "imageLinks" and "variants" fields are NOT direct Prisma product
+        // fields — they're derived from relations. Resolve them specially.
         // All other fields are read directly from the product object.
         const value = colDef.field === 'imageLinks'
           ? resolveImageLinks(product)
-          : product[colDef.field];
+          : colDef.field === 'variants'
+            ? resolveVariants(product, data)
+            : product[colDef.field];
         const isModified = isFieldModified(product, colDef.field);
 
         worksheet[cellRef] = createStyledCell(value, isModified);

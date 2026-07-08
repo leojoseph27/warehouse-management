@@ -316,7 +316,7 @@ export async function GET(request: NextRequest) {
         include: {
           images: { orderBy: { displayOrder: 'asc' } },
           original: true,
-          variantMemberships: true,
+          variantMemberships: { include: { variantGroup: { select: { id: true, primaryProductId: true } } } },
         },
         orderBy: { [finalSortColumn]: finalOrderDir },
         skip: (page - 1) * limit,

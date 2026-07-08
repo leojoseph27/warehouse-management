@@ -30,6 +30,8 @@ interface ProductSearchResult {
   barcode: string | null;
   nameEn: string | null;
   color: string | null;
+  images?: { imageUrl: string; thumbnailUrl: string | null }[];
+  variantMemberships?: { variantGroupId: string; variantGroup: { primaryProductId: string } }[];
 }
 
 /**
@@ -86,15 +88,33 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
       return;
     }
     try {
+      // Fetch products with images and variant memberships so we can show
+      // the product thumbnail and whether it's already linked as a variant.
       const res = await fetch(`/api/products?search=${encodeURIComponent(query)}&limit=20`);
       if (res.ok) {
         const data = await res.json();
-        // Filter out current product and already-linked products
+        // Filter out the current product. Do NOT filter out already-linked
+        // products — instead, mark them as "Already linked" so the user
+        // can see WHY they can't be selected.
         const linkedIds = variantGroup?.members.map(m => m.productId) || [];
         const filtered = data.products.filter(
-          (p: Product) => p.id !== product.id && !linkedIds.includes(p.id)
+          (p: ProductSearchResult) => p.id !== product.id
         );
-        setSearchResults(filtered);
+        // Mark each result with its availability status
+        const enriched = filtered.map((p: ProductSearchResult) => {
+          const isAlreadyInGroup = linkedIds.includes(p.id);
+          const isLinkedElsewhere = !isAlreadyInGroup &&
+            p.variantMemberships &&
+            p.variantMemberships.length > 0 &&
+            p.variantMemberships[0].variantGroup.primaryProductId !== product.id;
+          return {
+            ...p,
+            isAvailable: !isAlreadyInGroup && !isLinkedElsewhere,
+            isAlreadyInGroup,
+            isLinkedElsewhere,
+          };
+        });
+        setSearchResults(enriched);
       }
     } catch (error) {
       console.error('Error searching products:', error);
@@ -286,6 +306,18 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
   // Get current product's member info
   const currentMember = variantGroup?.members.find(m => m.productId === product.id);
 
+  // Is this product the PARENT (primary) or a VARIANT (child)?
+  // If the product has a variantGroup but is NOT the primaryProductId,
+  // it's a variant of another product. In that case, we hide the "Link as
+  // Variant" button and show "Already linked as a variant of {parent}".
+  const isParent = variantGroup?.primaryProductId === product.id;
+  const isVariant = variantGroup && !isParent;
+  const parentProduct = isVariant
+    ? variantGroup?.members.find(m => m.productId === variantGroup.primaryProductId)?.product
+    : null;
+  const parentIdLabel = parentProduct?.ndNumber ||
+    (parentProduct?.barcode ? `Barcode: ${parentProduct.barcode}` : null);
+
   return (
     <Card>
       <CardHeader
@@ -461,16 +493,53 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
             </div>
           )}
 
-          {/* Link new variant */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full h-9"
-            onClick={() => setShowLinkDialog(true)}
-          >
-            <Link2 className="h-4 w-4 mr-2" />
-            Link as Variant
-          </Button>
+          {/* If this product IS a variant (not the parent), show parent info
+              and DO NOT show the "Link as Variant" button. A product that is
+              already a variant cannot be a parent of its own variants. */}
+          {isVariant ? (
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  This product is already linked as a variant
+                </span>
+              </div>
+              {parentIdLabel && (
+                <p className="text-sm text-muted-foreground ml-6">
+                  Parent: <span className="font-mono font-medium">{parentIdLabel}</span>
+                </p>
+              )}
+              {parentProduct?.nameEn && (
+                <p className="text-xs text-muted-foreground ml-6">
+                  {parentProduct.nameEn}
+                </p>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-6 h-8 text-xs"
+                onClick={() => {
+                  // Navigate to the parent product
+                  if (variantGroup?.primaryProductId) {
+                    window.location.href = `/?product=${variantGroup.primaryProductId}`;
+                  }
+                }}
+              >
+                View Parent Product
+              </Button>
+            </div>
+          ) : (
+            /* Link new variant — only shown if this product is NOT already a variant */
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-9"
+              onClick={() => setShowLinkDialog(true)}
+            >
+              <Link2 className="h-4 w-4 mr-2" />
+              Link as Variant
+            </Button>
+          )}
 
           {/* Link Dialog */}
           <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
@@ -503,25 +572,51 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
 
                 {/* Search results */}
                 {searchResults.length > 0 && (
-                  <ScrollArea className="h-[150px] rounded-md border">
-                    {searchResults.map((result) => (
-                      <div
-                        key={result.id}
-                        className={`flex items-center gap-2 p-2 cursor-pointer hover:bg-accent ${
-                          selectedProductId === result.id ? 'bg-accent' : ''
-                        }`}
-                        onClick={() => setSelectedProductId(result.id)}
-                      >
-                        <div className="text-sm">
-                          <span className="font-mono text-xs">{result.ndNumber || result.barcode}</span>
-                          <span className="ml-2">{result.nameEn || 'Unnamed'}</span>
-                          {result.color && (
-                            <Badge variant="outline" className="ml-2 text-xs">{result.color}</Badge>
-                          )}
+                  <div className="h-[200px] rounded-md border overflow-y-auto">
+                    {searchResults.map((result: any) => {
+                      const img = result.images?.[0]?.thumbnailUrl || result.images?.[0]?.imageUrl;
+                      const isAvailable = result.isAvailable !== false;
+                      return (
+                        <div
+                          key={result.id}
+                          className={`flex items-center gap-2 p-2 ${
+                            isAvailable ? 'cursor-pointer hover:bg-accent' : 'opacity-50 cursor-not-allowed'
+                          } ${selectedProductId === result.id ? 'bg-accent' : ''}`}
+                          onClick={() => {
+                            if (isAvailable) setSelectedProductId(result.id);
+                          }}
+                        >
+                          {/* Product thumbnail */}
+                          <div className="w-10 h-10 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                            {img ? (
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Layers className="h-4 w-4 text-muted-foreground/50" />
+                            )}
+                          </div>
+                          {/* Product info */}
+                          <div className="flex-1 min-w-0 text-sm">
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-xs">
+                                {result.ndNumber || result.barcode || '(no ID)'}
+                              </span>
+                              <span className="truncate ml-1">
+                                {result.nameEn || 'Unnamed'}
+                              </span>
+                            </div>
+                            {/* Status badge */}
+                            {result.isAlreadyInGroup ? (
+                              <Badge variant="secondary" className="text-[10px] mt-0.5">Already in this group</Badge>
+                            ) : result.isLinkedElsewhere ? (
+                              <Badge variant="destructive" className="text-[10px] mt-0.5">Already linked as variant</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] mt-0.5 text-green-600">Available</Badge>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </ScrollArea>
+                      );
+                    })}
+                  </div>
                 )}
 
                 {/* Color override - simple dropdown */}
