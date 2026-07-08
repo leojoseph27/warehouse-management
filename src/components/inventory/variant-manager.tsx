@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Product, VariantGroup, VariantMember } from '@/store/inventory-store';
 import { COLOR_OPTIONS, getColorAr } from '@/lib/lookups';
 import { BarcodeScanner as BarcodeScannerModal } from './barcode-scanner-modal';
@@ -213,33 +212,51 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
     }
   };
 
-  // Remove member from group
-  const removeMember = async (memberId: string) => {
-    setIsLoading(true);
+  // Unlink a single variant member — asks for confirmation first,
+  // removes ONLY the relationship (not the product, images, or data).
+  // If the group is left with ≤1 member, the entire group is deleted.
+  const [unlinkTarget, setUnlinkTarget] = useState<VariantMember | null>(null);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
+  const confirmUnlink = async () => {
+    if (!unlinkTarget || !variantGroup) return;
+    setIsUnlinking(true);
     try {
-      const res = await fetch(`/api/variants/member/${memberId}`, {
+      const res = await fetch(`/api/variants/member/${unlinkTarget.id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        setVariantGroup(prev => {
-          if (!prev) return null;
-          const newMembers = prev.members.filter(m => m.id !== memberId);
-          // If only one member left, delete the whole group
-          if (newMembers.length <= 1) {
-            return null;
+        // Check how many members remain after this removal
+        const remainingMembers = variantGroup.members.filter(
+          m => m.id !== unlinkTarget.id
+        );
+
+        if (remainingMembers.length <= 1) {
+          // If 0 or 1 members remain, the variant group is no longer useful.
+          // Delete the entire group (the remaining product is just a normal product again).
+          if (variantGroup) {
+            await fetch(`/api/variants/${variantGroup.id}`, { method: 'DELETE' });
           }
-          return { ...prev, members: newMembers };
-        });
-        toast.success('Variant removed');
+          setVariantGroup(null);
+        } else {
+          // Update local state — remove only this member, keep all others
+          setVariantGroup(prev => prev ? {
+            ...prev,
+            members: remainingMembers,
+          } : null);
+        }
+
+        toast.success('Variant unlinked successfully');
         onVariantChange?.();
       } else {
-        toast.error('Failed to remove variant');
+        toast.error('Failed to unlink variant');
       }
     } catch (error) {
-      console.error('Error removing variant:', error);
-      toast.error('Failed to remove variant');
+      console.error('Error unlinking variant:', error);
+      toast.error('Failed to unlink variant');
     } finally {
-      setIsLoading(false);
+      setIsUnlinking(false);
+      setUnlinkTarget(null);
     }
   };
 
@@ -331,53 +348,116 @@ export function VariantManager({ product, onVariantChange }: VariantManagerProps
           {/* Existing variants */}
           {variantGroup && !isLoading && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Linked Variants</Label>
-              <ScrollArea className="h-[200px] rounded-md border p-2">
+              <Label className="text-sm font-medium">Linked Variants ({variantGroup.members.length})</Label>
+              <div className="space-y-2">
                 {variantGroup.members.map((member) => {
                   const isCurrentProduct = member.productId === product.id;
                   const memberProduct = member.product;
+                  const memberImage = memberProduct?.images?.[0]?.imageUrl || memberProduct?.images?.[0]?.thumbnailUrl;
                   return (
                     <div
                       key={member.id}
-                      className={`flex items-center justify-between p-2 rounded ${
-                        isCurrentProduct ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
+                      className={`flex items-center gap-3 p-3 rounded-lg border ${
+                        isCurrentProduct ? 'bg-primary/5 border-primary/30' : 'bg-card border-border'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm">
-                          <span className="font-medium">
-                            {memberProduct?.sourceRow ? `SR ${memberProduct.sourceRow}` : ''}
-                          </span>
-                          <span className="text-muted-foreground ml-1">
-                            {memberProduct?.ndNumber || memberProduct?.barcode || member.productId}
-                          </span>
-                          <span className="ml-2 truncate max-w-[150px]">
-                            {memberProduct?.nameEn || 'Unnamed'}
-                          </span>
-                        </div>
-                        {(member.color || memberProduct?.color) && (
-                          <Badge variant="outline" className="text-xs">
-                            {member.color || memberProduct?.color}
-                          </Badge>
-                        )}
-                        {isCurrentProduct && (
-                          <Badge variant="default" className="text-xs">Current</Badge>
+                      {/* Product image thumbnail */}
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-muted shrink-0 flex items-center justify-center">
+                        {memberImage ? (
+                          <img src={memberImage} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Layers className="h-5 w-5 text-muted-foreground/50" />
                         )}
                       </div>
+
+                      {/* Product info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium truncate">
+                            {memberProduct?.nameEn || 'Unnamed'}
+                          </span>
+                          {isCurrentProduct && (
+                            <Badge variant="default" className="text-[10px] py-0">Current</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          {memberProduct?.ndNumber && (
+                            <span className="font-mono">{memberProduct.ndNumber}</span>
+                          )}
+                          {memberProduct?.barcode && (
+                            <span className="font-mono">· {memberProduct.barcode}</span>
+                          )}
+                        </div>
+                        {/* Variant attributes */}
+                        {(member.color || memberProduct?.color) && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Badge variant="outline" className="text-[10px] py-0">
+                              {member.color || memberProduct?.color}
+                            </Badge>
+                            {member.colorAr && (
+                              <Badge variant="outline" className="text-[10px] py-0" dir="rtl">
+                                {member.colorAr}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unlink button — NOT shown for the current product */}
                       {!isCurrentProduct && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-destructive hover:text-destructive"
-                          onClick={() => removeMember(member.id)}
-                        >
-                          <Unlink2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                              title="Unlink this variant"
+                              aria-label={`Unlink ${memberProduct?.nameEn || 'this variant'}`}
+                            >
+                              <Unlink2 className="h-4 w-4 sm:mr-1" />
+                              <span className="text-xs hidden sm:inline">Unlink</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Unlink this variant?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                <strong>{memberProduct?.nameEn || 'This product'}</strong>
+                                {memberProduct?.ndNumber && ` (${memberProduct.ndNumber})`}
+                                {' will be unlinked from the variant group.'}
+                                <br /><br />
+                                The product itself, its images, inventory, and pricing will NOT be affected.
+                                Only the variant relationship will be removed.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel disabled={isUnlinking}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setUnlinkTarget(member);
+                                  confirmUnlink();
+                                }}
+                                disabled={isUnlinking}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {isUnlinking ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                    Unlinking...
+                                  </>
+                                ) : (
+                                  'Unlink Variant'
+                                )}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
                   );
                 })}
-              </ScrollArea>
+              </div>
             </div>
           )}
 
