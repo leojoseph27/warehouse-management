@@ -38,19 +38,18 @@ async function pooledMap<T, R>(
 
 // ── Weighted stages (total = 100) ──
 const STAGE_WEIGHTS = {
-  preparing:   { start: 0,  end: 3  },  // 3%
-  loadingDb:   { start: 3,  end: 8  },  // 5%
-  loadingImgs: { start: 8,  end: 13 },  // 5%
-  dlPrimary:   { start: 13, end: 28 },  // 15%
-  dlZipImgs:   { start: 28, end: 73 },  // 45%
-  buildExcel:  { start: 73, end: 88 },  // 15%
-  buildZip:    { start: 88, end: 95 },  // 7%
-  finalize:    { start: 95, end: 100 }, // 5%
+  preparing:   { start: 0,  end: 3  },
+  loadingDb:   { start: 3,  end: 8  },
+  loadingImgs: { start: 8,  end: 13 },
+  dlPrimary:   { start: 13, end: 28 },
+  dlZipImgs:   { start: 28, end: 73 },
+  buildExcel:  { start: 73, end: 88 },
+  buildZip:    { start: 88, end: 95 },
+  finalize:    { start: 95, end: 100 },
 };
 
 /**
  * POST /api/export/start
- * Creates an export job, runs the export in the background, returns job ID.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -72,20 +71,26 @@ export async function POST(request: NextRequest) {
     });
 
     const jobId = job.id;
+    console.log(`[Export ${jobId}] Job created. mode=${exportMode} quality=${quality} srFrom=${srFrom} srTo=${srTo}`);
 
+    // Start the export in the background
     runExportJob(jobId, exportMode, quality, srFrom, srTo).catch(async (err) => {
-      console.error(`[export-job ${jobId}] FATAL:`, err);
+      console.error(`[Export ${jobId}] FATAL ERROR:`, err?.message || err);
+      console.error(`[Export ${jobId}] Stack:`, err?.stack);
       try {
         await db.exportJob.update({
           where: { id: jobId },
           data: {
             status: 'failed',
             stage: 'Failed',
-            errorMessage: err?.message || 'Unknown error',
+            errorMessage: `${err?.message || 'Unknown error'}\nStack: ${err?.stack || 'N/A'}`,
             completedAt: new Date(),
           },
         });
-      } catch {}
+        console.log(`[Export ${jobId}] Job marked as FAILED in database.`);
+      } catch (dbErr) {
+        console.error(`[Export ${jobId}] Failed to mark job as failed in DB:`, dbErr);
+      }
     });
 
     return NextResponse.json({ jobId });
@@ -99,14 +104,9 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Run the export job in the background with:
- * - Weighted stage progress (no fake timers)
- * - Batch processing (50 products per batch, 10 concurrent image downloads)
- * - Memory release after each batch
- * - Accurate ETA based on actual processing speed
- * - Speed metrics (products/sec, images/sec)
- * - Failure counting (images and products)
- * - Comprehensive server-side timing logs
+ * Run the export job. Every step is logged with timestamps.
+ * The DB is updated at every milestone — no throttling.
+ * A stall detector logs a warning if the same stage hasn't progressed in 30s.
  */
 async function runExportJob(
   jobId: string,
@@ -118,55 +118,60 @@ async function runExportJob(
   const t0 = Date.now();
   const folderSizeParam = quality === 'high' ? 'sz=w2000' : quality === 'medium' ? 'sz=w1000' : 'sz=w400';
   const previewSizeParam = 'sz=w400';
-  const PRODUCT_BATCH = 50;
-  const IMAGE_CONCURRENCY = 10;
 
-  // ── Timing log helper ──
-  const stageTimings: { stage: string; ms: number }[] = [];
-  function logStage(stage: string, startMs: number) {
-    const ms = Date.now() - startMs;
-    stageTimings.push({ stage, ms });
-    console.log(`[export-job ${jobId}] ⏱ ${stage}: ${ms}ms`);
+  // ── Logging helper ──
+  function log(msg: string) {
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    console.log(`[Export ${jobId}] [${elapsed}s] ${msg}`);
   }
+
   function logMemory() {
     const used = process.memoryUsage();
-    console.log(`[export-job ${jobId}] 📊 Memory: RSS=${(used.rss/1024/1024).toFixed(0)}MB Heap=${(used.heapUsed/1024/1024).toFixed(0)}MB/${(used.heapTotal/1024/1024).toFixed(0)}MB`);
+    log(`Memory: RSS=${(used.rss/1024/1024).toFixed(0)}MB Heap=${(used.heapUsed/1024/1024).toFixed(0)}MB/${(used.heapTotal/1024/1024).toFixed(0)}MB`);
   }
 
-  // ── Progress update helper with throttling ──
-  let lastUpdateMs = 0;
-  async function updateProgress(
+  // ── DB update helper (NO throttling — always writes) ──
+  async function updateDB(
     stage: string,
-    overallPct: number,
-    extra: {
-      totalProducts?: number;
-      processedProducts?: number;
-      totalImages?: number;
-      downloadedImages?: number;
-      imagesFailed?: number;
-      productsFailed?: number;
-      speed?: string;
-    } = {}
+    percentage: number,
+    extra: Record<string, any> = {}
   ) {
-    const now = Date.now();
-    // Throttle DB updates to max 1 per 500ms (except for major stage changes)
-    if (now - lastUpdateMs < 500 && overallPct < 100) return;
-    lastUpdateMs = now;
-
     try {
       await db.exportJob.update({
         where: { id: jobId },
         data: {
           stage,
-          percentage: Math.round(overallPct),
+          percentage: Math.round(percentage),
           updatedAt: new Date(),
           ...extra,
         },
       });
-    } catch {}
+    } catch (e: any) {
+      log(`⚠ DB update failed: ${e?.message}`);
+    }
   }
 
-  // ── Compute weighted percentage for a stage ──
+  // ── Stall detector ──
+  let lastProgressStage = '';
+  let lastProgressTime = Date.now();
+  let lastProgressPct = 0;
+
+  const stallChecker = setInterval(() => {
+    const stalledFor = (Date.now() - lastProgressTime) / 1000;
+    if (stalledFor > 30) {
+      log(`⚠⚠ STALL WARNING: Stage "${lastProgressStage}" has not progressed in ${stalledFor.toFixed(0)}s (last pct=${lastProgressPct}%)`);
+      logMemory();
+    }
+  }, 10000); // Check every 10s, warn if stalled > 30s
+
+  function trackProgress(stage: string, pct: number) {
+    if (stage !== lastProgressStage || pct !== lastProgressPct) {
+      lastProgressStage = stage;
+      lastProgressTime = Date.now();
+      lastProgressPct = pct;
+    }
+  }
+
   function stagePct(stageKey: keyof typeof STAGE_WEIGHTS, completed: number, total: number): number {
     const w = STAGE_WEIGHTS[stageKey];
     if (total <= 0) return w.end;
@@ -174,330 +179,365 @@ async function runExportJob(
     return w.start + (w.end - w.start) * ratio;
   }
 
-  await db.exportJob.update({
-    where: { id: jobId },
-    data: { status: 'processing', startedAt: new Date() },
-  });
-
-  // ═══════════════════════════════════════════
-  // STAGE 1: Preparing Export (0-3%)
-  // ═══════════════════════════════════════════
-  const tPrep = Date.now();
-  await updateProgress('Preparing export...', STAGE_WEIGHTS.preparing.start);
-  logMemory();
-  logStage('Preparing Export', tPrep);
-
-  // ═══════════════════════════════════════════
-  // STAGE 2: Loading Products from DB (3-8%)
-  // ═══════════════════════════════════════════
-  const tDb = Date.now();
-  await updateProgress('Loading products from database...', STAGE_WEIGHTS.loadingDb.start);
-
-  const where: any = {};
-  if (srFrom != null && srTo != null) {
-    where.sourceRow = { gte: srFrom, lte: srTo };
-  }
-
-  const data = await db.product.findMany({
-    where,
-    include: {
-      images: { orderBy: { displayOrder: 'asc' } },
-      original: true,
-      variantMemberships: { include: { variantGroup: true } },
-    },
-    orderBy: { sourceRow: 'asc' },
-  });
-
-  const totalProducts = data.length;
-  console.log(`[export-job ${jobId}] Products loaded: ${totalProducts}`);
-
-  if (totalProducts === 0) {
+  try {
+    log('Job started.');
+    logMemory();
     await db.exportJob.update({
       where: { id: jobId },
-      data: { status: 'failed', stage: 'No products found', errorMessage: 'No products to export', completedAt: new Date() },
+      data: { status: 'processing', startedAt: new Date() },
     });
-    return;
-  }
 
-  await updateProgress('Products loaded', STAGE_WEIGHTS.loadingDb.end, { totalProducts });
-  logStage('Loading Products (DB query)', tDb);
-  logMemory();
+    // ═══ STAGE 1: Preparing ═══
+    log('Preparing export...');
+    trackProgress('Preparing export...', 1);
+    await updateDB('Preparing export...', STAGE_WEIGHTS.preparing.start);
 
-  // ═══════════════════════════════════════════
-  // STAGE 3: Loading Image Metadata (8-13%)
-  // ═══════════════════════════════════════════
-  const tImgs = Date.now();
-  await updateProgress('Loading image metadata...', STAGE_WEIGHTS.loadingImgs.start);
+    // ═══ STAGE 2: Database query ═══
+    log('Querying database...');
+    trackProgress('Querying database...', 3);
+    await updateDB('Querying database...', STAGE_WEIGHTS.loadingDb.start);
 
-  // Build all image entries for the ZIP folder
-  const allImageEntries: { folderName: string; filename: string; url: string; productIndex: number }[] = [];
-  for (let r = 0; r < data.length; r++) {
-    const product = data[r] as any;
-    const folderName = product.ndNumber?.trim() ||
-      (product.barcode ? `Barcode_${product.barcode}` : `Product_${product.productId || product.sourceRow}`);
-    if (product.images && product.images.length > 0) {
-      for (let i = 0; i < product.images.length; i++) {
-        const img = product.images[i];
-        let imgUrl = '';
-        if (img.driveFileId) imgUrl = `https://drive.google.com/thumbnail?id=${img.driveFileId}&${folderSizeParam}`;
-        else if (img.thumbnailUrl) imgUrl = img.thumbnailUrl;
-        else if (img.imageUrl && !img.imageUrl.startsWith('data:')) imgUrl = img.imageUrl;
-        if (imgUrl) {
-          const filename = img.isPrimary ? 'primary.jpg' : `image${i + 1}.jpg`;
-          allImageEntries.push({ folderName, filename, url: imgUrl, productIndex: r });
-        }
-      }
+    const tDb = Date.now();
+    const where: any = {};
+    if (srFrom != null && srTo != null) {
+      where.sourceRow = { gte: srFrom, lte: srTo };
     }
-  }
 
-  const totalImages = allImageEntries.length;
-  console.log(`[export-job ${jobId}] Total images: ${totalImages}`);
-  await updateProgress('Image metadata loaded', STAGE_WEIGHTS.loadingImgs.end, { totalImages, totalProducts });
-  logStage('Loading Image Metadata', tImgs);
-
-  // ═══════════════════════════════════════════
-  // STAGE 4: Download Primary Images for Embedding (13-28%)
-  // ═══════════════════════════════════════════
-  const tDlPrimary = Date.now();
-  const imageCache = new Map<string, Buffer>();
-  let primaryDownloaded = 0;
-  let primaryFailed = 0;
-
-  const primaryTasks = data.map((product: any, index: number) => ({
-    product, index,
-    image: product.images?.find((img: any) => img.isPrimary) || product.images?.[0] || null,
-  })).filter(t => t.image !== null);
-
-  const totalPrimary = primaryTasks.length;
-  await updateProgress('Downloading primary images for embedding...', STAGE_WEIGHTS.dlPrimary.start, { totalImages });
-
-  await pooledMap(IMAGE_CONCURRENCY, primaryTasks, async (task) => {
-    const { image } = task;
-    const cacheKey = image.driveFileId || image.imageUrl || `${task.product.id}_${task.index}`;
-    if (imageCache.has(cacheKey)) { primaryDownloaded++; return; }
-
-    let previewUrl = '';
-    if (image.driveFileId) previewUrl = `https://drive.google.com/thumbnail?id=${image.driveFileId}&${previewSizeParam}`;
-    else if (image.thumbnailUrl) previewUrl = image.thumbnailUrl;
-    else if (image.imageUrl && !image.imageUrl.startsWith('data:')) previewUrl = image.imageUrl;
-
-    if (!previewUrl) { primaryDownloaded++; return; }
-
-    try {
-      const imgRes = await fetch(previewUrl, { redirect: 'follow' });
-      if (imgRes.ok) {
-        const rawBuffer = Buffer.from(await imgRes.arrayBuffer());
-        let previewBuffer = rawBuffer;
-        try {
-          previewBuffer = await sharp(rawBuffer)
-            .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 80 })
-            .toBuffer();
-        } catch { previewBuffer = rawBuffer; }
-        imageCache.set(cacheKey, previewBuffer);
-        primaryDownloaded++;
-      } else { primaryFailed++; primaryDownloaded++; }
-    } catch { primaryFailed++; primaryDownloaded++; }
-
-    // Report progress
-    const pct = stagePct('dlPrimary', primaryDownloaded, totalPrimary);
-    const speed = primaryDownloaded > 0 ? `${(primaryDownloaded / ((Date.now() - tDlPrimary) / 1000)).toFixed(1)} img/s` : '';
-    await updateProgress('Downloading primary images...', pct, {
-      downloadedImages: primaryDownloaded,
-      imagesFailed: primaryFailed,
-      speed,
+    const data = await db.product.findMany({
+      where,
+      include: {
+        images: { orderBy: { displayOrder: 'asc' } },
+        original: true,
+        variantMemberships: { include: { variantGroup: true } },
+      },
+      orderBy: { sourceRow: 'asc' },
     });
-  });
 
-  await updateProgress('Primary images downloaded', STAGE_WEIGHTS.dlPrimary.end, { downloadedImages: primaryDownloaded });
-  logStage('Download Primary Images', tDlPrimary);
-  logMemory();
+    const totalProducts = data.length;
+    log(`Loaded ${totalProducts} products in ${Date.now() - tDb}ms`);
+    logMemory();
 
-  // ═══════════════════════════════════════════
-  // STAGE 5: Download All Images for ZIP Folder (28-73%)
-  // ═══════════════════════════════════════════
-  const tDlZip = Date.now();
-  const archive = createZip();
-  let zipImagesAdded = 0;
-  let zipImagesFailed = 0;
-
-  await updateProgress('Downloading images for ZIP folder...', STAGE_WEIGHTS.dlZipImgs.start, { downloadedImages: 0 });
-
-  // Process images in batches to release memory
-  const IMAGE_BATCH = 100;
-  for (let batchStart = 0; batchStart < allImageEntries.length; batchStart += IMAGE_BATCH) {
-    const batch = allImageEntries.slice(batchStart, batchStart + IMAGE_BATCH);
-
-    await pooledMap(IMAGE_CONCURRENCY, batch, async (entry) => {
-      try {
-        const imgRes = await fetch(entry.url, { redirect: 'follow' });
-        if (imgRes.ok) {
-          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
-          archive.append(imgBuffer, { name: `Images/${entry.folderName}/${entry.filename}` });
-          zipImagesAdded++;
-        } else { zipImagesFailed++; }
-      } catch { zipImagesFailed++; }
-
-      const totalDl = zipImagesAdded + zipImagesFailed;
-      const pct = stagePct('dlZipImgs', totalDl, allImageEntries.length);
-      const speed = totalDl > 0 ? `${(totalDl / ((Date.now() - tDlZip) / 1000)).toFixed(1)} img/s` : '';
-      await updateProgress('Downloading images for ZIP folder...', pct, {
-        downloadedImages: totalDl,
-        imagesFailed: zipImagesFailed,
-        speed,
+    if (totalProducts === 0) {
+      log('No products found — aborting.');
+      clearInterval(stallChecker);
+      await db.exportJob.update({
+        where: { id: jobId },
+        data: { status: 'failed', stage: 'No products found', errorMessage: 'No products to export', completedAt: new Date() },
       });
-    });
+      return;
+    }
 
-    // Release memory between batches
-    if (global.gc) { try { global.gc(); } catch {} }
-  }
+    trackProgress('Products loaded', STAGE_WEIGHTS.loadingDb.end);
+    await updateDB('Products loaded', STAGE_WEIGHTS.loadingDb.end, { totalProducts });
 
-  await updateProgress('ZIP images downloaded', STAGE_WEIGHTS.dlZipImgs.end, { downloadedImages: zipImagesAdded + zipImagesFailed });
-  logStage('Download ZIP Images', tDlZip);
-  logMemory();
+    // ═══ STAGE 3: Grouping images ═══
+    log('Grouping images...');
+    trackProgress('Grouping images...', 8);
+    await updateDB('Grouping images...', STAGE_WEIGHTS.loadingImgs.start);
 
-  // ═══════════════════════════════════════════
-  // STAGE 6: Build Excel Workbook (73-88%)
-  // ═══════════════════════════════════════════
-  const tExcel = Date.now();
-  await updateProgress('Generating Excel workbook...', STAGE_WEIGHTS.buildExcel.start);
-
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const ExcelJS = require('exceljs');
-  const workbook = new ExcelJS.Workbook();
-  const ws = workbook.addWorksheet('Master Catalog');
-
-  const columns: any[] = [
-    { header: 'Primary Image', key: '_primaryImage', width: 15 },
-    ...COLUMN_DEFS.map((col: any) => ({
-      header: col.header, key: col.field,
-      width: Math.max(10, Math.min(50, (col.header?.length || 10) + 5)),
-    })),
-    { header: 'Image Folder', key: '_imageFolder', width: 30 },
-  ];
-  ws.columns = columns;
-  ws.getRow(1).font = { bold: true };
-  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
-
-  let processedProducts = 0;
-  let productsFailed = 0;
-
-  for (let r = 0; r < data.length; r++) {
-    try {
+    const allImageEntries: { folderName: string; filename: string; url: string; productIndex: number }[] = [];
+    for (let r = 0; r < data.length; r++) {
       const product = data[r] as any;
-      const rowIdx = r + 2;
       const folderName = product.ndNumber?.trim() ||
         (product.barcode ? `Barcode_${product.barcode}` : `Product_${product.productId || product.sourceRow}`);
-
-      const rowData: any = {};
-      for (const colDef of COLUMN_DEFS) {
-        let value: any;
-        if (colDef.field === 'imageLinks') value = resolveImageLinks(product);
-        else if (colDef.field === 'variants') value = resolveVariants(product, data);
-        else value = product[colDef.field];
-        if (typeof value === 'string' && value.length > 32767) {
-          value = value.slice(0, 32747) + '... [truncated]';
+      if (product.images && product.images.length > 0) {
+        for (let i = 0; i < product.images.length; i++) {
+          const img = product.images[i];
+          let imgUrl = '';
+          if (img.driveFileId) imgUrl = `https://drive.google.com/thumbnail?id=${img.driveFileId}&${folderSizeParam}`;
+          else if (img.thumbnailUrl) imgUrl = img.thumbnailUrl;
+          else if (img.imageUrl && !img.imageUrl.startsWith('data:')) imgUrl = img.imageUrl;
+          if (imgUrl) {
+            const filename = img.isPrimary ? 'primary.jpg' : `image${i + 1}.jpg`;
+            allImageEntries.push({ folderName, filename, url: imgUrl, productIndex: r });
+          }
         }
-        rowData[colDef.field] = value === null || value === undefined ? '' : value;
       }
-      rowData['_imageFolder'] = `Images/${folderName}`;
-      const row = ws.addRow(rowData);
-      row.height = 90;
+    }
 
-      // Embed primary image
-      const primaryImg = product.images?.find((img: any) => img.isPrimary) || product.images?.[0];
-      if (primaryImg) {
-        const cacheKey = primaryImg.driveFileId || primaryImg.imageUrl || `${product.id}_${r}`;
-        const cached = imageCache.get(cacheKey);
-        if (cached) {
+    const totalImages = allImageEntries.length;
+    log(`Found ${totalImages} images across ${totalProducts} products.`);
+    trackProgress('Images grouped', STAGE_WEIGHTS.loadingImgs.end);
+    await updateDB('Images grouped', STAGE_WEIGHTS.loadingImgs.end, { totalProducts, totalImages });
+
+    // ═══ STAGE 4: Download primary images for embedding ═══
+    log('Starting primary image downloads (concurrency=10)...');
+    trackProgress('Downloading primary images...', 13);
+    await updateDB('Downloading primary images...', STAGE_WEIGHTS.dlPrimary.start, { totalImages });
+
+    const imageCache = new Map<string, Buffer>();
+    let primaryDownloaded = 0;
+    let primaryFailed = 0;
+
+    const primaryTasks = data.map((product: any, index: number) => ({
+      product, index,
+      image: product.images?.find((img: any) => img.isPrimary) || product.images?.[0] || null,
+    })).filter(t => t.image !== null);
+
+    const totalPrimary = primaryTasks.length;
+    log(`Primary images to download: ${totalPrimary}`);
+
+    const tDlPrimary = Date.now();
+    await pooledMap(10, primaryTasks, async (task) => {
+      const { image } = task;
+      const cacheKey = image.driveFileId || image.imageUrl || `${task.product.id}_${task.index}`;
+      if (imageCache.has(cacheKey)) { primaryDownloaded++; return; }
+
+      let previewUrl = '';
+      if (image.driveFileId) previewUrl = `https://drive.google.com/thumbnail?id=${image.driveFileId}&${previewSizeParam}`;
+      else if (image.thumbnailUrl) previewUrl = image.thumbnailUrl;
+      else if (image.imageUrl && !image.imageUrl.startsWith('data:')) previewUrl = image.imageUrl;
+
+      if (!previewUrl) { primaryDownloaded++; return; }
+
+      try {
+        const imgRes = await fetch(previewUrl, { redirect: 'follow' });
+        if (imgRes.ok) {
+          const rawBuffer = Buffer.from(await imgRes.arrayBuffer());
+          let previewBuffer = rawBuffer;
           try {
-            const imageId = workbook.addImage({ buffer: cached, extension: 'jpeg' });
-            ws.addImage(imageId, { tl: { col: 0, row: rowIdx - 1 }, br: { col: 1, row: rowIdx }, editAs: 'oneCell' });
-          } catch {}
+            previewBuffer = await sharp(rawBuffer)
+              .resize(400, 400, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 80 })
+              .toBuffer();
+          } catch { previewBuffer = rawBuffer; }
+          imageCache.set(cacheKey, previewBuffer);
+        } else {
+          primaryFailed++;
+          log(`Primary image download failed: HTTP ${imgRes.status} for ${previewUrl.slice(0, 80)}`);
         }
+      } catch (err: any) {
+        primaryFailed++;
+        log(`Primary image download error: ${err?.message} for ${previewUrl.slice(0, 80)}`);
       }
 
-      processedProducts++;
-    } catch {
-      productsFailed++;
-      processedProducts++;
-    }
+      primaryDownloaded++;
 
-    // Report progress every batch or at the end
-    if (processedProducts % PRODUCT_BATCH === 0 || processedProducts === totalProducts) {
-      const pct = stagePct('buildExcel', processedProducts, totalProducts);
-      await updateProgress('Embedding images into Excel...', pct, {
-        processedProducts,
-        productsFailed,
+      // Log every 50 images
+      if (primaryDownloaded % 50 === 0 || primaryDownloaded === totalPrimary) {
+        const speed = ((primaryDownloaded / ((Date.now() - tDlPrimary) / 1000))).toFixed(1);
+        const pct = stagePct('dlPrimary', primaryDownloaded, totalPrimary);
+        log(`Downloaded primary image ${primaryDownloaded} / ${totalPrimary} (${speed} img/s, ${primaryFailed} failed)`);
+        trackProgress('Downloading primary images...', pct);
+        await updateDB('Downloading primary images...', pct, {
+          downloadedImages: primaryDownloaded,
+          imagesFailed: primaryFailed,
+          speed: `${speed} img/s`,
+        });
+      }
+    });
+
+    log(`Primary images done: ${primaryDownloaded} ok, ${primaryFailed} failed in ${Date.now() - tDlPrimary}ms`);
+    logMemory();
+    trackProgress('Primary images downloaded', STAGE_WEIGHTS.dlPrimary.end);
+    await updateDB('Primary images downloaded', STAGE_WEIGHTS.dlPrimary.end, { downloadedImages: primaryDownloaded });
+
+    // ═══ STAGE 5: Download all images for ZIP folder ═══
+    log('Starting ZIP image downloads (concurrency=10)...');
+    trackProgress('Downloading images for ZIP folder...', 28);
+    await updateDB('Downloading images for ZIP folder...', STAGE_WEIGHTS.dlZipImgs.start, { downloadedImages: 0 });
+
+    const archive = createZip();
+    let zipImagesAdded = 0;
+    let zipImagesFailed = 0;
+    const tDlZip = Date.now();
+
+    const IMAGE_BATCH = 100;
+    for (let batchStart = 0; batchStart < allImageEntries.length; batchStart += IMAGE_BATCH) {
+      const batchEnd = Math.min(batchStart + IMAGE_BATCH, allImageEntries.length);
+      const batch = allImageEntries.slice(batchStart, batchEnd);
+      log(`Processing image batch ${batchStart}-${batchEnd} of ${allImageEntries.length}`);
+
+      await pooledMap(10, batch, async (entry) => {
+        try {
+          const imgRes = await fetch(entry.url, { redirect: 'follow' });
+          if (imgRes.ok) {
+            const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+            archive.append(imgBuffer, { name: `Images/${entry.folderName}/${entry.filename}` });
+            zipImagesAdded++;
+          } else {
+            zipImagesFailed++;
+          }
+        } catch {
+          zipImagesFailed++;
+        }
+
+        const totalDl = zipImagesAdded + zipImagesFailed;
+        if (totalDl % 50 === 0 || totalDl === allImageEntries.length) {
+          const speed = ((totalDl / ((Date.now() - tDlZip) / 1000))).toFixed(1);
+          const pct = stagePct('dlZipImgs', totalDl, allImageEntries.length);
+          log(`Downloaded ZIP image ${totalDl} / ${allImageEntries.length} (${speed} img/s, ${zipImagesFailed} failed)`);
+          trackProgress('Downloading images for ZIP folder...', pct);
+          await updateDB('Downloading images for ZIP folder...', pct, {
+            downloadedImages: totalDl,
+            imagesFailed: zipImagesFailed,
+            speed: `${speed} img/s`,
+          });
+        }
       });
+
+      // Release memory between batches
+      if (global.gc) { try { global.gc(); } catch {} }
     }
+
+    log(`ZIP images done: ${zipImagesAdded} ok, ${zipImagesFailed} failed in ${Date.now() - tDlZip}ms`);
+    logMemory();
+    trackProgress('ZIP images downloaded', STAGE_WEIGHTS.dlZipImgs.end);
+    await updateDB('ZIP images downloaded', STAGE_WEIGHTS.dlZipImgs.end, { downloadedImages: zipImagesAdded + zipImagesFailed });
+
+    // ═══ STAGE 6: Build Excel workbook ═══
+    log('Building Excel workbook...');
+    trackProgress('Building Excel workbook...', 73);
+    await updateDB('Building Excel workbook...', STAGE_WEIGHTS.buildExcel.start);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const ws = workbook.addWorksheet('Master Catalog');
+
+    const columns: any[] = [
+      { header: 'Primary Image', key: '_primaryImage', width: 15 },
+      ...COLUMN_DEFS.map((col: any) => ({
+        header: col.header, key: col.field,
+        width: Math.max(10, Math.min(50, (col.header?.length || 10) + 5)),
+      })),
+      { header: 'Image Folder', key: '_imageFolder', width: 30 },
+    ];
+    ws.columns = columns;
+    ws.getRow(1).font = { bold: true };
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+    let processedProducts = 0;
+    let productsFailed = 0;
+    const tExcel = Date.now();
+
+    for (let r = 0; r < data.length; r++) {
+      try {
+        const product = data[r] as any;
+        const rowIdx = r + 2;
+        const folderName = product.ndNumber?.trim() ||
+          (product.barcode ? `Barcode_${product.barcode}` : `Product_${product.productId || product.sourceRow}`);
+
+        const rowData: any = {};
+        for (const colDef of COLUMN_DEFS) {
+          let value: any;
+          if (colDef.field === 'imageLinks') value = resolveImageLinks(product);
+          else if (colDef.field === 'variants') value = resolveVariants(product, data);
+          else value = product[colDef.field];
+          if (typeof value === 'string' && value.length > 32767) {
+            value = value.slice(0, 32747) + '... [truncated]';
+          }
+          rowData[colDef.field] = value === null || value === undefined ? '' : value;
+        }
+        rowData['_imageFolder'] = `Images/${folderName}`;
+        const row = ws.addRow(rowData);
+        row.height = 90;
+
+        // Embed primary image
+        const primaryImg = product.images?.find((img: any) => img.isPrimary) || product.images?.[0];
+        if (primaryImg) {
+          const cacheKey = primaryImg.driveFileId || primaryImg.imageUrl || `${product.id}_${r}`;
+          const cached = imageCache.get(cacheKey);
+          if (cached) {
+            try {
+              const imageId = workbook.addImage({ buffer: cached, extension: 'jpeg' });
+              ws.addImage(imageId, { tl: { col: 0, row: rowIdx - 1 }, br: { col: 1, row: rowIdx }, editAs: 'oneCell' });
+            } catch {}
+          }
+        }
+
+        processedProducts++;
+      } catch (err: any) {
+        productsFailed++;
+        processedProducts++;
+        log(`Product ${r + 1} failed: ${err?.message}`);
+      }
+
+      // Log + update DB every 50 products
+      if (processedProducts % 50 === 0 || processedProducts === totalProducts) {
+        const pct = stagePct('buildExcel', processedProducts, totalProducts);
+        const speed = ((processedProducts / ((Date.now() - tExcel) / 1000))).toFixed(1);
+        log(`Processed product ${processedProducts} / ${totalProducts} (${speed} prod/s)`);
+        trackProgress('Building Excel workbook...', pct);
+        await updateDB('Building Excel workbook...', pct, {
+          processedProducts,
+          productsFailed,
+          speed: `${speed} prod/s`,
+        });
+      }
+    }
+
+    // Free image cache
+    imageCache.clear();
+    if (global.gc) { try { global.gc(); } catch {} }
+
+    log(`Workbook rows done: ${processedProducts} products in ${Date.now() - tExcel}ms`);
+    log('Generating workbook buffer...');
+
+    const excelBuffer = await workbook.xlsx.writeBuffer();
+    log(`Workbook buffer generated: ${(excelBuffer.length / 1024 / 1024).toFixed(1)} MB`);
+    logMemory();
+    trackProgress('Workbook complete', STAGE_WEIGHTS.buildExcel.end);
+    await updateDB('Workbook complete', STAGE_WEIGHTS.buildExcel.end, { processedProducts: totalProducts });
+
+    // ═══ STAGE 7: Build ZIP ═══
+    log('Creating ZIP package...');
+    trackProgress('Creating ZIP package...', 88);
+    await updateDB('Creating ZIP package...', STAGE_WEIGHTS.buildZip.start);
+
+    archive.append(Readable.from(Buffer.from(excelBuffer)), { name: 'Products.xlsx' });
+    archive.finalize();
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of archive) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const zipBuffer = Buffer.concat(chunks);
+    const resultSize = zipBuffer.length;
+    log(`ZIP created: ${(resultSize / 1024 / 1024).toFixed(1)} MB`);
+    logMemory();
+    trackProgress('ZIP complete', STAGE_WEIGHTS.buildZip.end);
+    await updateDB('ZIP complete', STAGE_WEIGHTS.buildZip.end);
+
+    // ═══ STAGE 8: Finalize ═══
+    log('Storing export result in database...');
+    trackProgress('Storing result...', 95);
+    await updateDB('Storing result...', STAGE_WEIGHTS.finalize.start);
+
+    const resultBase64 = zipBuffer.toString('base64');
+    log(`Base64 encoding done: ${(resultBase64.length / 1024 / 1024).toFixed(1)} MB`);
+
+    await db.exportJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'completed',
+        stage: 'Completed',
+        percentage: 100,
+        processedProducts: totalProducts,
+        downloadedImages: zipImagesAdded,
+        resultBlob: resultBase64,
+        resultSize,
+        completedAt: new Date(),
+      },
+    });
+
+    // ── Final summary ──
+    const tTotal = Date.now() - t0;
+    const totalFailed = primaryFailed + zipImagesFailed;
+    log('═══ EXPORT COMPLETE ═══');
+    log(`  Total time: ${(tTotal / 1000).toFixed(1)}s`);
+    log(`  Products: ${totalProducts} (${productsFailed} failed)`);
+    log(`  Images: ${zipImagesAdded} ok, ${totalFailed} failed`);
+    log(`  ZIP size: ${(resultSize / 1024 / 1024).toFixed(1)} MB`);
+    logMemory();
+
+    clearInterval(stallChecker);
+  } catch (err: any) {
+    clearInterval(stallChecker);
+    log(`═══ FATAL ERROR ═══`);
+    log(`  Message: ${err?.message}`);
+    log(`  Stack: ${err?.stack}`);
+    logMemory();
+    throw err; // Re-throw so the .catch() in POST handler marks it as failed
   }
-
-  // Free image cache — no longer needed
-  imageCache.clear();
-  if (global.gc) { try { global.gc(); } catch {} }
-
-  const excelBuffer = await workbook.xlsx.writeBuffer();
-  await updateProgress('Workbook generated', STAGE_WEIGHTS.buildExcel.end, { processedProducts: totalProducts });
-  logStage('Build Excel Workbook', tExcel);
-  logMemory();
-
-  // ═══════════════════════════════════════════
-  // STAGE 7: Build ZIP (88-95%)
-  // ═══════════════════════════════════════════
-  const tZip = Date.now();
-  await updateProgress('Creating ZIP package...', STAGE_WEIGHTS.buildZip.start);
-
-  // Add Excel to the archive (archive already has images from stage 5)
-  archive.append(Readable.from(Buffer.from(excelBuffer)), { name: 'Products.xlsx' });
-
-  archive.finalize();
-  const chunks: Buffer[] = [];
-  for await (const chunk of archive) {
-    chunks.push(Buffer.from(chunk));
-  }
-  const zipBuffer = Buffer.concat(chunks);
-  const resultSize = zipBuffer.length;
-
-  await updateProgress('ZIP created', STAGE_WEIGHTS.buildZip.end);
-  logStage('Build ZIP', tZip);
-  logMemory();
-
-  // ═══════════════════════════════════════════
-  // STAGE 8: Finalize (95-100%)
-  // ═══════════════════════════════════════════
-  const tFinal = Date.now();
-  await updateProgress('Storing export result...', STAGE_WEIGHTS.finalize.start);
-
-  const resultBase64 = zipBuffer.toString('base64');
-
-  await db.exportJob.update({
-    where: { id: jobId },
-    data: {
-      status: 'completed',
-      stage: 'Completed',
-      percentage: 100,
-      processedProducts: totalProducts,
-      downloadedImages: zipImagesAdded,
-      resultBlob: resultBase64,
-      resultSize,
-      completedAt: new Date(),
-    },
-  });
-
-  logStage('Finalize', tFinal);
-
-  // ── Final summary log ──
-  const tTotal = Date.now() - t0;
-  const totalImgFailed = primaryFailed + zipImagesFailed;
-  console.log(`[export-job ${jobId}] ═══ EXPORT COMPLETE ═══`);
-  console.log(`[export-job ${jobId}]   Total time: ${(tTotal / 1000).toFixed(1)}s`);
-  console.log(`[export-job ${jobId}]   Products: ${totalProducts} (${productsFailed} failed)`);
-  console.log(`[export-job ${jobId}]   Images: ${zipImagesAdded} ok, ${totalImgFailed} failed`);
-  console.log(`[export-job ${jobId}]   ZIP size: ${(resultSize / 1024 / 1024).toFixed(1)} MB`);
-  console.log(`[export-job ${jobId}]   Stage timings:`);
-  for (const t of stageTimings) {
-    console.log(`[export-job ${jobId}]     ${t.stage}: ${t.ms}ms (${(t.ms / tTotal * 100).toFixed(0)}%)`);
-  }
-  logMemory();
 }
