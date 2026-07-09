@@ -192,31 +192,20 @@ async function runExportJob(
     trackProgress('Preparing export...', 1);
     await updateDB('Preparing export...', STAGE_WEIGHTS.preparing.start);
 
-    // ═══ STAGE 2: Database query ═══
-    log('Querying database...');
+    // ═══ STAGE 2: Database query — PAGINATED, NO EAGER LOADS ═══
+    log('Starting database query...');
     trackProgress('Querying database...', 3);
     await updateDB('Querying database...', STAGE_WEIGHTS.loadingDb.start);
 
-    const tDb = Date.now();
     const where: any = {};
     if (srFrom != null && srTo != null) {
       where.sourceRow = { gte: srFrom, lte: srTo };
     }
 
-    const data = await db.product.findMany({
-      where,
-      include: {
-        images: { orderBy: { displayOrder: 'asc' } },
-        original: true,
-        variantMemberships: { include: { variantGroup: true } },
-      },
-      orderBy: { sourceRow: 'asc' },
-    });
-
-    const totalProducts = data.length;
-    log(`Loaded ${totalProducts} products in ${Date.now() - tDb}ms`);
-    logMemory();
-
+    // Step 2a: Count total products (fast query)
+    const tCount = Date.now();
+    const totalProducts = await db.product.count({ where });
+    log(`Product count: ${totalProducts} in ${Date.now() - tCount}ms`);
     if (totalProducts === 0) {
       log('No products found — aborting.');
       clearInterval(stallChecker);
@@ -226,15 +215,153 @@ async function runExportJob(
       });
       return;
     }
+    if (Date.now() - tCount > 3000) {
+      log(`⚠ COUNT query took ${Date.now() - tCount}ms (>3s warning)`);
+    }
+
+    // Step 2b: Load products in BATCHES — no includes (no images, no original, no variants)
+    // Only select the fields needed for the export. This is MUCH faster than
+    // a single findMany with nested includes.
+    const BATCH_SIZE = 200;
+    const data: any[] = [];
+    const tProducts = Date.now();
+    let lastSourceRow: number | null = null;
+    let batchNum = 0;
+
+    log(`Loading products in batches of ${BATCH_SIZE} (no eager loads)...`);
+
+    while (true) {
+      const batchWhere = { ...where };
+      if (lastSourceRow !== null) {
+        batchWhere.sourceRow = { ...(where.sourceRow || {}), gt: lastSourceRow };
+      }
+
+      const tBatch = Date.now();
+      const batch = await db.product.findMany({
+        where: batchWhere,
+        orderBy: { sourceRow: 'asc' },
+        take: BATCH_SIZE,
+        // NO includes — just the product fields. This is the key optimization.
+        // Images are loaded separately below. Variants are resolved at export time
+        // using the variantMemberships relation, but we load them in a separate
+        // query to avoid a massive JOIN.
+      });
+
+      if (batch.length === 0) break;
+
+      data.push(...batch);
+      lastSourceRow = batch[batch.length - 1].sourceRow;
+      batchNum++;
+
+      const batchMs = Date.now() - tBatch;
+      log(`Batch ${batchNum}: ${batch.length} products in ${batchMs}ms (total: ${data.length}/${totalProducts})`);
+      if (batchMs > 3000) {
+        log(`⚠ Batch ${batchNum} took ${batchMs}ms (>3s warning)`);
+      }
+
+      // Update progress within the DB loading stage
+      const pct = stagePct('loadingDb', data.length, totalProducts);
+      trackProgress('Querying database...', pct);
+      await updateDB('Querying database...', pct, { totalProducts });
+    }
+
+    log(`Database query completed in ${Date.now() - tProducts}ms`);
+    log(`Products loaded: ${data.length}`);
+    logMemory();
+    if (Date.now() - tProducts > 3000) {
+      log(`⚠ Product query took ${Date.now() - tProducts}ms (>3s warning)`);
+    }
 
     trackProgress('Products loaded', STAGE_WEIGHTS.loadingDb.end);
-    await updateDB('Products loaded', STAGE_WEIGHTS.loadingDb.end, { totalProducts });
+    await updateDB('Products loaded', STAGE_WEIGHTS.loadingDb.end, { totalProducts: data.length });
 
-    // ═══ STAGE 3: Grouping images ═══
-    log('Grouping images...');
-    trackProgress('Grouping images...', 8);
-    await updateDB('Grouping images...', STAGE_WEIGHTS.loadingImgs.start);
+    // Step 2c: Load ALL images in a single query (no JOIN with products)
+    log('Loading images separately (single query, no JOIN)...');
+    const tImages = Date.now();
 
+    const allImages = await db.productImage.findMany({
+      where: {
+        productId: { in: data.map((p: any) => p.id) },
+      },
+      orderBy: [{ productId: 'asc' }, { displayOrder: 'asc' }],
+      select: {
+        id: true,
+        productId: true,
+        imageUrl: true,
+        thumbnailUrl: true,
+        driveFileId: true,
+        isPrimary: true,
+        displayOrder: true,
+        filename: true,
+        mimeType: true,
+        fileSize: true,
+      },
+    });
+
+    log(`Image query completed in ${Date.now() - tImages}ms`);
+    log(`Images loaded: ${allImages.length}`);
+    if (Date.now() - tImages > 3000) {
+      log(`⚠ Image query took ${Date.now() - tImages}ms (>3s warning)`);
+    }
+
+    // Step 2d: Group images by productId in memory
+    log('Grouping images by productId in memory...');
+    const tGroup = Date.now();
+    const imageMap = new Map<string, any[]>();
+    for (const img of allImages) {
+      const arr = imageMap.get(img.productId) || [];
+      arr.push(img);
+      imageMap.set(img.productId, arr);
+    }
+
+    // Attach images to products
+    for (const product of data) {
+      product.images = imageMap.get(product.id) || [];
+    }
+
+    log(`Image grouping completed in ${Date.now() - tGroup}ms`);
+    log(`Products with images: ${data.filter((p: any) => p.images && p.images.length > 0).length}`);
+    logMemory();
+
+    // Step 2e: Load variant memberships separately (lightweight)
+    log('Loading variant memberships separately...');
+    const tVariants = Date.now();
+
+    const allMemberships = await db.variantMember.findMany({
+      where: {
+        productId: { in: data.map((p: any) => p.id) },
+      },
+      include: {
+        variantGroup: { select: { id: true, primaryProductId: true } },
+      },
+    });
+
+    log(`Variant memberships loaded: ${allMemberships.length} in ${Date.now() - tVariants}ms`);
+    if (Date.now() - tVariants > 3000) {
+      log(`⚠ Variant query took ${Date.now() - tVariants}ms (>3s warning)`);
+    }
+
+    // Group memberships by productId
+    const membershipMap = new Map<string, any[]>();
+    for (const m of allMemberships) {
+      const arr = membershipMap.get(m.productId) || [];
+      arr.push(m);
+      membershipMap.set(m.productId, arr);
+    }
+
+    for (const product of data) {
+      product.variantMemberships = membershipMap.get(product.id) || [];
+    }
+
+    // Free the maps
+    imageMap.clear();
+    membershipMap.clear();
+
+    const totalImagesCount = allImages.length;
+    log(`Total DB loading complete: ${data.length} products, ${totalImagesCount} images, ${allMemberships.length} variant memberships in ${Date.now() - tProducts}ms total`);
+    logMemory();
+
+    // Build allImageEntries for the ZIP folder (now that images are attached to products)
     const allImageEntries: { folderName: string; filename: string; url: string; productIndex: number }[] = [];
     for (let r = 0; r < data.length; r++) {
       const product = data[r] as any;
@@ -254,11 +381,8 @@ async function runExportJob(
         }
       }
     }
-
     const totalImages = allImageEntries.length;
-    log(`Found ${totalImages} images across ${totalProducts} products.`);
-    trackProgress('Images grouped', STAGE_WEIGHTS.loadingImgs.end);
-    await updateDB('Images grouped', STAGE_WEIGHTS.loadingImgs.end, { totalProducts, totalImages });
+    log(`Image entries for ZIP: ${totalImages}`);
 
     // ═══ STAGE 4: Download primary images for embedding ═══
     log('Starting primary image downloads (concurrency=10)...');
