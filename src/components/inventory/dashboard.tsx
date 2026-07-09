@@ -24,6 +24,7 @@ import {
   Edit3,
   Layers,
   ArrowRight,
+  FolderCheck,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ export function Dashboard() {
   const { setView, stats, setStats, setLoading } = useInventoryStore();
   const [isClearing, setIsClearing] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isCheckingFolders, setIsCheckingFolders] = useState(false);
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
@@ -81,6 +83,34 @@ export function Dashboard() {
       console.error('Error loading recent products:', error);
     } finally {
       setIsLoadingRecent(false);
+    }
+  };
+
+  // Check and fix Google Drive folder organization — ensures every product's
+  // images are in a folder named after the product's ND Number or Product ID.
+  const handleCheckFolders = async () => {
+    setIsCheckingFolders(true);
+    toast.info('Checking Google Drive folders... This may take a while.');
+    try {
+      const res = await fetch('/api/images/check-folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(
+          `Done! Checked ${data.totalProducts} products, moved ${data.filesMoved} files, ${data.failures} failures. (${data.duration})`
+        );
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Failed to check folders');
+      }
+    } catch (error) {
+      console.error('Error checking folders:', error);
+      toast.error('Failed to check Drive folders');
+    } finally {
+      setIsCheckingFolders(false);
     }
   };
 
@@ -364,6 +394,21 @@ export function Dashboard() {
                 </>
               )}
             </div>
+            {/* Check Drive Folders — ensures all product images are in the
+                correct folder (ND Number or Product ID) on Google Drive */}
+            <Button
+              variant="outline"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
+              onClick={handleCheckFolders}
+              disabled={isCheckingFolders}
+            >
+              {isCheckingFolders ? (
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 animate-spin" />
+              ) : (
+                <FolderCheck className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              )}
+              <span className="text-xs">{isCheckingFolders ? 'Checking...' : 'Check Folders'}</span>
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

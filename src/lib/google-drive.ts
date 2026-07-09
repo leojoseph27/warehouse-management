@@ -497,3 +497,31 @@ export async function verifyDriveAccess(): Promise<{ ok: boolean; folderId: stri
     folderName: res.data.name,
   };
 }
+
+/**
+ * Move a file to a specific folder in Google Drive.
+ * Uses the Drive API's addParents/removeParents parameters.
+ *
+ * @param fileId    The Drive file ID to move
+ * @param folderId  The destination folder ID
+ */
+export async function moveFileToFolder(fileId: string, folderId: string): Promise<void> {
+  const drive = getDriveClient();
+
+  // Get current parents of the file
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fileRes: any = await drive.files.get({
+    fileId,
+    fields: 'parents',
+  });
+
+  const previousParents = (fileRes.data.parents || []).join(',');
+
+  // Move the file: add new parent, remove old parents
+  await drive.files.update({
+    fileId,
+    addParents: folderId,
+    removeParents: previousParents || undefined,
+    fields: 'id, parents',
+  });
+}
