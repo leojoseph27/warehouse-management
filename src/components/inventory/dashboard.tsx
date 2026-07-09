@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +61,7 @@ export function Dashboard() {
   const [isLoadingRecent, setIsLoadingRecent] = useState(false);
   const [resumableJob, setResumableJob] = useState<any | null>(null);
   const [recentExports, setRecentExports] = useState<any[]>([]);
+  const completionNotifiedRef = useRef<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -147,6 +148,29 @@ export function Dashboard() {
   const handleDismissResume = () => {
     setResumableJob(null);
   };
+
+  // Memoized callbacks for ExportProgressDialog — stable identity prevents
+  // the dialog's useEffects from re-firing on every parent re-render.
+  const handleProgressDialogClose = useCallback(() => {
+    setShowProgressDialog(false);
+    setIsExporting(false);
+    setResumeJobId(null);
+    setProgressExportParams(null);
+  }, []);
+
+  const handleProgressDialogComplete = useCallback(() => {
+    setShowProgressDialog(false);
+    setIsExporting(false);
+    setResumeJobId(null);
+    setProgressExportParams(null);
+    // GUARDED toast: only fire once per job. The ref stores the last jobId
+    // we notified, so if onComplete fires again for the same job (e.g.,
+    // due to React StrictMode double-invocation), we skip the duplicate.
+    // The dialog also has its own completionHandledRef guard.
+    toast.success('Export completed successfully');
+    // Refresh history now that a new export is done.
+    loadRecentExports();
+  }, []);
 
   // Build the export URL based on the selected export mode
   const getExportUrl = (baseUrl: string): string => {
@@ -838,21 +862,8 @@ export function Dashboard() {
         exportParams={progressExportParams}
         resumeJobId={resumeJobId}
         filename={progressFilename}
-        onClose={() => {
-          setShowProgressDialog(false);
-          setIsExporting(false);
-          setResumeJobId(null);
-          setProgressExportParams(null);
-        }}
-        onComplete={() => {
-          setShowProgressDialog(false);
-          setIsExporting(false);
-          setResumeJobId(null);
-          setProgressExportParams(null);
-          toast.success('Export completed successfully');
-          // Refresh history now that a new export is done.
-          loadRecentExports();
-        }}
+        onClose={handleProgressDialogClose}
+        onComplete={handleProgressDialogComplete}
       />
     </div>
   );

@@ -798,10 +798,67 @@ async function transitionToBuildingZip(
 
   const isThumbnailsMode = job.exportMode === 'excel-thumbnails';
 
+  // ── Dynamic empty-column analysis ──
+  // Scan the parsed chunk data to find extra columns where every row is empty.
+  // Those columns are excluded from the workbook entirely.
+  // Required product columns (COLUMN_DEFS) are ALWAYS included.
+  const allExtraColumnDefs: { header: string; key: string; width: number }[] = [
+    { header: 'Primary Image Path', key: '_primaryImagePath', width: 40 },
+    { header: 'Image Folder', key: '_imageFolder', width: 30 },
+    { header: 'Image Count', key: '_imageCount', width: 12 },
+    { header: 'Google Drive URL', key: '_googleDriveUrl', width: 50 },
+    { header: 'Relative Image Path', key: '_relativeImagePath', width: 40 },
+  ];
+  if (isThumbnailsMode) {
+    allExtraColumnDefs.push(
+      { header: 'Thumbnail URL', key: '_thumbnailUrl', width: 60 },
+      { header: 'Full Image URL', key: '_fullImageUrl', width: 60 },
+      { header: 'Google Drive File ID', key: '_driveFileId', width: 40 },
+    );
+  }
+
+  const emptyExtraColumns = new Set<string>();
+  for (const def of allExtraColumnDefs) {
+    let allEmpty = true;
+    for (const chunk of parsedChunks) {
+      for (const row of chunk.rows) {
+        const val = (row as any)[def.key];
+        if (val !== null && val !== undefined && val !== '') {
+          allEmpty = false;
+          break;
+        }
+      }
+      if (!allEmpty) break;
+    }
+    if (allEmpty) emptyExtraColumns.add(def.key);
+  }
+  // For excel-thumbnails mode, also check if the Thumbnail column would be
+  // entirely empty (no products have images). If so, skip it.
+  let skipThumbnailColumn = false;
+  if (isThumbnailsMode) {
+    let anyThumbnailUrl = false;
+    for (const chunk of parsedChunks) {
+      for (const row of chunk.rows) {
+        if ((row as any)._thumbnailUrl) {
+          anyThumbnailUrl = true;
+          break;
+        }
+      }
+      if (anyThumbnailUrl) break;
+    }
+    if (!anyThumbnailUrl) {
+      skipThumbnailColumn = true;
+      console.log(`[Export ${job.id}] Skipping Thumbnail column — no products have image URLs`);
+    }
+  }
+  if (emptyExtraColumns.size > 0) {
+    console.log(`[Export ${job.id}] Skipping ${emptyExtraColumns.size} empty columns: ${Array.from(emptyExtraColumns).join(', ')}`);
+  }
+
   // Column definitions. For excel-thumbnails mode, add Thumbnail as the
   // FIRST column (before COLUMN_DEFS) plus the extra image URL columns.
   const columns: any[] = [];
-  if (isThumbnailsMode) {
+  if (isThumbnailsMode && !skipThumbnailColumn) {
     columns.push({ header: 'Thumbnail', key: '_thumbnail', width: 20 });
   }
   columns.push(
@@ -810,16 +867,11 @@ async function transitionToBuildingZip(
       key: col.field,
       width: Math.max(10, Math.min(50, (col.header?.length || 10) + 5)),
     })),
-    { header: 'Primary Image Path', key: '_primaryImagePath', width: 40 },
-    { header: 'Image Folder', key: '_imageFolder', width: 30 },
-    { header: 'Image Count', key: '_imageCount', width: 12 },
-    { header: 'Google Drive URL', key: '_googleDriveUrl', width: 50 },
-    { header: 'Relative Image Path', key: '_relativeImagePath', width: 40 },
   );
-  if (isThumbnailsMode) {
-    columns.push({ header: 'Thumbnail URL', key: '_thumbnailUrl', width: 60 });
-    columns.push({ header: 'Full Image URL', key: '_fullImageUrl', width: 60 });
-    columns.push({ header: 'Google Drive File ID', key: '_driveFileId', width: 40 });
+  for (const def of allExtraColumnDefs) {
+    if (!emptyExtraColumns.has(def.key)) {
+      columns.push(def);
+    }
   }
   ws.columns = columns;
   ws.getRow(1).font = { bold: true };
@@ -860,25 +912,30 @@ async function transitionToBuildingZip(
       }
 
       // ── Thumbnail column: IMAGE() formula for excel-thumbnails mode ──
-      if (isThumbnailsMode) {
+      // Only write if the Thumbnail column wasn't skipped (i.e., at least one
+      // product has an image URL).
+      if (isThumbnailsMode && !skipThumbnailColumn) {
         const thumbnailCell = addedRow.getCell('_thumbnail');
         const thumbnailUrl = excelRow._thumbnailUrl || '';
         if (thumbnailUrl) {
-          // Excel 365 IMAGE() function. If the URL is empty, show blank.
+          // Excel 365 IMAGE() function.
           // Formula: =IMAGE("https://drive.google.com/thumbnail?id=...&sz=w300")
           //
+          // ExcelJS formula format: { formula: 'IMAGE("url")', result: null }
+          // We use result: null (not '') so Excel knows to compute it.
+          //
           // Note: IMAGE() is only supported in Excel 365 and Excel for the Web.
-          // Older Excel versions will show #NAME? error. To handle this
-          // gracefully, we set the cell to a formula string — Excel 365 will
-          // evaluate it, older versions will display the formula as text or
-          // show the URL as a fallback (via the Thumbnail URL column).
-          thumbnailCell.value = {
-            formula: `IMAGE("${thumbnailUrl}")`,
-            result: '', // placeholder — Excel 365 will compute
-          } as any;
+          // Older Excel versions will show #NAME? error — the Thumbnail URL
+          // column provides a fallback (direct link).
+          const formula = `IMAGE("${thumbnailUrl}")`;
+          thumbnailCell.value = { formula, result: null } as any;
           // Set row height to make thumbnails visible.
           addedRow.height = 60;
           thumbnailsAdded++;
+          // Debug: log first 3 thumbnails to verify formula is set.
+          if (thumbnailsAdded <= 3) {
+            console.log(`[Export ${job.id}] Thumbnail #${thumbnailsAdded}: formula=${formula.substring(0, 80)}... cell.value type=${typeof thumbnailCell.value}`);
+          }
         } else {
           thumbnailCell.value = '';
         }

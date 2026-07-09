@@ -96,6 +96,7 @@ export function ExportProgressDialog({
   const cancelledRef = useRef<boolean>(false);
   const downloadTriggeredRef = useRef<boolean>(false);
   const pollCountRef = useRef<number>(0);
+  const completionHandledRef = useRef<boolean>(false);
 
   // Reset state when dialog opens.
   useEffect(() => {
@@ -110,6 +111,7 @@ export function ExportProgressDialog({
       consecutiveErrorsRef.current = 0;
       downloadTriggeredRef.current = false;
       pollCountRef.current = 0;
+      completionHandledRef.current = false;
     }
   }, [open, resumeJobId]);
 
@@ -233,7 +235,7 @@ export function ExportProgressDialog({
 
   // ── Main orchestrator loop ──
   const runOrchestrator = useCallback(async (jobId: string) => {
-    while (!cancelledRef.current) {
+    while (!cancelledRef.current && !completionHandledRef.current) {
       if (isProcessingRef.current) {
         await new Promise(r => setTimeout(r, 100));
         continue;
@@ -244,8 +246,9 @@ export function ExportProgressDialog({
         const done = await processOneChunk(jobId);
         consecutiveErrorsRef.current = 0;
 
-        if (done) {
+        if (done || completionHandledRef.current) {
           isProcessingRef.current = false;
+          console.log(`[export-orchestrator] Loop exiting — done=${done}, completionHandled=${completionHandledRef.current}`);
           return;
         }
       } catch (err: any) {
@@ -273,6 +276,7 @@ export function ExportProgressDialog({
 
       await new Promise(r => setTimeout(r, INTER_CHUNK_DELAY_MS));
     }
+    console.log(`[export-orchestrator] Loop exited — cancelled=${cancelledRef.current}, completionHandled=${completionHandledRef.current}`);
   }, [processOneChunk]);
 
   // ── Kickoff: create the job (or resume), then start orchestrator ──
@@ -371,14 +375,18 @@ export function ExportProgressDialog({
   }, [open]);
 
   // Auto-close after completion (give the download a moment to start).
+  // GUARDED: only fires once per job via completionHandledRef.
   useEffect(() => {
-    if (state.done) {
+    if (state.done && !completionHandledRef.current) {
+      completionHandledRef.current = true;
+      console.log(`[export-orchestrator] ✓ Completion handled — stopping all polling, firing onComplete once`);
       const timer = setTimeout(() => {
         onComplete();
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [state.done, onComplete]);
+    // Intentionally only re-run when state.done changes.
+  }, [state.done]);
 
   // ── Cancel handler ──
   const handleCancel = useCallback(async () => {
@@ -411,6 +419,9 @@ export function ExportProgressDialog({
     cursorRef.current = null;
     isProcessingRef.current = false;
     consecutiveErrorsRef.current = 0;
+    downloadTriggeredRef.current = false;
+    pollCountRef.current = 0;
+    completionHandledRef.current = false;
     setTimeout(() => startExport(), 100);
   };
 
