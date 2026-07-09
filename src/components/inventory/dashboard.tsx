@@ -45,6 +45,8 @@ export function Dashboard() {
   const [isClearing, setIsClearing] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isCheckingFolders, setIsCheckingFolders] = useState(false);
+  const [exportMode, setExportMode] = useState<'excel-only' | 'excel-package' | 'excel-embedded'>('excel-only');
+  const [imageQuality, setImageQuality] = useState<'high' | 'medium' | 'low'>('high');
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
@@ -85,6 +87,35 @@ export function Dashboard() {
     } finally {
       setIsLoadingRecent(false);
     }
+  };
+
+  // Build the export URL based on the selected export mode
+  const getExportUrl = (baseUrl: string): string => {
+    const url = new URL(baseUrl, window.location.origin);
+    if (exportMode === 'excel-package') {
+      url.pathname = url.pathname.replace('/api/products/export', '/api/products/export-package');
+      url.searchParams.set('quality', imageQuality);
+    } else if (exportMode === 'excel-embedded') {
+      url.searchParams.set('mode', 'embedded');
+      url.searchParams.set('quality', imageQuality);
+    }
+    return url.toString();
+  };
+
+  // Download a blob from a URL and trigger a file download
+  const downloadBlob = async (url: string, filename: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || 'Export failed');
+    }
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(blobUrl);
   };
 
   // Check and fix Google Drive folder organization — ensures every product's
@@ -307,8 +338,76 @@ export function Dashboard() {
               {showExportMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
-                  <div className="absolute left-0 right-0 sm:left-0 sm:right-auto sm:w-72 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-3 space-y-3">
+                  <div className="absolute left-0 right-0 sm:left-0 sm:right-auto sm:w-80 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-3 space-y-3 max-h-[80vh] overflow-y-auto">
                     <p className="text-sm font-medium">Export Excel</p>
+
+                    {/* Export Mode selector */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Export Mode</p>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="exportMode"
+                          checked={exportMode === 'excel-only'}
+                          onChange={() => setExportMode('excel-only')}
+                          className="accent-purple-600"
+                        />
+                        <div>
+                          <p className="text-sm">Excel Only</p>
+                          <p className="text-[10px] text-muted-foreground">Standard export, no images</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="exportMode"
+                          checked={exportMode === 'excel-package'}
+                          onChange={() => setExportMode('excel-package')}
+                          className="accent-purple-600"
+                        />
+                        <div>
+                          <p className="text-sm">Excel + Image Package <Badge variant="secondary" className="text-[9px] ml-1">Recommended</Badge></p>
+                          <p className="text-[10px] text-muted-foreground">ZIP with organized image folders</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="exportMode"
+                          checked={exportMode === 'excel-embedded'}
+                          onChange={() => setExportMode('excel-embedded')}
+                          className="accent-purple-600"
+                        />
+                        <div>
+                          <p className="text-sm">Excel + Embedded Images</p>
+                          <p className="text-[10px] text-muted-foreground">Primary images embedded in workbook</p>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Image Quality selector — only for image export modes */}
+                    {(exportMode === 'excel-package' || exportMode === 'excel-embedded') && (
+                      <div className="space-y-2 border-t pt-2">
+                        <p className="text-xs font-medium text-muted-foreground">Image Quality</p>
+                        <div className="flex gap-2">
+                          {(['high', 'medium', 'low'] as const).map(q => (
+                            <button
+                              key={q}
+                              onClick={() => setImageQuality(q)}
+                              className={`flex-1 h-9 rounded-md text-xs capitalize border transition-colors ${
+                                imageQuality === q
+                                  ? 'bg-purple-600 text-white border-purple-600'
+                                  : 'bg-background hover:bg-accent border-border'
+                              }`}
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t" />
 
                     <Button
                       variant="outline"
@@ -318,16 +417,10 @@ export function Dashboard() {
                         setIsExporting(true);
                         setShowExportMenu(false);
                         try {
-                          const res = await fetch('/api/products/export');
-                          if (!res.ok) throw new Error('Export failed');
-                          const blob = await res.blob();
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = 'products_export.xlsx';
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        } catch { toast.error('Export failed'); }
+                          const url = getExportUrl('/api/products/export');
+                          const filename = exportMode === 'excel-package' ? 'product_export_package.zip' : 'products_export.xlsx';
+                          await downloadBlob(url, filename);
+                        } catch (err: any) { toast.error(err.message || 'Export failed'); }
                         finally { setIsExporting(false); }
                       }}
                       disabled={isExporting}
@@ -353,13 +446,12 @@ export function Dashboard() {
                             const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                             if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                             setIsExporting(true);
-                            fetch(`/api/products/export?srFrom=${from}&srTo=${to}`)
-                              .then(res => { if (!res.ok) return res.json().then(b => { throw new Error(b.error || 'Export failed'); }); return res.blob(); })
-                              .then(blob => {
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a'); a.href = url; a.download = `products_sr_${from}_${to}.xlsx`; a.click(); URL.revokeObjectURL(url);
-                                setShowExportMenu(false); setSrRange('');
-                              })
+                            const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
+                            const filename = exportMode === 'excel-package'
+                              ? `product_export_sr_${from}_${to}.zip`
+                              : `products_sr_${from}_${to}.xlsx`;
+                            downloadBlob(url, filename)
+                              .then(() => { setShowExportMenu(false); setSrRange(''); })
                               .catch(err => toast.error(err.message || 'Export failed'))
                               .finally(() => setIsExporting(false));
                           }
@@ -380,13 +472,12 @@ export function Dashboard() {
                           const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                           if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                           setIsExporting(true);
-                          fetch(`/api/products/export?srFrom=${from}&srTo=${to}`)
-                            .then(res => { if (!res.ok) return res.json().then(b => { throw new Error(b.error || 'Export failed'); }); return res.blob(); })
-                            .then(blob => {
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement('a'); a.href = url; a.download = `products_sr_${from}_${to}.xlsx`; a.click(); URL.revokeObjectURL(url);
-                              setShowExportMenu(false); setSrRange('');
-                            })
+                          const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
+                          const filename = exportMode === 'excel-package'
+                            ? `product_export_sr_${from}_${to}.zip`
+                            : `products_sr_${from}_${to}.xlsx`;
+                          downloadBlob(url, filename)
+                            .then(() => { setShowExportMenu(false); setSrRange(''); })
                             .catch(err => toast.error(err.message || 'Export failed'))
                             .finally(() => setIsExporting(false));
                         }}

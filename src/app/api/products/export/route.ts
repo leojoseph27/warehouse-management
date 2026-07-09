@@ -124,6 +124,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const sourceRowFrom = searchParams.get('sourceRowFrom');
     const sourceRowTo = searchParams.get('sourceRowTo');
+    const mode = searchParams.get('mode') || '';
+    const isEmbedded = mode === 'embedded';
 
     const where: any = {};
     if (sourceRowFrom !== null && sourceRowTo !== null) {
