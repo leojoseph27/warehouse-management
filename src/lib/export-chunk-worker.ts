@@ -55,14 +55,10 @@ import {
   buildProcessResponse,
   getMemoryUsageMb,
   STAGE_LABELS,
-  buildDriveThumbnailUrl,
-  buildDriveFullImageUrl,
-  buildDriveViewUrl,
-  thumbnailQualityToPixels,
   type ProcessChunkResponse,
 } from '@/lib/export-helpers';
 import { createExportLogger } from '@/lib/export-logger';
-import { COLUMN_DEFS, resolveImageLinks, resolveVariants } from '@/lib/lookups';
+import { COLUMN_DEFS, resolveImageLinksForExport, resolveVariants } from '@/lib/lookups';
 import {
   uploadExportFile,
   computeBlobExpiresAt,
@@ -527,14 +523,38 @@ async function handleStageLoadingProducts(
   // so /download can reassemble without re-querying the DB.
   // NOTE: variants column is left blank here — resolved during /download
   // when we have the full product set across all chunks.
+  //
+  // EXCLUDED COLUMNS (removed from export per requirements):
+  //   - minSalesMultiples
+  //   - validationStatus
+  //   - confidenceScore
+  // These are filtered out of COLUMN_DEFS before iteration.
+  const EXCLUDED_COLUMN_FIELDS = new Set([
+    'minSalesMultiples',
+    'validationStatus',
+    'confidenceScore',
+  ]);
+  const exportColumnDefs = COLUMN_DEFS.filter(
+    (c: any) => !EXCLUDED_COLUMN_FIELDS.has(c.field)
+  );
+
+  // Determine the size param for Google Drive thumbnail URLs in Image Links.
+  // For excel-thumbnails mode, use the thumbnail quality. For other modes,
+  // use a default medium size.
+  const imageLinksSizeParam = job.exportMode === 'excel-thumbnails'
+    ? qualityToSizeParam(job.quality)
+    : 'sz=w1000';
+
   const tExcelStart = Date.now();
   const excelRows: any[] = [];
   for (const product of batch) {
     const rowData: any = {};
-    for (const colDef of COLUMN_DEFS) {
+    for (const colDef of exportColumnDefs) {
       let value: any;
       if (colDef.field === 'imageLinks') {
-        value = resolveImageLinks(product as any);
+        // Build Image Links column: newline-separated Google Drive thumbnail URLs,
+        // primary image first, then remaining images in display order.
+        value = resolveImageLinksForExport(product as any, imageLinksSizeParam);
       } else if (colDef.field === 'variants') {
         value = ''; // resolved during /download
       } else {
@@ -545,50 +565,8 @@ async function handleStageLoadingProducts(
       }
       rowData[colDef.field] = value === null || value === undefined ? '' : value;
     }
-    const folder = resolveFolderName(product);
-    const images = (product as any).images || [];
-    const primaryImg = images.find((img: any) => img.isPrimary) || images[0] || null;
-    const imageCount = images.length;
-
-    // ── Image Count consistency fix ──
-    // If a product has a primary image, imageCount >= 1.
-    // If no images exist, imageCount = 0 AND all image path/URL fields are empty.
-    if (imageCount === 0 || !primaryImg) {
-      rowData['_imageFolder'] = '';
-      rowData['_primaryImagePath'] = '';
-      rowData['_imageCount'] = 0;
-      rowData['_googleDriveUrl'] = '';
-      rowData['_relativeImagePath'] = '';
-      rowData['_thumbnailUrl'] = '';
-      rowData['_fullImageUrl'] = '';
-      rowData['_driveFileId'] = '';
-    } else {
-      rowData['_imageFolder'] = `Images/${folder}`;
-      rowData['_primaryImagePath'] = `Images/${folder}/primary.jpg`;
-      rowData['_imageCount'] = imageCount;
-      rowData['_relativeImagePath'] = `Images/${folder}/primary.jpg`;
-
-      if (primaryImg.driveFileId) {
-        // Use the thumbnail-quality-aware URL for the IMAGE() formula.
-        // The `quality` field on ExportJob is reused: for excel-thumbnails mode
-        // it carries the thumbnail quality ('small'|'medium'|'large').
-        rowData['_thumbnailUrl'] = buildDriveThumbnailUrl(primaryImg.driveFileId, job.quality);
-        rowData['_fullImageUrl'] = buildDriveFullImageUrl(primaryImg.driveFileId);
-        rowData['_googleDriveUrl'] = buildDriveViewUrl(primaryImg.driveFileId);
-        rowData['_driveFileId'] = primaryImg.driveFileId;
-      } else if (primaryImg.imageUrl && !primaryImg.imageUrl.startsWith('data:')) {
-        rowData['_thumbnailUrl'] = primaryImg.imageUrl;
-        rowData['_fullImageUrl'] = primaryImg.imageUrl;
-        rowData['_googleDriveUrl'] = primaryImg.imageUrl;
-        rowData['_driveFileId'] = '';
-      } else {
-        rowData['_thumbnailUrl'] = '';
-        rowData['_fullImageUrl'] = '';
-        rowData['_googleDriveUrl'] = '';
-        rowData['_driveFileId'] = '';
-      }
-    }
     // Internal: needed for variant resolution during /download.
+    // These are NOT written to Excel — they're stripped before addRow.
     rowData['_productId'] = product.id;
     rowData['_variantMemberships'] = (product as any).variantMemberships || [];
     excelRows.push(rowData);
@@ -798,81 +776,50 @@ async function transitionToBuildingZip(
 
   const isThumbnailsMode = job.exportMode === 'excel-thumbnails';
 
-  // ── Dynamic empty-column analysis ──
-  // Scan the parsed chunk data to find extra columns where every row is empty.
-  // Those columns are excluded from the workbook entirely.
-  // Required product columns (COLUMN_DEFS) are ALWAYS included.
-  const allExtraColumnDefs: { header: string; key: string; width: number }[] = [
-    { header: 'Primary Image Path', key: '_primaryImagePath', width: 40 },
-    { header: 'Image Folder', key: '_imageFolder', width: 30 },
-    { header: 'Image Count', key: '_imageCount', width: 12 },
-    { header: 'Google Drive URL', key: '_googleDriveUrl', width: 50 },
-    { header: 'Relative Image Path', key: '_relativeImagePath', width: 40 },
-  ];
-  if (isThumbnailsMode) {
-    allExtraColumnDefs.push(
-      { header: 'Thumbnail URL', key: '_thumbnailUrl', width: 60 },
-      { header: 'Full Image URL', key: '_fullImageUrl', width: 60 },
-      { header: 'Google Drive File ID', key: '_driveFileId', width: 40 },
-    );
-  }
+  // ── Excluded columns (removed from all export modes per requirements) ──
+  const EXCLUDED_COLUMN_FIELDS = new Set([
+    'minSalesMultiples',
+    'validationStatus',
+    'confidenceScore',
+  ]);
+  const exportColumnDefs = COLUMN_DEFS.filter(
+    (c: any) => !EXCLUDED_COLUMN_FIELDS.has(c.field)
+  );
 
-  const emptyExtraColumns = new Set<string>();
-  for (const def of allExtraColumnDefs) {
-    let allEmpty = true;
-    for (const chunk of parsedChunks) {
-      for (const row of chunk.rows) {
-        const val = (row as any)[def.key];
-        if (val !== null && val !== undefined && val !== '') {
-          allEmpty = false;
-          break;
-        }
-      }
-      if (!allEmpty) break;
-    }
-    if (allEmpty) emptyExtraColumns.add(def.key);
-  }
-  // For excel-thumbnails mode, also check if the Thumbnail column would be
-  // entirely empty (no products have images). If so, skip it.
+  // For excel-thumbnails mode, check if the Thumbnail column should be
+  // included (only if at least one product has an imageLinks value).
   let skipThumbnailColumn = false;
   if (isThumbnailsMode) {
-    let anyThumbnailUrl = false;
+    let anyImageLinks = false;
     for (const chunk of parsedChunks) {
       for (const row of chunk.rows) {
-        if ((row as any)._thumbnailUrl) {
-          anyThumbnailUrl = true;
+        if ((row as any).imageLinks) {
+          anyImageLinks = true;
           break;
         }
       }
-      if (anyThumbnailUrl) break;
+      if (anyImageLinks) break;
     }
-    if (!anyThumbnailUrl) {
+    if (!anyImageLinks) {
       skipThumbnailColumn = true;
       console.log(`[Export ${job.id}] Skipping Thumbnail column — no products have image URLs`);
     }
   }
-  if (emptyExtraColumns.size > 0) {
-    console.log(`[Export ${job.id}] Skipping ${emptyExtraColumns.size} empty columns: ${Array.from(emptyExtraColumns).join(', ')}`);
-  }
 
-  // Column definitions. For excel-thumbnails mode, add Thumbnail as the
-  // FIRST column (before COLUMN_DEFS) plus the extra image URL columns.
+  // ── Column definitions ──
+  // For excel-thumbnails mode: Thumbnail column first, then product columns.
+  // No extra image columns — all image data is in the Image Links column.
   const columns: any[] = [];
   if (isThumbnailsMode && !skipThumbnailColumn) {
     columns.push({ header: 'Thumbnail', key: '_thumbnail', width: 20 });
   }
   columns.push(
-    ...COLUMN_DEFS.map((col: any) => ({
+    ...exportColumnDefs.map((col: any) => ({
       header: col.header,
       key: col.field,
       width: Math.max(10, Math.min(50, (col.header?.length || 10) + 5)),
     })),
   );
-  for (const def of allExtraColumnDefs) {
-    if (!emptyExtraColumns.has(def.key)) {
-      columns.push(def);
-    }
-  }
   ws.columns = columns;
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).fill = {
@@ -901,40 +848,20 @@ async function transitionToBuildingZip(
       void _variantMemberships;
       const addedRow = ws.addRow(excelRow);
 
-      // Hyperlink on Google Drive URL column.
-      if (excelRow._googleDriveUrl) {
-        const cell = addedRow.getCell('_googleDriveUrl');
-        cell.value = {
-          text: excelRow._googleDriveUrl,
-          hyperlink: excelRow._googleDriveUrl,
-        } as any;
-        cell.font = { color: { argb: 'FF0563C1' }, underline: true };
-      }
-
       // ── Thumbnail column: IMAGE() formula for excel-thumbnails mode ──
-      // Only write if the Thumbnail column wasn't skipped (i.e., at least one
-      // product has an image URL).
+      // Extract the first URL from imageLinks (primary image is first line).
       if (isThumbnailsMode && !skipThumbnailColumn) {
         const thumbnailCell = addedRow.getCell('_thumbnail');
-        const thumbnailUrl = excelRow._thumbnailUrl || '';
-        if (thumbnailUrl) {
-          // Excel 365 IMAGE() function.
-          // Formula: =IMAGE("https://drive.google.com/thumbnail?id=...&sz=w300")
-          //
-          // ExcelJS formula format: { formula: 'IMAGE("url")', result: null }
-          // We use result: null (not '') so Excel knows to compute it.
-          //
-          // Note: IMAGE() is only supported in Excel 365 and Excel for the Web.
-          // Older Excel versions will show #NAME? error — the Thumbnail URL
-          // column provides a fallback (direct link).
-          const formula = `IMAGE("${thumbnailUrl}")`;
+        const imageLinksValue = excelRow.imageLinks || '';
+        // First line = primary image URL
+        const firstUrl = imageLinksValue.split('\n')[0]?.trim() || '';
+        if (firstUrl) {
+          const formula = `IMAGE("${firstUrl}")`;
           thumbnailCell.value = { formula, result: null } as any;
-          // Set row height to make thumbnails visible.
           addedRow.height = 60;
           thumbnailsAdded++;
-          // Debug: log first 3 thumbnails to verify formula is set.
           if (thumbnailsAdded <= 3) {
-            console.log(`[Export ${job.id}] Thumbnail #${thumbnailsAdded}: formula=${formula.substring(0, 80)}... cell.value type=${typeof thumbnailCell.value}`);
+            console.log(`[Export ${job.id}] Thumbnail #${thumbnailsAdded}: formula=${formula.substring(0, 80)}...`);
           }
         } else {
           thumbnailCell.value = '';
@@ -942,6 +869,48 @@ async function transitionToBuildingZip(
       }
 
       totalRowsWritten++;
+    }
+  }
+
+  // ── Dynamic empty-column removal ──
+  // Scan every non-required column. If every data row has null/""/undefined
+  // in that column, hide it from the workbook.
+  // Required product columns (the core identity + classification fields) are
+  // NEVER removed. Non-required columns like imageLinks, variants, and some
+  // optional fields CAN be removed if entirely empty.
+  const REQUIRED_FIELD_KEYS = new Set([
+    'sourceRow', 'productId', 'sku', 'ndNumber', 'barcode', 'brand',
+    'department', 'category', 'nameAr', 'nameEn',
+  ]);
+  const columnsToHide: string[] = [];
+  const lastRowNum = ws.rowCount;
+  for (const col of ws.columns) {
+    const colKey = (col as any).key as string | undefined;
+    if (!colKey) continue;
+    if (colKey === '_thumbnail') continue; // Thumbnail column has formulas
+    if (REQUIRED_FIELD_KEYS.has(colKey)) continue;
+
+    let allEmpty = true;
+    for (let rowNum = 2; rowNum <= lastRowNum; rowNum++) {
+      const cell = ws.getCell(rowNum, col.number);
+      const val = cell.value;
+      if (val && typeof val === 'object' && 'formula' in val) {
+        allEmpty = false;
+        break;
+      }
+      if (val !== null && val !== undefined && val !== '') {
+        allEmpty = false;
+        break;
+      }
+    }
+    if (allEmpty) {
+      columnsToHide.push(colKey);
+    }
+  }
+  if (columnsToHide.length > 0) {
+    console.log(`[Export ${job.id}] Hiding ${columnsToHide.length} empty columns: ${columnsToHide.join(', ')}`);
+    for (const key of columnsToHide) {
+      ws.getColumn(key).hidden = true;
     }
   }
 

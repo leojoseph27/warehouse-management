@@ -533,6 +533,48 @@ export function resolveImageLinks(product: { images?: { imageUrl: string; isPrim
 }
 
 /**
+ * Resolve image links for the export pipeline — returns Google Drive thumbnail
+ * URLs, one per line, with the primary image first.
+ *
+ * For each image:
+ *   - If driveFileId exists → https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
+ *   - Else if imageUrl is a real URL (not data:) → use it directly
+ *   - Else skip (base64 images have no URL to link to)
+ *
+ * Multiple URLs are separated by newlines (\n) so they appear on separate
+ * lines within the same Excel cell.
+ *
+ * @param product Product with images relation loaded (including driveFileId)
+ * @param sizeParam Google Drive thumbnail size param (e.g. 'sz=w1000', 'sz=w300')
+ * @returns Newline-separated image URLs, primary first. Empty string if no images.
+ */
+export function resolveImageLinksForExport(
+  product: { images?: { imageUrl: string; isPrimary: boolean; displayOrder: number; driveFileId?: string | null }[] } | null | undefined,
+  sizeParam: string = 'sz=w1000'
+): string {
+  if (!product || !product.images || product.images.length === 0) return '';
+
+  // Primary image first, then the rest in display order
+  const sorted = [...product.images].sort((a, b) => {
+    if (a.isPrimary && !b.isPrimary) return -1;
+    if (!a.isPrimary && b.isPrimary) return 1;
+    return a.displayOrder - b.displayOrder;
+  });
+
+  const urls: string[] = [];
+  for (const img of sorted) {
+    if (img.driveFileId) {
+      urls.push(`https://drive.google.com/thumbnail?id=${img.driveFileId}&${sizeParam}`);
+    } else if (img.imageUrl && !img.imageUrl.startsWith('data:')) {
+      urls.push(img.imageUrl);
+    }
+    // Skip base64 images — they have no URL to link to
+  }
+
+  return urls.join('\n');
+}
+
+/**
  * Resolve the Variants value for a product in the Excel export.
  *
  * Rules:
