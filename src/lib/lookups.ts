@@ -529,7 +529,7 @@ export function resolveImageLinks(product: { images?: { imageUrl: string; isPrim
       return `[base64 image — ${url.length} chars]`;
     }
     return url;
-  }).join('\n');
+  }).join(', ');
 }
 
 /**
@@ -586,7 +586,7 @@ export function resolveVariants(
         if (p.barcode) return `Barcode: ${p.barcode}`;
         return '(no identifier)';
       })
-      .join('\n');
+      .join(', ');
   } else {
     // This product IS a variant — show the parent
     const parentProduct = allProducts.find(
