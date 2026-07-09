@@ -302,3 +302,34 @@ model ImportJob {
   @@index([createdAt])
   @@map("import_jobs")
 }
+
+// ─────────────────────────────────────────────────────────────────
+// EXPORT JOBS
+// Async export jobs for Excel + Image Package generation
+// ─────────────────────────────────────────────────────────────────
+
+model ExportJob {
+  id                String   @id @default(cuid())
+  status            String   @default("pending")  // pending, processing, completed, failed, cancelled
+  stage             String   @default("")          // current stage description
+  percentage        Int      @default(0)           // 0-100
+  exportMode        String   @default("excel-package")  // excel-package, excel-embedded
+  quality           String   @default("high")      // high, medium, low
+  srFrom            Int?
+  srTo              Int?
+  totalProducts     Int      @default(0)
+  processedProducts Int      @default(0)
+  totalImages       Int      @default(0)
+  downloadedImages  Int      @default(0)
+  resultBlob        String?  // Base64-encoded ZIP (for small exports) or null
+  resultSize        Int?     // Size in bytes
+  errorMessage      String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("export_jobs")
+}

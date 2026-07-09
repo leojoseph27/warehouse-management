@@ -19,6 +19,7 @@ interface ExportProgressState {
   estimatedTimeRemaining: string;
   error: string | null;
   done: boolean;
+  jobId: string | null;
 }
 
 const INITIAL_STATE: ExportProgressState = {
@@ -31,11 +32,18 @@ const INITIAL_STATE: ExportProgressState = {
   estimatedTimeRemaining: 'Calculating...',
   error: null,
   done: false,
+  jobId: null,
 };
 
 interface ExportProgressDialogProps {
   open: boolean;
-  exportUrl: string;
+  /** Parameters for starting the export job */
+  exportParams: {
+    exportMode: string;
+    quality: string;
+    srFrom?: number | null;
+    srTo?: number | null;
+  } | null;
   filename: string;
   onClose: () => void;
   onComplete: () => void;
@@ -43,15 +51,16 @@ interface ExportProgressDialogProps {
 
 export function ExportProgressDialog({
   open,
-  exportUrl,
+  exportParams,
   filename,
   onClose,
   onComplete,
 }: ExportProgressDialogProps) {
   const [state, setState] = useState<ExportProgressState>(INITIAL_STATE);
   const [isCancelled, setIsCancelled] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const startTimeRef = useRef<number>(0);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const jobIdRef = useRef<string | null>(null);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -59,159 +68,134 @@ export function ExportProgressDialog({
       setState(INITIAL_STATE);
       setIsCancelled(false);
       startTimeRef.current = Date.now();
+      jobIdRef.current = null;
+    } else {
+      // Cleanup polling when dialog closes
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     }
   }, [open]);
 
-  // Start the export with progress tracking
+  // Start the export job
   const startExport = useCallback(async () => {
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
+    if (!exportParams) return;
 
     try {
-      const res = await fetch(exportUrl, {
-        signal: controller.signal,
+      // Create the export job
+      const res = await fetch('/api/export/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exportParams),
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || body.details || `HTTP ${res.status}`);
+        throw new Error(body.error || `HTTP ${res.status}`);
       }
 
-      const contentType = res.headers.get('content-type') || '';
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      const { jobId } = await res.json();
+      jobIdRef.current = jobId;
+      setState(prev => ({ ...prev, jobId, stage: 'Export job started...' }));
 
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let binaryMode = false;
-      let binaryChunks: Uint8Array[] = [];
-      let binaryOffset = 0;
+      // Start polling for status
+      let lastPercentage = 0;
+      let lastUpdateTime = Date.now();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        if (isCancelled) {
-          controller.abort();
-          break;
+      pollingRef.current = setInterval(async () => {
+        if (isCancelled || !jobIdRef.current) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+          return;
         }
 
-        if (binaryMode) {
-          // Collect binary data
-          binaryChunks.push(value);
-          continue;
+        try {
+          const statusRes = await fetch(`/api/export/${jobIdRef.current}/status`);
+          if (!statusRes.ok) return;
+
+          const status = await statusRes.json();
+
+          // Calculate ETA
+          let eta = 'Calculating...';
+          if (status.percentage > 0 && status.percentage < 100) {
+            const elapsed = (Date.now() - startTimeRef.current) / 1000;
+            const totalEst = elapsed / (status.percentage / 100);
+            const remaining = Math.max(0, totalEst - elapsed);
+            const mins = Math.floor(remaining / 60);
+            const secs = Math.floor(remaining % 60);
+            eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+          } else if (status.percentage >= 100) {
+            eta = '00:00';
+          }
+
+          setState(prev => ({
+            ...prev,
+            stage: status.stage || prev.stage,
+            percentage: status.percentage || 0,
+            totalProducts: status.totalProducts || 0,
+            processedProducts: status.processedProducts || 0,
+            totalImages: status.totalImages || 0,
+            downloadedImages: status.downloadedImages || 0,
+            estimatedTimeRemaining: eta,
+            error: status.errorMessage || null,
+            done: status.status === 'completed',
+          }));
+
+          // If completed, download the file and stop polling
+          if (status.status === 'completed') {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+
+            // Trigger download
+            try {
+              const dlRes = await fetch(`/api/export/${jobIdRef.current}/download`);
+              if (dlRes.ok) {
+                const blob = await dlRes.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+              }
+            } catch (dlErr) {
+              console.error('Download failed:', dlErr);
+            }
+          }
+
+          // If failed, stop polling
+          if (status.status === 'failed') {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            setState(prev => ({
+              ...prev,
+              error: status.errorMessage || 'Export failed',
+              stage: 'Failed',
+            }));
+          }
+        } catch (err) {
+          // Network error during polling — keep trying
         }
-
-        // Parse SSE events from text
-        textBuffer += decoder.decode(value, { stream: true });
-
-        // Check for binary start marker
-        const binaryMarker = 'data: [BINARY_START]\n\n';
-        const binaryIdx = textBuffer.indexOf(binaryMarker);
-        if (binaryIdx >= 0) {
-          // Everything before the marker is SSE text
-          const sseText = textBuffer.substring(0, binaryIdx);
-          // Process any remaining SSE events
-          processSSEEvents(sseText);
-
-          // Switch to binary mode
-          binaryMode = true;
-          // The marker itself might span across chunks — the remaining bytes
-          // after the marker in the current `value` are binary
-          // But since we decoded as text, we need to handle this carefully.
-          // Actually, the marker is text, and everything after it is binary.
-          // The binary data starts fresh from the next chunk.
-          textBuffer = '';
-          continue;
-        }
-
-        // Process SSE events
-        const events = textBuffer.split('\n\n');
-        textBuffer = events.pop() || '';
-
-        for (const eventStr of events) {
-          processSSEEvent(eventStr);
-        }
-      }
-
-      // Process any remaining text
-      if (textBuffer && !binaryMode) {
-        const events = textBuffer.split('\n\n');
-        for (const eventStr of events) {
-          processSSEEvent(eventStr);
-        }
-      }
-
-      // If we collected binary data, trigger download
-      if (binaryChunks.length > 0) {
-        const blob = new Blob(binaryChunks as BlobPart[], { type: 'application/zip' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      // If not already marked as done by SSE, mark it
-      setState(prev => {
-        if (prev.done) return prev;
-        return { ...prev, done: true, stage: 'Completed', percentage: 100, estimatedTimeRemaining: '00:00' };
-      });
+      }, 1500); // Poll every 1.5 seconds
     } catch (err: any) {
-      if (err.name === 'AbortError' || isCancelled) {
-        setState(prev => ({ ...prev, stage: 'Cancelled', error: 'Export cancelled by user' }));
-      } else {
-        setState(prev => ({ ...prev, error: err.message || 'Export failed', stage: 'Failed' }));
-      }
-    }
-  }, [exportUrl, filename, isCancelled]);
-
-  // Helper: process SSE events from a text block
-  function processSSEEvents(text: string) {
-    const events = text.split('\n\n');
-    for (const eventStr of events) {
-      processSSEEvent(eventStr);
-    }
-  }
-
-  // Helper: process a single SSE event
-  function processSSEEvent(eventStr: string) {
-    if (!eventStr.startsWith('data: ')) return;
-    const jsonStr = eventStr.slice(6).trim();
-    if (jsonStr === '[DONE]') {
-      setState(prev => ({ ...prev, done: true, stage: 'Completed', percentage: 100 }));
-      return;
-    }
-    if (jsonStr === '[BINARY_START]') return; // handled by binary mode switch
-    try {
-      const progress = JSON.parse(jsonStr);
-      let eta = 'Calculating...';
-      if (progress.percentage > 0 && progress.percentage < 100) {
-        const elapsed = (Date.now() - startTimeRef.current) / 1000;
-        const totalEst = elapsed / (progress.percentage / 100);
-        const remaining = Math.max(0, totalEst - elapsed);
-        const mins = Math.floor(remaining / 60);
-        const secs = Math.floor(remaining % 60);
-        eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      } else if (progress.percentage >= 100) {
-        eta = '00:00';
-      }
       setState(prev => ({
         ...prev,
-        ...progress,
-        estimatedTimeRemaining: eta,
-        error: progress.error || null,
-        done: progress.done || false,
+        error: err.message || 'Failed to start export',
+        stage: 'Failed',
       }));
-    } catch {
-      // Not JSON — ignore
     }
-  }
+  }, [exportParams, filename, isCancelled]);
 
   // Start export when dialog opens
   useEffect(() => {
-    if (open && !state.done && !state.error && !isCancelled) {
+    if (open && !state.jobId && !state.error && !isCancelled) {
       const timer = setTimeout(() => startExport(), 100);
       return () => clearTimeout(timer);
     }
@@ -222,14 +206,26 @@ export function ExportProgressDialog({
     if (state.done) {
       const timer = setTimeout(() => {
         onComplete();
-      }, 2000);
+      }, 2500);
       return () => clearTimeout(timer);
     }
   }, [state.done, onComplete]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
   const handleCancel = () => {
     setIsCancelled(true);
-    abortControllerRef.current?.abort();
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
     setState(prev => ({ ...prev, stage: 'Cancelled', error: 'Export cancelled by user' }));
   };
 
@@ -237,6 +233,7 @@ export function ExportProgressDialog({
     setState(INITIAL_STATE);
     setIsCancelled(false);
     startTimeRef.current = Date.now();
+    jobIdRef.current = null;
     setTimeout(() => startExport(), 100);
   };
 
@@ -244,7 +241,7 @@ export function ExportProgressDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && !state.done) handleCancel(); if (!o) onClose(); }}>
-      <DialogContent className="max-w-md p-6" >
+      <DialogContent className="max-w-md p-6">
         <DialogTitle className="sr-only">Export Progress</DialogTitle>
 
         {/* Success state */}
@@ -254,7 +251,9 @@ export function ExportProgressDialog({
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
             <h2 className="text-lg font-bold mb-1">Export Complete</h2>
-            <p className="text-sm text-muted-foreground mb-2">Products exported successfully.</p>
+            <p className="text-sm text-muted-foreground mb-2">
+              {state.totalProducts} products exported successfully.
+            </p>
             <p className="text-xs text-muted-foreground">
               <Download className="h-3 w-3 inline mr-1" />
               Download starting...
@@ -308,7 +307,7 @@ export function ExportProgressDialog({
               </div>
               <div className="h-3 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-600 rounded-full transition-all duration-300 ease-out"
+                  className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${state.percentage}%` }}
                 />
               </div>
@@ -335,7 +334,7 @@ export function ExportProgressDialog({
             </div>
 
             <p className="text-[10px] text-muted-foreground mt-4 text-center">
-              Please keep this window open. You may continue using other parts of the application.
+              You may continue using the application while the export runs in the background.
             </p>
 
             <div className="flex justify-center mt-3">

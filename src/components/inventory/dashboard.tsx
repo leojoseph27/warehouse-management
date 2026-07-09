@@ -50,7 +50,7 @@ export function Dashboard() {
   const [exportMode, setExportMode] = useState<'excel-only' | 'excel-package' | 'excel-embedded'>('excel-only');
   const [imageQuality, setImageQuality] = useState<'high' | 'medium' | 'low'>('high');
   const [showProgressDialog, setShowProgressDialog] = useState(false);
-  const [progressExportUrl, setProgressExportUrl] = useState('');
+  const [progressExportParams, setProgressExportParams] = useState<any>(null);
   const [progressFilename, setProgressFilename] = useState('');
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
@@ -423,19 +423,23 @@ export function Dashboard() {
                         setShowExportMenu(false);
                         try {
                           if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
-                            // Use progress dialog for image exports
-                            const url = getExportUrl('/api/products/export') + (exportMode === 'excel-package' ? '&stream=true' : '');
-                            const filename = exportMode === 'excel-package' ? 'product_export_package.zip' : 'products_export.xlsx';
-                            setProgressExportUrl(url);
-                            setProgressFilename(filename);
+                            // Use async export job with progress dialog
+                            setProgressExportParams({
+                              exportMode,
+                              quality: imageQuality,
+                            });
+                            setProgressFilename(exportMode === 'excel-package' ? 'product_export_package.zip' : 'products_export.xlsx');
                             setShowProgressDialog(true);
                           } else {
-                            // Standard export without progress dialog
+                            // Standard Excel-only export (direct download)
                             const url = getExportUrl('/api/products/export');
                             await downloadBlob(url, 'products_export.xlsx');
+                            setIsExporting(false);
                           }
-                        } catch (err: any) { toast.error(err.message || 'Export failed'); }
-                        finally { setIsExporting(false); }
+                        } catch (err: any) {
+                          toast.error(err.message || 'Export failed');
+                          setIsExporting(false);
+                        }
                       }}
                       disabled={isExporting}
                     >
@@ -681,7 +685,7 @@ export function Dashboard() {
       {/* Export Progress Dialog — shown when exporting with images */}
       <ExportProgressDialog
         open={showProgressDialog}
-        exportUrl={progressExportUrl}
+        exportParams={progressExportParams}
         filename={progressFilename}
         onClose={() => { setShowProgressDialog(false); setIsExporting(false); }}
         onComplete={() => {
