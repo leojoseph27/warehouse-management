@@ -94,6 +94,8 @@ export function ExportProgressDialog({
   const isProcessingRef = useRef<boolean>(false);
   const consecutiveErrorsRef = useRef<number>(0);
   const cancelledRef = useRef<boolean>(false);
+  const downloadTriggeredRef = useRef<boolean>(false);
+  const pollCountRef = useRef<number>(0);
 
   // Reset state when dialog opens.
   useEffect(() => {
@@ -106,6 +108,8 @@ export function ExportProgressDialog({
       cursorRef.current = null;
       isProcessingRef.current = false;
       consecutiveErrorsRef.current = 0;
+      downloadTriggeredRef.current = false;
+      pollCountRef.current = 0;
     }
   }, [open, resumeJobId]);
 
@@ -133,6 +137,12 @@ export function ExportProgressDialog({
   const processOneChunk = useCallback(async (jobId: string): Promise<boolean> => {
     if (cancelledRef.current) return true;
 
+    pollCountRef.current += 1;
+    const pollCount = pollCountRef.current;
+
+    console.log(`[export-orchestrator] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[export-orchestrator] POLL #${pollCount} — jobId=${jobId} cursor=${cursorRef.current}`);
+
     const res = await fetch('/api/export/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -141,11 +151,27 @@ export function ExportProgressDialog({
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
+      console.error(`[export-orchestrator] POLL #${pollCount} FAILED — HTTP ${res.status}`, body);
       throw new Error(body.error || `HTTP ${res.status}`);
     }
 
     const data = await res.json();
     cursorRef.current = data.nextCursor ?? null;
+
+    console.log(`[export-orchestrator] POLL #${pollCount} RESPONSE:`);
+    console.log(`  status:              ${data.status}`);
+    console.log(`  stage:               ${data.stage}`);
+    console.log(`  percentage:          ${data.percentage}%`);
+    console.log(`  cursor/nextCursor:   ${data.nextCursor}`);
+    console.log(`  processedProducts:   ${data.processedProducts} / ${data.totalProducts}`);
+    console.log(`  downloadedImages:    ${data.downloadedImages} / ${data.totalImages}`);
+    console.log(`  chunkCount:          ${data.chunkCount}`);
+    console.log(`  fileSize:            ${data.fileSize}`);
+    console.log(`  downloadUrl:         ${data.downloadUrl}`);
+    console.log(`  done:                ${data.done}`);
+    if (data.error) {
+      console.log(`  error:               ${data.error}`);
+    }
 
     setState(prev => ({
       ...prev,
@@ -169,11 +195,41 @@ export function ExportProgressDialog({
       done: data.done || false,
     }));
 
-    if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+    // ── Handle completion: trigger download IMMEDIATELY ──
+    if (data.status === 'completed') {
+      console.log(`[export-orchestrator] ✓ JOB COMPLETED — triggering download`);
+      console.log(`[export-orchestrator]   fileSize:    ${data.fileSize}`);
+      console.log(`[export-orchestrator]   downloadUrl: ${data.downloadUrl}`);
+      if (!downloadTriggeredRef.current) {
+        downloadTriggeredRef.current = true;
+        console.log(`[export-orchestrator] Calling downloadResult(${jobId})...`);
+        downloadResult(jobId);
+      } else {
+        console.warn(`[export-orchestrator] Download already triggered — skipping (prevents duplicate)`);
+      }
       return true;
     }
+
+    if (['failed', 'cancelled'].includes(data.status)) {
+      console.log(`[export-orchestrator] ✗ JOB ${data.status.toUpperCase()} — stopping polling`);
+      return true;
+    }
+
+    // ── Infinite loop guard: if we've polled >50 times, something is wrong ──
+    if (pollCount > 50) {
+      console.error(`[export-orchestrator] ✗ POLL LIMIT EXCEEDED (50 polls) — stopping to prevent infinite loop`);
+      console.error(`[export-orchestrator]   Final status: ${data.status}`);
+      console.error(`[export-orchestrator]   Final stage:  ${data.stage}`);
+      setState(prev => ({
+        ...prev,
+        error: `Export stalled — exceeded 50 polling cycles without completion. Last status: ${data.status}, stage: ${data.stage}`,
+        stage: 'Failed',
+      }));
+      return true;
+    }
+
     return false;
-  }, []);
+  }, [downloadResult]);
 
   // ── Main orchestrator loop ──
   const runOrchestrator = useCallback(async (jobId: string) => {
@@ -274,7 +330,10 @@ export function ExportProgressDialog({
           }));
           // If already terminal, don't start the orchestrator.
           if (['completed', 'failed', 'cancelled'].includes(status.status)) {
-            if (status.status === 'completed') {
+            console.log(`[export-orchestrator] Resume: job already ${status.status}`);
+            if (status.status === 'completed' && !downloadTriggeredRef.current) {
+              downloadTriggeredRef.current = true;
+              console.log(`[export-orchestrator] Resume: triggering download for completed job`);
               downloadResult(jobId);
             }
             return;
@@ -284,17 +343,15 @@ export function ExportProgressDialog({
 
       // At this point jobId is guaranteed non-null (we either had one or threw above).
       if (!jobId) return;
+
+      console.log(`[export-orchestrator] Starting orchestrator loop for jobId=${jobId}`);
       await runOrchestrator(jobId);
 
-      if (!cancelledRef.current) {
-        setState(prev => {
-          if (prev.done && !prev.error) {
-            downloadResult(jobId!);
-          }
-          return prev;
-        });
-      }
+      // Download is now triggered inside processOneChunk when status='completed'.
+      // No stale-state download trigger here — that was the old buggy pattern.
+      console.log(`[export-orchestrator] Orchestrator loop exited. downloadTriggered=${downloadTriggeredRef.current} cancelled=${cancelledRef.current}`);
     } catch (err: any) {
+      console.error(`[export-orchestrator] startExport FAILED:`, err?.message);
       setState(prev => ({
         ...prev,
         error: err.message || 'Failed to start export',

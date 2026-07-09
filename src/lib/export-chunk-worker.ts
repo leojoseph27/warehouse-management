@@ -64,8 +64,7 @@ import {
   computeBlobExpiresAt,
 } from '@/lib/export-storage';
 import ExcelJS from 'exceljs';
-import * as archiver from 'archiver';
-import { Readable } from 'stream';
+import { ZipArchive } from 'archiver';
 
 // ─────────────────────────────────────────────────────────────
 // Stage dispatcher
@@ -141,54 +140,88 @@ export async function runChunkWorker(
   const freshJob = await db.exportJob.findUnique({ where: { id: jobId } });
   if (!freshJob) return buildProcessResponse(job);
 
+  // ── LIFECYCLE LOG: before stage dispatch ──
+  console.log(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`[Export ${jobId}] BEFORE stage dispatch:`);
+  console.log(`  jobId:              ${jobId}`);
+  console.log(`  status:             ${freshJob.status}`);
+  console.log(`  stage:              "${freshJob.stage}"`);
+  console.log(`  cursor:             ${freshJob.cursor}`);
+  console.log(`  chunkCount:         ${freshJob.chunkCount}`);
+  console.log(`  processedProducts:  ${freshJob.processedProducts} / ${freshJob.totalProducts}`);
+  console.log(`  downloadedImages:   ${freshJob.downloadedImages} / ${freshJob.totalImages}`);
+  console.log(`  percentage:         ${freshJob.percentage}%`);
+  console.log(`  blobUrl:            ${freshJob.blobUrl || '(not set)'}`);
+  console.log(`  fileSize:           ${freshJob.fileSize || '(not set)'}`);
+  console.log(`  downloadUrl:        ${freshJob.downloadUrl || '(not set)'}`);
+  console.log(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
   const chunkStartTime = Date.now();
   let chunkSucceeded = false;
 
   try {
+    const stageBefore = freshJob.stage;
+    console.log(`[Export ${jobId}] Dispatching stage: "${stageBefore}"`);
+
     switch (freshJob.stage) {
       case '':
       case STAGE_LABELS.preparing:
       case 'Initializing...':
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → handleStageCreated → "Loading products..."`);
         await handleStageCreated(freshJob, logger);
         break;
 
       case STAGE_LABELS.loadingProducts:
       case 'Loading products...':
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → handleStageLoadingProducts`);
         await handleStageLoadingProducts(freshJob, logger);
         break;
 
       case STAGE_LABELS.downloadingImages:
       case 'Downloading images...':
-        // Loading stage handles both DB + image download in one go.
-        // If we're here, all chunks are done — transition to writing Excel.
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → transitionToWritingExcel → "Writing Excel..."`);
         await transitionToWritingExcel(freshJob, logger);
         break;
 
       case STAGE_LABELS.writingExcel:
       case 'Writing Excel...':
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → transitionToBuildingZip (HEAVY: builds Excel + ZIP + uploads Blob) → "Saving package..."`);
         await transitionToBuildingZip(freshJob, logger);
         break;
 
       case STAGE_LABELS.buildingZip:
       case 'Building ZIP...':
-        await transitionToSavingPackage(freshJob, logger);
+        // This case should NOT normally be hit because transitionToBuildingZip
+        // runs to completion (setting stage directly to saving_package) in one
+        // request. If we're here, the previous request timed out mid-build.
+        console.log(`[Export ${jobId}] WARNING: stage is "Building ZIP..." — previous request may have timed out mid-build. Retrying the build.`);
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → transitionToBuildingZip (retry) → "Saving package..."`);
+        await transitionToBuildingZip(freshJob, logger);
         break;
 
       case STAGE_LABELS.savingPackage:
       case 'Saving package...':
+        console.log(`[Export ${jobId}] TRANSITION: "${stageBefore}" → handleStageCompleted → "Completed"`);
         await handleStageCompleted(freshJob, logger);
         break;
 
       default:
-        console.warn(
-          `[Export ${jobId}] Unknown stage "${freshJob.stage}" — treating as created.`
-        );
+        console.warn(`[Export ${jobId}] Unknown stage "${freshJob.stage}" — treating as created.`);
         await handleStageCreated(freshJob, logger);
     }
 
     chunkSucceeded = true;
+    console.log(`[Export ${jobId}] ✓ Stage handler completed successfully (${Date.now() - chunkStartTime}ms)`);
   } catch (err: any) {
     const elapsedMs = Date.now() - chunkStartTime;
+    console.error(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.error(`[Export ${jobId}] ✗ STAGE HANDLER FAILED after ${elapsedMs}ms`);
+    console.error(`[Export ${jobId}]   stage:      "${freshJob.stage}"`);
+    console.error(`[Export ${jobId}]   error:      ${err?.message}`);
+    console.error(`[Export ${jobId}]   code:       ${err?.code}`);
+    console.error(`[Export ${jobId}]   stack:      ${err?.stack}`);
+    console.error(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+
     await logger.error('process', `Chunk failed: ${err?.message || 'Unknown error'}`, {
       stage: freshJob.stage,
       cursor: freshJob.cursor,
@@ -219,7 +252,32 @@ export async function runChunkWorker(
     }
   }
 
+  // ── LIFECYCLE LOG: after stage dispatch ──
   const finalJob = await db.exportJob.findUnique({ where: { id: jobId } });
+  if (finalJob) {
+    console.log(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[Export ${jobId}] AFTER stage dispatch:`);
+    console.log(`  jobId:              ${finalJob.id}`);
+    console.log(`  status:             ${finalJob.status}`);
+    console.log(`  stage:              "${finalJob.stage}"`);
+    console.log(`  cursor:             ${finalJob.cursor}`);
+    console.log(`  chunkCount:         ${finalJob.chunkCount}`);
+    console.log(`  processedProducts:  ${finalJob.processedProducts} / ${finalJob.totalProducts}`);
+    console.log(`  downloadedImages:   ${finalJob.downloadedImages} / ${finalJob.totalImages}`);
+    console.log(`  percentage:         ${finalJob.percentage}%`);
+    console.log(`  blobUrl:            ${finalJob.blobUrl || '(not set)'}`);
+    console.log(`  fileSize:           ${finalJob.fileSize || '(not set)'}`);
+    console.log(`  downloadUrl:        ${finalJob.downloadUrl || '(not set)'}`);
+    console.log(`  failedChunkCount:   ${finalJob.failedChunkCount}`);
+    if (finalJob.status === 'completed') {
+      console.log(`[Export ${jobId}] ✓✓✓ JOB COMPLETED ✓✓✓`);
+      console.log(`  ZIP uploaded successfully`);
+      console.log(`  Blob URL:           ${finalJob.blobUrl}`);
+      console.log(`  File size:          ${finalJob.fileSize} bytes (${(finalJob.fileSize! / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(`  Download URL:       ${finalJob.downloadUrl}`);
+    }
+    console.log(`[Export ${jobId}] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  }
   return buildProcessResponse(finalJob || job);
 }
 
@@ -805,8 +863,8 @@ async function transitionToBuildingZip(
     return;
   }
 
-  // ── Build ZIP: archiver → Vercel Blob ──
-  const archiverInstance = (archiver as any)('zip', { zlib: { level: 5 } });
+  // ── Build ZIP: ZipArchive → Vercel Blob ──
+  const archiverInstance = new ZipArchive({ zlib: { level: 5 } });
 
   // Append the Excel file.
   archiverInstance.append(excelBuffer, { name: 'Products.xlsx' });
@@ -843,22 +901,16 @@ async function transitionToBuildingZip(
     data: { percentage: Math.round(stagePct('buildingZip', 3, 4)) },
   });
 
-  // Create a ReadableStream that archiver will pipe into.
-  // Vercel Blob's put() accepts a ReadableStream, so we can stream
-  // archiver output directly to Blob without buffering the entire ZIP.
-  const archiveStream = new Readable({
-    read() {}, // No-op — archiver pushes via pipe.
-  });
-
-  // Pipe archiver → archiveStream.
-  archiverInstance.pipe(archiveStream);
-
-  // Start the Blob upload (returns a promise that resolves when uploaded).
-  // Cast via unknown — Node's Readable is structurally compatible with the
-  // Web ReadableStream that @vercel/blob expects, but TS doesn't know that.
+  // Archiver is itself a Readable stream that produces ZIP data.
+  // Vercel Blob's put() accepts a ReadableStream, so we can pass the
+  // archiver directly — no intermediate stream needed.
+  //
+  // We start the Blob upload FIRST (it consumes the archiver's output),
+  // then append entries to the archiver. When archiver.finalize() is
+  // called, the stream ends and the Blob upload completes.
   const blobPromise = uploadExportFile(
     job.id,
-    archiveStream as unknown as ReadableStream,
+    archiverInstance as unknown as ReadableStream,
     'product_export_package.zip',
     'application/zip',
   );
