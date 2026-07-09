@@ -259,11 +259,96 @@ async function runExportJob(
 
     log(`Loading products in batches of ${BATCH_SIZE} (no eager loads)...`);
 
+    // ── DIAGNOSTIC: try minimal query first, then escalate ──
+    // Step 1: Absolute minimum — 1 product, only id field
+    log('CHECKPOINT 6.1: Before MINIMAL test query (take:1, select:id)');
+    try {
+      const tMin = Date.now();
+      const minResult = await db.product.findMany({
+        take: 1,
+        select: { id: true },
+      });
+      log(`CHECKPOINT 6.1.5: Minimal query OK — ${minResult.length} products in ${Date.now() - tMin}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 6.1 FAILED (minimal query): ${e?.message}`);
+      console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+      throw e;
+    }
+
+    // Step 2: 10 products, only id + sourceRow
+    log('CHECKPOINT 6.2: Before 10-product test query (select: id, sourceRow)');
+    try {
+      const t10 = Date.now();
+      const r10 = await db.product.findMany({
+        take: 10,
+        orderBy: { sourceRow: 'asc' },
+        select: { id: true, sourceRow: true },
+      });
+      log(`CHECKPOINT 6.2.5: 10-product query OK — ${r10.length} products in ${Date.now() - t10}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 6.2 FAILED: ${e?.message}`);
+      throw e;
+    }
+
+    // Step 3: 10 products, ALL fields (no includes)
+    log('CHECKPOINT 6.3: Before 10-product ALL-FIELDS test query');
+    try {
+      const t10all = Date.now();
+      const r10all = await db.product.findMany({
+        take: 10,
+        orderBy: { sourceRow: 'asc' },
+      });
+      log(`CHECKPOINT 6.3.5: 10-product all-fields query OK — ${r10all.length} products in ${Date.now() - t10all}ms`);
+      log(`  Sample fields: id=${r10all[0]?.id}, sourceRow=${r10all[0]?.sourceRow}, ndNumber=${r10all[0]?.ndNumber}, nameEn=${r10all[0]?.nameEn?.slice(0,30)}`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 6.3 FAILED: ${e?.message}`);
+      throw e;
+    }
+
+    // Step 4: 200 products, ALL fields (no includes)
+    log('CHECKPOINT 6.4: Before 200-product ALL-FIELDS test query');
+    try {
+      const t200 = Date.now();
+      const r200 = await db.product.findMany({
+        take: 200,
+        orderBy: { sourceRow: 'asc' },
+      });
+      log(`CHECKPOINT 6.4.5: 200-product all-fields query OK — ${r200.length} products in ${Date.now() - t200}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 6.4 FAILED: ${e?.message}`);
+      throw e;
+    }
+
+    // Step 5: 200 products with WHERE clause (matching export filter)
+    log('CHECKPOINT 6.5: Before 200-product query with WHERE clause');
+    log(`  WHERE: ${JSON.stringify(where)}`);
+    try {
+      const t200w = Date.now();
+      const r200w = await db.product.findMany({
+        where,
+        orderBy: { sourceRow: 'asc' },
+        take: 200,
+      });
+      log(`CHECKPOINT 6.5.5: 200-product WHERE query OK — ${r200w.length} products in ${Date.now() - t200w}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 6.5 FAILED: ${e?.message}`);
+      throw e;
+    }
+
+    log('CHECKPOINT 6.6: All diagnostic queries passed. Starting batch loop.');
+
     while (true) {
       const batchWhere = { ...where };
       if (lastSourceRow !== null) {
         batchWhere.sourceRow = { ...(where.sourceRow || {}), gt: lastSourceRow };
       }
+
+      log(`CHECKPOINT 6.${batchNum + 1}.a: Before batch ${batchNum + 1} findMany`);
+      log(`  batchWhere: ${JSON.stringify(batchWhere)}`);
+      log(`  orderBy: { sourceRow: 'asc' }`);
+      log(`  take: ${BATCH_SIZE}`);
+      log(`  include: NONE`);
+      log(`  select: ALL (default)`);
 
       const tBatch = Date.now();
       let batch: any[];
@@ -274,13 +359,16 @@ async function runExportJob(
           take: BATCH_SIZE,
         });
       } catch (e: any) {
-        console.error(`[Export ${jobId}] CHECKPOINT 6 FAILED (batch ${batchNum + 1} findMany): ${e?.message}`);
+        console.error(`[Export ${jobId}] CHECKPOINT 6.${batchNum + 1} FAILED (batch findMany): ${e?.message}`);
         console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+        console.error(`[Export ${jobId}] Query args: where=${JSON.stringify(batchWhere)}, orderBy={sourceRow:asc}, take=${BATCH_SIZE}`);
         throw e;
       }
 
+      log(`CHECKPOINT 6.${batchNum + 1}.b: Batch ${batchNum + 1} returned ${batch.length} products in ${Date.now() - tBatch}ms`);
+
       if (batch.length === 0) {
-        log(`CHECKPOINT 6.${batchNum}.done: Batch loop complete — no more products`);
+        log(`CHECKPOINT 6.${batchNum + 1}.done: Batch loop complete — no more products`);
         break;
       }
 
@@ -289,7 +377,7 @@ async function runExportJob(
       batchNum++;
 
       const batchMs = Date.now() - tBatch;
-      log(`CHECKPOINT 6.${batchNum}: Batch ${batchNum} — ${batch.length} products in ${batchMs}ms (total: ${data.length}/${totalProducts})`);
+      log(`Batch ${batchNum}: ${batch.length} products in ${batchMs}ms (total: ${data.length}/${totalProducts})`);
       if (batchMs > 3000) {
         log(`⚠ Batch ${batchNum} took ${batchMs}ms (>3s warning)`);
       }
