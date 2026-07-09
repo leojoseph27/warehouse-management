@@ -66,6 +66,7 @@ export function ExportProgressDialog({
   const [isCancelled, setIsCancelled] = useState(false);
   const startTimeRef = useRef<number>(0);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const jobIdRef = useRef<string | null>(null);
 
   // Reset state when dialog opens
@@ -76,10 +77,14 @@ export function ExportProgressDialog({
       startTimeRef.current = Date.now();
       jobIdRef.current = null;
     } else {
-      // Cleanup polling when dialog closes
+      // Cleanup both SSE and polling when dialog closes
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
+      }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     }
   }, [open]);
@@ -105,96 +110,99 @@ export function ExportProgressDialog({
       jobIdRef.current = jobId;
       setState(prev => ({ ...prev, jobId, stage: 'Export job started...' }));
 
-      // Start polling for status
-      let lastPercentage = 0;
-      let lastUpdateTime = Date.now();
+      // Try SSE first, fall back to polling
+      let sseFailed = false;
 
-      pollingRef.current = setInterval(async () => {
-        if (isCancelled || !jobIdRef.current) {
-          if (pollingRef.current) {
-            clearInterval(pollingRef.current);
-            pollingRef.current = null;
-          }
-          return;
-        }
+      try {
+        const eventSource = new EventSource(`/api/export/${jobId}/events`);
+        eventSourceRef.current = eventSource;
 
-        try {
-          const statusRes = await fetch(`/api/export/${jobIdRef.current}/status`);
-          if (!statusRes.ok) return;
-
-          const status = await statusRes.json();
-
-          // Calculate ETA — only after enough data (at least 5% done)
-          let eta = 'Calculating...';
-          if (status.percentage >= 5 && status.percentage < 100) {
-            const elapsed = (Date.now() - startTimeRef.current) / 1000;
-            if (elapsed > 2) {
-              const totalEst = elapsed / (status.percentage / 100);
-              const remaining = Math.max(0, totalEst - elapsed);
-              const mins = Math.floor(remaining / 60);
-              const secs = Math.floor(remaining % 60);
-              eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            }
-          } else if (status.percentage >= 100) {
-            eta = '00:00';
+        eventSource.onmessage = (event) => {
+          if (event.data === '[DONE]') {
+            eventSource.close();
+            eventSourceRef.current = null;
+            return;
           }
 
-          setState(prev => ({
-            ...prev,
-            stage: status.stage || prev.stage,
-            percentage: status.percentage || 0,
-            totalProducts: status.totalProducts || 0,
-            processedProducts: status.processedProducts || 0,
-            totalImages: status.totalImages || 0,
-            downloadedImages: status.downloadedImages || 0,
-            imagesFailed: (status as any).imagesFailed || 0,
-            productsFailed: (status as any).productsFailed || 0,
-            speed: (status as any).speed || '',
-            estimatedTimeRemaining: eta,
-            error: status.errorMessage || null,
-            done: status.status === 'completed',
-          }));
+          try {
+            const status = JSON.parse(event.data);
 
-          // If completed, download the file and stop polling
-          if (status.status === 'completed') {
-            if (pollingRef.current) {
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
+            if (status.error && status.status === 'not_found') {
+              sseFailed = true;
+              eventSource.close();
+              eventSourceRef.current = null;
+              startPolling(jobId);
+              return;
             }
 
-            // Trigger download
-            try {
-              const dlRes = await fetch(`/api/export/${jobIdRef.current}/download`);
-              if (dlRes.ok) {
-                const blob = await dlRes.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.click();
-                URL.revokeObjectURL(url);
-              }
-            } catch (dlErr) {
-              console.error('Download failed:', dlErr);
-            }
-          }
-
-          // If failed, stop polling
-          if (status.status === 'failed') {
-            if (pollingRef.current) {
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
-            }
             setState(prev => ({
               ...prev,
-              error: status.errorMessage || 'Export failed',
-              stage: 'Failed',
+              stage: status.stage || prev.stage,
+              percentage: status.percentage || 0,
+              totalProducts: status.totalProducts || 0,
+              processedProducts: status.processedProducts || 0,
+              totalImages: status.totalImages || 0,
+              downloadedImages: status.downloadedImages || 0,
+              speed: status.speed || '',
+              estimatedTimeRemaining: status.eta || 'Calculating...',
+              error: status.error || null,
+              done: status.done || false,
             }));
+
+            // If completed, download the file
+            if (status.done) {
+              eventSource.close();
+              eventSourceRef.current = null;
+              downloadResult(jobId);
+            }
+
+            // If failed, close SSE
+            if (status.status === 'failed') {
+              eventSource.close();
+              eventSourceRef.current = null;
+            }
+          } catch {
+            // Parse error — ignore
           }
-        } catch (err) {
-          // Network error during polling — keep trying
-        }
-      }, 1500); // Poll every 1.5 seconds
+        };
+
+        eventSource.onerror = () => {
+          // SSE failed — fall back to polling (only if not already done/failed)
+          if (!sseFailed) {
+            sseFailed = true;
+            eventSource.close();
+            eventSourceRef.current = null;
+
+            setState(prev => {
+              if (!prev.done && !prev.error) {
+                // Start polling as fallback
+                startPolling(jobId);
+              }
+              return prev;
+            });
+          }
+        };
+
+        // Set a timeout: if no SSE message in 5s, fall back to polling
+        setTimeout(() => {
+          if (eventSourceRef.current && !sseFailed) {
+            // Check if we've received any progress yet
+            setState(prev => {
+              if (prev.percentage === 0 && !prev.done && !prev.error) {
+                sseFailed = true;
+                eventSource.close();
+                eventSourceRef.current = null;
+                startPolling(jobId);
+              }
+              return prev;
+            });
+          }
+        }, 5000);
+
+      } catch {
+        // EventSource not supported — fall back to polling
+        startPolling(jobId);
+      }
     } catch (err: any) {
       setState(prev => ({
         ...prev,
@@ -203,6 +211,83 @@ export function ExportProgressDialog({
       }));
     }
   }, [exportParams, filename, isCancelled]);
+
+  // Polling fallback — prevents overlapping requests
+  const startPolling = useCallback((jobId: string) => {
+    let isRequestPending = false;
+
+    pollingRef.current = setInterval(async () => {
+      if (isCancelled || !jobIdRef.current || isRequestPending) return;
+
+      isRequestPending = true;
+      try {
+        const statusRes = await fetch(`/api/export/${jobId}/status`);
+        if (!statusRes.ok) return;
+
+        const status = await statusRes.json();
+
+        // Calculate ETA
+        let eta = 'Calculating...';
+        if (status.percentage >= 5 && status.percentage < 100) {
+          const elapsed = (Date.now() - startTimeRef.current) / 1000;
+          if (elapsed > 2) {
+            const totalEst = elapsed / (status.percentage / 100);
+            const remaining = Math.max(0, totalEst - elapsed);
+            const mins = Math.floor(remaining / 60);
+            const secs = Math.floor(remaining % 60);
+            eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+          }
+        } else if (status.percentage >= 100) {
+          eta = '00:00';
+        }
+
+        setState(prev => ({
+          ...prev,
+          stage: status.stage || prev.stage,
+          percentage: status.percentage || 0,
+          totalProducts: status.totalProducts || 0,
+          processedProducts: status.processedProducts || 0,
+          totalImages: status.totalImages || 0,
+          downloadedImages: status.downloadedImages || 0,
+          estimatedTimeRemaining: eta,
+          error: status.errorMessage || null,
+          done: status.status === 'completed',
+        }));
+
+        if (status.status === 'completed') {
+          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+          downloadResult(jobId);
+        }
+
+        if (status.status === 'failed') {
+          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+          setState(prev => ({ ...prev, error: status.errorMessage || 'Export failed', stage: 'Failed' }));
+        }
+      } catch {
+        // Network error — keep trying
+      } finally {
+        isRequestPending = false;
+      }
+    }, 2000); // Poll every 2s
+  }, [isCancelled]);
+
+  // Download the result file
+  const downloadResult = useCallback(async (jobId: string) => {
+    try {
+      const dlRes = await fetch(`/api/export/${jobId}/download`);
+      if (dlRes.ok) {
+        const blob = await dlRes.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (dlErr) {
+      console.error('Download failed:', dlErr);
+    }
+  }, [filename]);
 
   // Start export when dialog opens
   useEffect(() => {
@@ -228,6 +313,9 @@ export function ExportProgressDialog({
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
       }
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
     };
   }, []);
 
@@ -236,6 +324,10 @@ export function ExportProgressDialog({
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
+    }
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
     setState(prev => ({ ...prev, stage: 'Cancelled', error: 'Export cancelled by user' }));
   };
