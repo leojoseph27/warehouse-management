@@ -74,8 +74,9 @@ export async function POST(request: NextRequest) {
     console.log(`[Export ${jobId}] Job created. mode=${exportMode} quality=${quality} srFrom=${srFrom} srTo=${srTo}`);
 
     // Start the export in the background
+    console.log(`[Export ${jobId}] CHECKPOINT 0: About to call runExportJob`);
     runExportJob(jobId, exportMode, quality, srFrom, srTo).catch(async (err) => {
-      console.error(`[Export ${jobId}] FATAL ERROR:`, err?.message || err);
+      console.error(`[Export ${jobId}] CHECKPOINT FAILED — runExportJob threw:`, err?.message || err);
       console.error(`[Export ${jobId}] Stack:`, err?.stack);
       try {
         await db.exportJob.update({
@@ -88,10 +89,11 @@ export async function POST(request: NextRequest) {
           },
         });
         console.log(`[Export ${jobId}] Job marked as FAILED in database.`);
-      } catch (dbErr) {
-        console.error(`[Export ${jobId}] Failed to mark job as failed in DB:`, dbErr);
+      } catch (dbErr: any) {
+        console.error(`[Export ${jobId}] Failed to mark job as failed in DB:`, dbErr?.message);
       }
     });
+    console.log(`[Export ${jobId}] CHECKPOINT 0.5: runExportJob called (fire-and-forget)`);
 
     return NextResponse.json({ jobId });
   } catch (error: any) {
@@ -180,22 +182,42 @@ async function runExportJob(
   }
 
   try {
-    log('Job started.');
+    log('CHECKPOINT 1: Job started.');
     logMemory();
-    await db.exportJob.update({
-      where: { id: jobId },
-      data: { status: 'processing', startedAt: new Date() },
-    });
+
+    log('CHECKPOINT 2: Before marking job as processing in DB');
+    try {
+      await db.exportJob.update({
+        where: { id: jobId },
+        data: { status: 'processing', startedAt: new Date() },
+      });
+      log('CHECKPOINT 2.5: Job marked as processing');
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 2 FAILED: ${e?.message}`);
+      throw e;
+    }
 
     // ═══ STAGE 1: Preparing ═══
-    log('Preparing export...');
+    log('CHECKPOINT 3: Preparing export...');
     trackProgress('Preparing export...', 1);
-    await updateDB('Preparing export...', STAGE_WEIGHTS.preparing.start);
+    try {
+      await updateDB('Preparing export...', STAGE_WEIGHTS.preparing.start);
+      log('CHECKPOINT 3.5: Preparing DB update done');
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 3 FAILED: ${e?.message}`);
+      throw e;
+    }
 
     // ═══ STAGE 2: Database query — PAGINATED, NO EAGER LOADS ═══
-    log('Starting database query...');
+    log('CHECKPOINT 4: Starting database query...');
     trackProgress('Querying database...', 3);
-    await updateDB('Querying database...', STAGE_WEIGHTS.loadingDb.start);
+    try {
+      await updateDB('Querying database...', STAGE_WEIGHTS.loadingDb.start);
+      log('CHECKPOINT 4.5: DB status update done');
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 4 FAILED: ${e?.message}`);
+      throw e;
+    }
 
     const where: any = {};
     if (srFrom != null && srTo != null) {
@@ -203,9 +225,17 @@ async function runExportJob(
     }
 
     // Step 2a: Count total products (fast query)
+    log('CHECKPOINT 5: Before product COUNT query');
     const tCount = Date.now();
-    const totalProducts = await db.product.count({ where });
-    log(`Product count: ${totalProducts} in ${Date.now() - tCount}ms`);
+    let totalProducts: number;
+    try {
+      totalProducts = await db.product.count({ where });
+      log(`CHECKPOINT 5.5: Product count: ${totalProducts} in ${Date.now() - tCount}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 5 FAILED (count query): ${e?.message}`);
+      console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+      throw e;
+    }
     if (totalProducts === 0) {
       log('No products found — aborting.');
       clearInterval(stallChecker);
@@ -219,9 +249,8 @@ async function runExportJob(
       log(`⚠ COUNT query took ${Date.now() - tCount}ms (>3s warning)`);
     }
 
-    // Step 2b: Load products in BATCHES — no includes (no images, no original, no variants)
-    // Only select the fields needed for the export. This is MUCH faster than
-    // a single findMany with nested includes.
+    // Step 2b: Load products in BATCHES — no includes
+    log('CHECKPOINT 6: Before product batch loading loop');
     const BATCH_SIZE = 200;
     const data: any[] = [];
     const tProducts = Date.now();
@@ -237,75 +266,74 @@ async function runExportJob(
       }
 
       const tBatch = Date.now();
-      const batch = await db.product.findMany({
-        where: batchWhere,
-        orderBy: { sourceRow: 'asc' },
-        take: BATCH_SIZE,
-        // NO includes — just the product fields. This is the key optimization.
-        // Images are loaded separately below. Variants are resolved at export time
-        // using the variantMemberships relation, but we load them in a separate
-        // query to avoid a massive JOIN.
-      });
+      let batch: any[];
+      try {
+        batch = await db.product.findMany({
+          where: batchWhere,
+          orderBy: { sourceRow: 'asc' },
+          take: BATCH_SIZE,
+        });
+      } catch (e: any) {
+        console.error(`[Export ${jobId}] CHECKPOINT 6 FAILED (batch ${batchNum + 1} findMany): ${e?.message}`);
+        console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+        throw e;
+      }
 
-      if (batch.length === 0) break;
+      if (batch.length === 0) {
+        log(`CHECKPOINT 6.${batchNum}.done: Batch loop complete — no more products`);
+        break;
+      }
 
       data.push(...batch);
       lastSourceRow = batch[batch.length - 1].sourceRow;
       batchNum++;
 
       const batchMs = Date.now() - tBatch;
-      log(`Batch ${batchNum}: ${batch.length} products in ${batchMs}ms (total: ${data.length}/${totalProducts})`);
+      log(`CHECKPOINT 6.${batchNum}: Batch ${batchNum} — ${batch.length} products in ${batchMs}ms (total: ${data.length}/${totalProducts})`);
       if (batchMs > 3000) {
         log(`⚠ Batch ${batchNum} took ${batchMs}ms (>3s warning)`);
       }
 
-      // Update progress within the DB loading stage
       const pct = stagePct('loadingDb', data.length, totalProducts);
       trackProgress('Querying database...', pct);
       await updateDB('Querying database...', pct, { totalProducts });
     }
 
-    log(`Database query completed in ${Date.now() - tProducts}ms`);
+    log(`CHECKPOINT 7: Database query completed in ${Date.now() - tProducts}ms`);
     log(`Products loaded: ${data.length}`);
     logMemory();
-    if (Date.now() - tProducts > 3000) {
-      log(`⚠ Product query took ${Date.now() - tProducts}ms (>3s warning)`);
-    }
 
     trackProgress('Products loaded', STAGE_WEIGHTS.loadingDb.end);
     await updateDB('Products loaded', STAGE_WEIGHTS.loadingDb.end, { totalProducts: data.length });
 
-    // Step 2c: Load ALL images in a single query (no JOIN with products)
-    log('Loading images separately (single query, no JOIN)...');
+    // Step 2c: Load ALL images
+    log('CHECKPOINT 8: Before image query');
     const tImages = Date.now();
-
-    const allImages = await db.productImage.findMany({
-      where: {
-        productId: { in: data.map((p: any) => p.id) },
-      },
-      orderBy: [{ productId: 'asc' }, { displayOrder: 'asc' }],
-      select: {
-        id: true,
-        productId: true,
-        imageUrl: true,
-        thumbnailUrl: true,
-        driveFileId: true,
-        isPrimary: true,
-        displayOrder: true,
-        filename: true,
-        mimeType: true,
-        fileSize: true,
-      },
-    });
-
-    log(`Image query completed in ${Date.now() - tImages}ms`);
-    log(`Images loaded: ${allImages.length}`);
+    let allImages: any[];
+    try {
+      allImages = await db.productImage.findMany({
+        where: {
+          productId: { in: data.map((p: any) => p.id) },
+        },
+        orderBy: [{ productId: 'asc' }, { displayOrder: 'asc' }],
+        select: {
+          id: true, productId: true, imageUrl: true, thumbnailUrl: true,
+          driveFileId: true, isPrimary: true, displayOrder: true,
+          filename: true, mimeType: true, fileSize: true,
+        },
+      });
+      log(`CHECKPOINT 8.5: Image query completed in ${Date.now() - tImages}ms — ${allImages.length} images`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 8 FAILED (image query): ${e?.message}`);
+      console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+      throw e;
+    }
     if (Date.now() - tImages > 3000) {
       log(`⚠ Image query took ${Date.now() - tImages}ms (>3s warning)`);
     }
 
-    // Step 2d: Group images by productId in memory
-    log('Grouping images by productId in memory...');
+    // Step 2d: Group images by productId
+    log('CHECKPOINT 9: Before image grouping');
     const tGroup = Date.now();
     const imageMap = new Map<string, any[]>();
     for (const img of allImages) {
@@ -313,32 +341,30 @@ async function runExportJob(
       arr.push(img);
       imageMap.set(img.productId, arr);
     }
-
-    // Attach images to products
     for (const product of data) {
       product.images = imageMap.get(product.id) || [];
     }
-
-    log(`Image grouping completed in ${Date.now() - tGroup}ms`);
-    log(`Products with images: ${data.filter((p: any) => p.images && p.images.length > 0).length}`);
+    log(`CHECKPOINT 9.5: Image grouping done in ${Date.now() - tGroup}ms`);
     logMemory();
 
-    // Step 2e: Load variant memberships separately (lightweight)
-    log('Loading variant memberships separately...');
+    // Step 2e: Load variant memberships
+    log('CHECKPOINT 10: Before variant memberships query');
     const tVariants = Date.now();
-
-    const allMemberships = await db.variantMember.findMany({
-      where: {
-        productId: { in: data.map((p: any) => p.id) },
-      },
-      include: {
-        variantGroup: { select: { id: true, primaryProductId: true } },
-      },
-    });
-
-    log(`Variant memberships loaded: ${allMemberships.length} in ${Date.now() - tVariants}ms`);
-    if (Date.now() - tVariants > 3000) {
-      log(`⚠ Variant query took ${Date.now() - tVariants}ms (>3s warning)`);
+    let allMemberships: any[];
+    try {
+      allMemberships = await db.variantMember.findMany({
+        where: {
+          productId: { in: data.map((p: any) => p.id) },
+        },
+        include: {
+          variantGroup: { select: { id: true, primaryProductId: true } },
+        },
+      });
+      log(`CHECKPOINT 10.5: Variant memberships loaded: ${allMemberships.length} in ${Date.now() - tVariants}ms`);
+    } catch (e: any) {
+      console.error(`[Export ${jobId}] CHECKPOINT 10 FAILED (variant query): ${e?.message}`);
+      console.error(`[Export ${jobId}] Stack: ${e?.stack}`);
+      throw e;
     }
 
     // Group memberships by productId
@@ -385,6 +411,7 @@ async function runExportJob(
     log(`Image entries for ZIP: ${totalImages}`);
 
     // ═══ STAGE 4: Download primary images for embedding ═══
+    log('CHECKPOINT 11: Before primary image downloads');
     log('Starting primary image downloads (concurrency=10)...');
     trackProgress('Downloading primary images...', 13);
     await updateDB('Downloading primary images...', STAGE_WEIGHTS.dlPrimary.start, { totalImages });
@@ -457,6 +484,7 @@ async function runExportJob(
     await updateDB('Primary images downloaded', STAGE_WEIGHTS.dlPrimary.end, { downloadedImages: primaryDownloaded });
 
     // ═══ STAGE 5: Download all images for ZIP folder ═══
+    log('CHECKPOINT 12: Before ZIP image downloads');
     log('Starting ZIP image downloads (concurrency=10)...');
     trackProgress('Downloading images for ZIP folder...', 28);
     await updateDB('Downloading images for ZIP folder...', STAGE_WEIGHTS.dlZipImgs.start, { downloadedImages: 0 });
@@ -510,6 +538,7 @@ async function runExportJob(
     await updateDB('ZIP images downloaded', STAGE_WEIGHTS.dlZipImgs.end, { downloadedImages: zipImagesAdded + zipImagesFailed });
 
     // ═══ STAGE 6: Build Excel workbook ═══
+    log('CHECKPOINT 13: Before Excel workbook generation');
     log('Building Excel workbook...');
     trackProgress('Building Excel workbook...', 73);
     await updateDB('Building Excel workbook...', STAGE_WEIGHTS.buildExcel.start);
@@ -605,6 +634,7 @@ async function runExportJob(
     await updateDB('Workbook complete', STAGE_WEIGHTS.buildExcel.end, { processedProducts: totalProducts });
 
     // ═══ STAGE 7: Build ZIP ═══
+    log('CHECKPOINT 14: Before ZIP generation');
     log('Creating ZIP package...');
     trackProgress('Creating ZIP package...', 88);
     await updateDB('Creating ZIP package...', STAGE_WEIGHTS.buildZip.start);
@@ -624,6 +654,7 @@ async function runExportJob(
     await updateDB('ZIP complete', STAGE_WEIGHTS.buildZip.end);
 
     // ═══ STAGE 8: Finalize ═══
+    log('CHECKPOINT 15: Before storing result in DB');
     log('Storing export result in database...');
     trackProgress('Storing result...', 95);
     await updateDB('Storing result...', STAGE_WEIGHTS.finalize.start);
@@ -648,6 +679,7 @@ async function runExportJob(
     // ── Final summary ──
     const tTotal = Date.now() - t0;
     const totalFailed = primaryFailed + zipImagesFailed;
+    log(`CHECKPOINT 16: Result stored in DB. Export complete.`);
     log('═══ EXPORT COMPLETE ═══');
     log(`  Total time: ${(tTotal / 1000).toFixed(1)}s`);
     log(`  Products: ${totalProducts} (${productsFailed} failed)`);
@@ -658,10 +690,12 @@ async function runExportJob(
     clearInterval(stallChecker);
   } catch (err: any) {
     clearInterval(stallChecker);
-    log(`═══ FATAL ERROR ═══`);
-    log(`  Message: ${err?.message}`);
+    log(`═══ CHECKPOINT FAILED ═══`);
+    log(`  Error: ${err?.message}`);
     log(`  Stack: ${err?.stack}`);
+    log(`  Last checkpoint reached: ${lastProgressStage}`);
+    log(`  Last percentage: ${lastProgressPct}%`);
     logMemory();
-    throw err; // Re-throw so the .catch() in POST handler marks it as failed
+    throw err;
   }
 }
