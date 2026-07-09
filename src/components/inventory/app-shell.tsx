@@ -8,6 +8,7 @@ import { ProductTable } from './product-table';
 import { ProductForm } from './product-form';
 import { ProductDetail } from './product-detail';
 import { ExcelImport } from './excel-import';
+import { VariantExplorer } from './variant-explorer';
 import { AuthScreen } from './auth-screen';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -94,6 +95,12 @@ export function AppShell() {
         return (
           <ErrorBoundary fallbackMessage="Import process encountered an error. Please try again.">
             <ExcelImport />
+          </ErrorBoundary>
+        );
+      case 'variant-explorer':
+        return (
+          <ErrorBoundary fallbackMessage="Variant Explorer encountered an error. Try refreshing.">
+            <VariantExplorer />
           </ErrorBoundary>
         );
       default:

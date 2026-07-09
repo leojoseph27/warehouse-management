@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ViewMode = 'dashboard' | 'products' | 'add-product' | 'edit-product' | 'product-detail' | 'import' | 'filters';
+export type ViewMode = 'dashboard' | 'products' | 'add-product' | 'edit-product' | 'product-detail' | 'import' | 'filters' | 'variant-explorer';
 
 export type SortBy =
   | 'sourceRow'

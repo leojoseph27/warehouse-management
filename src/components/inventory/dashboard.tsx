@@ -38,6 +38,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export function Dashboard() {
   const { setView, stats, setStats, setLoading } = useInventoryStore();
@@ -210,7 +211,11 @@ export function Dashboard() {
       {/* Main Stats - Primary 4 cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {mainStats.map((card) => (
-          <Card key={card.title} className="overflow-hidden">
+          <Card
+            key={card.title}
+            className={cn('overflow-hidden', card.title === 'Variant Groups' && 'cursor-pointer hover:bg-accent/50 transition-colors')}
+            onClick={card.title === 'Variant Groups' ? () => setView('variant-explorer') : undefined}
+          >
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className={`${card.bg} p-2 sm:p-2.5 rounded-lg shrink-0`}>
