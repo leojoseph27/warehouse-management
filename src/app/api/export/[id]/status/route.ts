@@ -29,11 +29,12 @@ export async function GET(
         processedProducts: true,
         totalImages: true,
         downloadedImages: true,
-        errorMessage: true,
         resultSize: true,
+        errorMessage: true,
         startedAt: true,
         completedAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 

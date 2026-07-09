@@ -16,6 +16,9 @@ interface ExportProgressState {
   processedProducts: number;
   totalImages: number;
   downloadedImages: number;
+  imagesFailed: number;
+  productsFailed: number;
+  speed: string;
   estimatedTimeRemaining: string;
   error: string | null;
   done: boolean;
@@ -29,6 +32,9 @@ const INITIAL_STATE: ExportProgressState = {
   processedProducts: 0,
   totalImages: 0,
   downloadedImages: 0,
+  imagesFailed: 0,
+  productsFailed: 0,
+  speed: '',
   estimatedTimeRemaining: 'Calculating...',
   error: null,
   done: false,
@@ -118,15 +124,17 @@ export function ExportProgressDialog({
 
           const status = await statusRes.json();
 
-          // Calculate ETA
+          // Calculate ETA — only after enough data (at least 5% done)
           let eta = 'Calculating...';
-          if (status.percentage > 0 && status.percentage < 100) {
+          if (status.percentage >= 5 && status.percentage < 100) {
             const elapsed = (Date.now() - startTimeRef.current) / 1000;
-            const totalEst = elapsed / (status.percentage / 100);
-            const remaining = Math.max(0, totalEst - elapsed);
-            const mins = Math.floor(remaining / 60);
-            const secs = Math.floor(remaining % 60);
-            eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            if (elapsed > 2) {
+              const totalEst = elapsed / (status.percentage / 100);
+              const remaining = Math.max(0, totalEst - elapsed);
+              const mins = Math.floor(remaining / 60);
+              const secs = Math.floor(remaining % 60);
+              eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
           } else if (status.percentage >= 100) {
             eta = '00:00';
           }
@@ -139,6 +147,9 @@ export function ExportProgressDialog({
             processedProducts: status.processedProducts || 0,
             totalImages: status.totalImages || 0,
             downloadedImages: status.downloadedImages || 0,
+            imagesFailed: (status as any).imagesFailed || 0,
+            productsFailed: (status as any).productsFailed || 0,
+            speed: (status as any).speed || '',
             estimatedTimeRemaining: eta,
             error: status.errorMessage || null,
             done: status.status === 'completed',
@@ -250,10 +261,14 @@ export function ExportProgressDialog({
             <div className="bg-green-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-lg font-bold mb-1">Export Complete</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              {state.totalProducts} products exported successfully.
-            </p>
+            <h2 className="text-lg font-bold mb-2">Export Complete</h2>
+            <div className="text-sm text-muted-foreground space-y-1 mb-3">
+              <p>Products exported: <span className="font-medium text-foreground">{state.totalProducts}</span></p>
+              <p>Images exported: <span className="font-medium text-foreground">{state.downloadedImages}</span></p>
+              {state.imagesFailed > 0 && (
+                <p className="text-red-600">Images failed: {state.imagesFailed}</p>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               <Download className="h-3 w-3 inline mr-1" />
               Download starting...
@@ -329,6 +344,18 @@ export function ExportProgressDialog({
                   <p className="font-medium">
                     {state.downloadedImages} / {state.totalImages}
                   </p>
+                </div>
+              )}
+              {state.speed && (
+                <div className="bg-muted/50 rounded-md p-2">
+                  <p className="text-muted-foreground">Speed</p>
+                  <p className="font-medium">{state.speed}</p>
+                </div>
+              )}
+              {state.imagesFailed > 0 && (
+                <div className="bg-red-50 dark:bg-red-950/20 rounded-md p-2">
+                  <p className="text-muted-foreground">Failed</p>
+                  <p className="font-medium text-red-600">{state.imagesFailed} images</p>
                 </div>
               )}
             </div>
