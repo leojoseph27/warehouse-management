@@ -487,8 +487,8 @@ export function Dashboard() {
                           className="accent-purple-600"
                         />
                         <div>
-                          <p className="text-sm">Excel + Live Thumbnails <Badge variant="secondary" className="text-[9px] ml-1">Recommended</Badge></p>
-                          <p className="text-[10px] text-muted-foreground">Live image previews via Google Drive (no embedding)</p>
+                          <p className="text-sm">Excel + Live Primary Image <Badge variant="secondary" className="text-[9px] ml-1">Excel 365 Recommended</Badge></p>
+                          <p className="text-[10px] text-muted-foreground">Primary image displayed live in cell via IMAGE() (no embedding)</p>
                         </div>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
@@ -528,10 +528,10 @@ export function Dashboard() {
                       </div>
                     )}
 
-                    {/* Thumbnail Quality selector — only for excel-thumbnails mode */}
+                    {/* Primary Image Quality selector — only for excel-thumbnails mode */}
                     {exportMode === 'excel-thumbnails' && (
                       <div className="space-y-2 border-t pt-2">
-                        <p className="text-xs font-medium text-muted-foreground">Thumbnail Quality</p>
+                        <p className="text-xs font-medium text-muted-foreground">Primary Image Quality</p>
                         <div className="flex gap-2">
                           {(['small', 'medium', 'large'] as const).map(q => (
                             <button
@@ -548,7 +548,7 @@ export function Dashboard() {
                           ))}
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                          Controls the thumbnail URL size in the IMAGE() formula. Does not affect downloaded images.
+                          Controls the image resolution loaded by IMAGE(). Does not affect downloaded images.
                         </p>
                       </div>
                     )}

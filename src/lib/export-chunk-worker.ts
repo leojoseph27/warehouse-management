@@ -786,9 +786,9 @@ async function transitionToBuildingZip(
     (c: any) => !EXCLUDED_COLUMN_FIELDS.has(c.field)
   );
 
-  // For excel-thumbnails mode, check if the Thumbnail column should be
+  // For excel-thumbnails mode, check if the Primary Image column should be
   // included (only if at least one product has an imageLinks value).
-  let skipThumbnailColumn = false;
+  let skipPrimaryImageColumn = false;
   if (isThumbnailsMode) {
     let anyImageLinks = false;
     for (const chunk of parsedChunks) {
@@ -801,17 +801,18 @@ async function transitionToBuildingZip(
       if (anyImageLinks) break;
     }
     if (!anyImageLinks) {
-      skipThumbnailColumn = true;
-      console.log(`[Export ${job.id}] Skipping Thumbnail column — no products have image URLs`);
+      skipPrimaryImageColumn = true;
+      console.log(`[Export ${job.id}] Skipping Primary Image column — no products have image URLs`);
     }
   }
 
   // ── Column definitions ──
-  // For excel-thumbnails mode: Thumbnail column first, then product columns.
+  // For excel-thumbnails mode: 'Primary Image' column first, then product columns.
   // No extra image columns — all image data is in the Image Links column.
+  // Column width ~15 chars ≈ 105px. Row height set per-row to 60 ≈ 80px.
   const columns: any[] = [];
-  if (isThumbnailsMode && !skipThumbnailColumn) {
-    columns.push({ header: 'Thumbnail', key: '_thumbnail', width: 20 });
+  if (isThumbnailsMode && !skipPrimaryImageColumn) {
+    columns.push({ header: 'Primary Image', key: '_primaryImage', width: 15 });
   }
   columns.push(
     ...exportColumnDefs.map((col: any) => ({
@@ -848,23 +849,27 @@ async function transitionToBuildingZip(
       void _variantMemberships;
       const addedRow = ws.addRow(excelRow);
 
-      // ── Thumbnail column: IMAGE() formula for excel-thumbnails mode ──
+      // ── Primary Image column: IMAGE() formula for excel-thumbnails mode ──
       // Extract the first URL from imageLinks (primary image is first line).
-      if (isThumbnailsMode && !skipThumbnailColumn) {
-        const thumbnailCell = addedRow.getCell('_thumbnail');
+      // Uses Excel 365's IMAGE() function to display the image live in the cell.
+      // Row height set to 60 (≈80px) for catalog display.
+      if (isThumbnailsMode && !skipPrimaryImageColumn) {
+        const primaryImageCell = addedRow.getCell('_primaryImage');
         const imageLinksValue = excelRow.imageLinks || '';
         // First line = primary image URL
         const firstUrl = imageLinksValue.split('\n')[0]?.trim() || '';
         if (firstUrl) {
           const formula = `IMAGE("${firstUrl}")`;
-          thumbnailCell.value = { formula, result: null } as any;
+          primaryImageCell.value = { formula, result: null } as any;
+          // Row height ~60 ≈ 80px — fits a 80×80 image comfortably.
           addedRow.height = 60;
           thumbnailsAdded++;
           if (thumbnailsAdded <= 3) {
-            console.log(`[Export ${job.id}] Thumbnail #${thumbnailsAdded}: formula=${formula.substring(0, 80)}...`);
+            console.log(`[Export ${job.id}] Primary Image #${thumbnailsAdded}: formula=${formula.substring(0, 80)}...`);
           }
         } else {
-          thumbnailCell.value = '';
+          // No primary image — leave cell blank. No invalid formula.
+          primaryImageCell.value = '';
         }
       }
 
@@ -887,7 +892,7 @@ async function transitionToBuildingZip(
   for (const col of ws.columns) {
     const colKey = (col as any).key as string | undefined;
     if (!colKey) continue;
-    if (colKey === '_thumbnail') continue; // Thumbnail column has formulas
+    if (colKey === '_primaryImage') continue; // Primary Image column has formulas
     if (REQUIRED_FIELD_KEYS.has(colKey)) continue;
 
     let allEmpty = true;
