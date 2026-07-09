@@ -319,6 +319,57 @@ export function qualityToAvgBytes(quality: string): number {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Thumbnail quality → Google Drive thumbnail URL size param
+//
+// Used ONLY by the 'excel-thumbnails' export mode. Controls the
+// size of the thumbnail URL embedded in the IMAGE() formula.
+// Does NOT affect downloaded images in the ZIP package.
+// ─────────────────────────────────────────────────────────────
+
+export type ThumbnailQuality = 'small' | 'medium' | 'large';
+
+export function thumbnailQualityToSizeParam(q: string): string {
+  if (q === 'small') return 'sz=w200';
+  if (q === 'large') return 'sz=w600';
+  return 'sz=w300'; // medium (default)
+}
+
+export function thumbnailQualityToPixels(q: string): number {
+  if (q === 'small') return 200;
+  if (q === 'large') return 600;
+  return 300; // medium
+}
+
+/**
+ * Build a Google Drive thumbnail URL suitable for Excel's IMAGE() function.
+ * Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w300
+ *
+ * This URL returns the image directly (not a redirect to a sharing page),
+ * which is what IMAGE() requires. Normal sharing links
+ * (https://drive.google.com/file/d/.../view) do NOT work with IMAGE().
+ */
+export function buildDriveThumbnailUrl(driveFileId: string, thumbnailQuality: string): string {
+  const sizeParam = thumbnailQualityToSizeParam(thumbnailQuality);
+  return `https://drive.google.com/thumbnail?id=${driveFileId}&${sizeParam}`;
+}
+
+/**
+ * Build a Google Drive full-image URL (direct download / thumbnail at max res).
+ * Used for the "Direct Full Image URL" column.
+ */
+export function buildDriveFullImageUrl(driveFileId: string): string {
+  return `https://drive.google.com/thumbnail?id=${driveFileId}&sz=w2000`;
+}
+
+/**
+ * Build a Google Drive file view URL (sharing link, for human browsing).
+ * Used for the "Google Drive URL" column (hyperlinked).
+ */
+export function buildDriveViewUrl(driveFileId: string): string {
+  return `https://drive.google.com/file/d/${driveFileId}/view`;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Memory snapshot helper
 // ─────────────────────────────────────────────────────────────
 

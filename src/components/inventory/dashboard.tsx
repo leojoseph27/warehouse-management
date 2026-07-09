@@ -47,8 +47,9 @@ export function Dashboard() {
   const [isClearing, setIsClearing] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isCheckingFolders, setIsCheckingFolders] = useState(false);
-  const [exportMode, setExportMode] = useState<'excel-only' | 'excel-package' | 'excel-embedded'>('excel-only');
+  const [exportMode, setExportMode] = useState<'excel-only' | 'excel-package' | 'excel-embedded' | 'excel-thumbnails'>('excel-only');
   const [imageQuality, setImageQuality] = useState<'high' | 'medium' | 'low'>('high');
+  const [thumbnailQuality, setThumbnailQuality] = useState<'small' | 'medium' | 'large'>('medium');
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progressExportParams, setProgressExportParams] = useState<any>(null);
   const [progressFilename, setProgressFilename] = useState('');
@@ -449,8 +450,21 @@ export function Dashboard() {
                           className="accent-purple-600"
                         />
                         <div>
-                          <p className="text-sm">Excel + Image Package <Badge variant="secondary" className="text-[9px] ml-1">Recommended</Badge></p>
+                          <p className="text-sm">Excel + Image Package</p>
                           <p className="text-[10px] text-muted-foreground">ZIP with organized image folders</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="exportMode"
+                          checked={exportMode === 'excel-thumbnails'}
+                          onChange={() => setExportMode('excel-thumbnails')}
+                          className="accent-purple-600"
+                        />
+                        <div>
+                          <p className="text-sm">Excel + Live Thumbnails <Badge variant="secondary" className="text-[9px] ml-1">Recommended</Badge></p>
+                          <p className="text-[10px] text-muted-foreground">Live image previews via Google Drive (no embedding)</p>
                         </div>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
@@ -490,6 +504,31 @@ export function Dashboard() {
                       </div>
                     )}
 
+                    {/* Thumbnail Quality selector — only for excel-thumbnails mode */}
+                    {exportMode === 'excel-thumbnails' && (
+                      <div className="space-y-2 border-t pt-2">
+                        <p className="text-xs font-medium text-muted-foreground">Thumbnail Quality</p>
+                        <div className="flex gap-2">
+                          {(['small', 'medium', 'large'] as const).map(q => (
+                            <button
+                              key={q}
+                              onClick={() => setThumbnailQuality(q)}
+                              className={`flex-1 h-9 rounded-md text-xs capitalize border transition-colors ${
+                                thumbnailQuality === q
+                                  ? 'bg-purple-600 text-white border-purple-600'
+                                  : 'bg-background hover:bg-accent border-border'
+                              }`}
+                            >
+                              {q === 'small' ? 'Small (200px)' : q === 'medium' ? 'Medium (300px)' : 'Large (600px)'}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Controls the thumbnail URL size in the IMAGE() formula. Does not affect downloaded images.
+                        </p>
+                      </div>
+                    )}
+
                     <div className="border-t" />
 
                     <Button
@@ -500,12 +539,14 @@ export function Dashboard() {
                         setIsExporting(true);
                         setShowExportMenu(false);
                         try {
-                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
+                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
                             // Use async export job with progress dialog
                             setResumeJobId(null);
                             setProgressExportParams({
                               exportMode,
-                              quality: imageQuality,
+                              // For excel-thumbnails mode, quality carries the thumbnail quality.
+                              // For excel-package/excel-embedded, quality carries the image quality.
+                              quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
                             });
                             setProgressFilename(exportMode === 'excel-package' ? 'product_export_package.zip' : 'products_export.xlsx');
                             setShowProgressDialog(true);
@@ -543,12 +584,12 @@ export function Dashboard() {
                             const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                             if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                             setIsExporting(true);
-                            if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
+                            if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
                               // Use chunked pipeline for image exports
                               setResumeJobId(null);
                               setProgressExportParams({
                                 exportMode,
-                                quality: imageQuality,
+                                quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
                                 srFrom: from,
                                 srTo: to,
                               });
@@ -584,12 +625,12 @@ export function Dashboard() {
                           const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                           if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                           setIsExporting(true);
-                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
+                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
                             // Use chunked pipeline for image exports
                             setResumeJobId(null);
                             setProgressExportParams({
                               exportMode,
-                              quality: imageQuality,
+                              quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
                               srFrom: from,
                               srTo: to,
                             });

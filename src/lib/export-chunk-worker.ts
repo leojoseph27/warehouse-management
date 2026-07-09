@@ -55,6 +55,10 @@ import {
   buildProcessResponse,
   getMemoryUsageMb,
   STAGE_LABELS,
+  buildDriveThumbnailUrl,
+  buildDriveFullImageUrl,
+  buildDriveViewUrl,
+  thumbnailQualityToPixels,
   type ProcessChunkResponse,
 } from '@/lib/export-helpers';
 import { createExportLogger } from '@/lib/export-logger';
@@ -542,20 +546,48 @@ async function handleStageLoadingProducts(
       rowData[colDef.field] = value === null || value === undefined ? '' : value;
     }
     const folder = resolveFolderName(product);
-    rowData['_imageFolder'] = `Images/${folder}`;
-    rowData['_primaryImagePath'] = `Images/${folder}/primary.jpg`;
-    rowData['_imageCount'] = (product as any).images?.length || 0;
-    // Drive URL column (hyperlink target for the primary image).
-    const primaryImg = ((product as any).images || []).find((img: any) => img.isPrimary)
-      || (product as any).images?.[0];
-    if (primaryImg?.driveFileId) {
-      rowData['_googleDriveUrl'] = `https://drive.google.com/file/d/${primaryImg.driveFileId}/view`;
-    } else if (primaryImg?.imageUrl && !primaryImg.imageUrl.startsWith('data:')) {
-      rowData['_googleDriveUrl'] = primaryImg.imageUrl;
-    } else {
+    const images = (product as any).images || [];
+    const primaryImg = images.find((img: any) => img.isPrimary) || images[0] || null;
+    const imageCount = images.length;
+
+    // ── Image Count consistency fix ──
+    // If a product has a primary image, imageCount >= 1.
+    // If no images exist, imageCount = 0 AND all image path/URL fields are empty.
+    if (imageCount === 0 || !primaryImg) {
+      rowData['_imageFolder'] = '';
+      rowData['_primaryImagePath'] = '';
+      rowData['_imageCount'] = 0;
       rowData['_googleDriveUrl'] = '';
+      rowData['_relativeImagePath'] = '';
+      rowData['_thumbnailUrl'] = '';
+      rowData['_fullImageUrl'] = '';
+      rowData['_driveFileId'] = '';
+    } else {
+      rowData['_imageFolder'] = `Images/${folder}`;
+      rowData['_primaryImagePath'] = `Images/${folder}/primary.jpg`;
+      rowData['_imageCount'] = imageCount;
+      rowData['_relativeImagePath'] = `Images/${folder}/primary.jpg`;
+
+      if (primaryImg.driveFileId) {
+        // Use the thumbnail-quality-aware URL for the IMAGE() formula.
+        // The `quality` field on ExportJob is reused: for excel-thumbnails mode
+        // it carries the thumbnail quality ('small'|'medium'|'large').
+        rowData['_thumbnailUrl'] = buildDriveThumbnailUrl(primaryImg.driveFileId, job.quality);
+        rowData['_fullImageUrl'] = buildDriveFullImageUrl(primaryImg.driveFileId);
+        rowData['_googleDriveUrl'] = buildDriveViewUrl(primaryImg.driveFileId);
+        rowData['_driveFileId'] = primaryImg.driveFileId;
+      } else if (primaryImg.imageUrl && !primaryImg.imageUrl.startsWith('data:')) {
+        rowData['_thumbnailUrl'] = primaryImg.imageUrl;
+        rowData['_fullImageUrl'] = primaryImg.imageUrl;
+        rowData['_googleDriveUrl'] = primaryImg.imageUrl;
+        rowData['_driveFileId'] = '';
+      } else {
+        rowData['_thumbnailUrl'] = '';
+        rowData['_fullImageUrl'] = '';
+        rowData['_googleDriveUrl'] = '';
+        rowData['_driveFileId'] = '';
+      }
     }
-    rowData['_relativeImagePath'] = `Images/${folder}/primary.jpg`;
     // Internal: needed for variant resolution during /download.
     rowData['_productId'] = product.id;
     rowData['_variantMemberships'] = (product as any).variantMemberships || [];
@@ -764,7 +796,15 @@ async function transitionToBuildingZip(
   const workbook = new ExcelJS.Workbook();
   const ws = workbook.addWorksheet('Master Catalog');
 
-  const columns: any[] = [
+  const isThumbnailsMode = job.exportMode === 'excel-thumbnails';
+
+  // Column definitions. For excel-thumbnails mode, add Thumbnail as the
+  // FIRST column (before COLUMN_DEFS) plus the extra image URL columns.
+  const columns: any[] = [];
+  if (isThumbnailsMode) {
+    columns.push({ header: 'Thumbnail', key: '_thumbnail', width: 20 });
+  }
+  columns.push(
     ...COLUMN_DEFS.map((col: any) => ({
       header: col.header,
       key: col.field,
@@ -775,7 +815,12 @@ async function transitionToBuildingZip(
     { header: 'Image Count', key: '_imageCount', width: 12 },
     { header: 'Google Drive URL', key: '_googleDriveUrl', width: 50 },
     { header: 'Relative Image Path', key: '_relativeImagePath', width: 40 },
-  ];
+  );
+  if (isThumbnailsMode) {
+    columns.push({ header: 'Thumbnail URL', key: '_thumbnailUrl', width: 60 });
+    columns.push({ header: 'Full Image URL', key: '_fullImageUrl', width: 60 });
+    columns.push({ header: 'Google Drive File ID', key: '_driveFileId', width: 40 });
+  }
   ws.columns = columns;
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).fill = {
@@ -786,6 +831,7 @@ async function transitionToBuildingZip(
 
   const tExcelStart = Date.now();
   let totalRowsWritten = 0;
+  let thumbnailsAdded = 0;
   for (const chunk of parsedChunks) {
     for (const row of chunk.rows) {
       const productRef = productRefMap.get(row._productId);
@@ -802,6 +848,8 @@ async function transitionToBuildingZip(
       void _productId;
       void _variantMemberships;
       const addedRow = ws.addRow(excelRow);
+
+      // Hyperlink on Google Drive URL column.
       if (excelRow._googleDriveUrl) {
         const cell = addedRow.getCell('_googleDriveUrl');
         cell.value = {
@@ -810,6 +858,32 @@ async function transitionToBuildingZip(
         } as any;
         cell.font = { color: { argb: 'FF0563C1' }, underline: true };
       }
+
+      // ── Thumbnail column: IMAGE() formula for excel-thumbnails mode ──
+      if (isThumbnailsMode) {
+        const thumbnailCell = addedRow.getCell('_thumbnail');
+        const thumbnailUrl = excelRow._thumbnailUrl || '';
+        if (thumbnailUrl) {
+          // Excel 365 IMAGE() function. If the URL is empty, show blank.
+          // Formula: =IMAGE("https://drive.google.com/thumbnail?id=...&sz=w300")
+          //
+          // Note: IMAGE() is only supported in Excel 365 and Excel for the Web.
+          // Older Excel versions will show #NAME? error. To handle this
+          // gracefully, we set the cell to a formula string — Excel 365 will
+          // evaluate it, older versions will display the formula as text or
+          // show the URL as a fallback (via the Thumbnail URL column).
+          thumbnailCell.value = {
+            formula: `IMAGE("${thumbnailUrl}")`,
+            result: '', // placeholder — Excel 365 will compute
+          } as any;
+          // Set row height to make thumbnails visible.
+          addedRow.height = 60;
+          thumbnailsAdded++;
+        } else {
+          thumbnailCell.value = '';
+        }
+      }
+
       totalRowsWritten++;
     }
   }
@@ -818,8 +892,12 @@ async function transitionToBuildingZip(
   const excelMs = Date.now() - tExcelStart;
   const memAfterExcel = getMemoryUsageMb();
 
+  console.log(`[Export ${job.id}] Excel workbook built: ${totalRowsWritten} rows, ${thumbnailsAdded} thumbnails, ${(excelBuffer.length / 1024).toFixed(1)} KB, ${excelMs}ms (mode=${job.exportMode})`);
+
   await logger.info('stage-building-zip', 'Excel workbook built', {
     rowsWritten: totalRowsWritten,
+    thumbnailsAdded,
+    exportMode: job.exportMode,
     excelBufferMb: (excelBuffer.length / 1024 / 1024).toFixed(2),
     excelMs,
     memoryAfterExcelMb: memAfterExcel.heap,
@@ -830,7 +908,10 @@ async function transitionToBuildingZip(
     data: { percentage: Math.round(stagePct('buildingZip', 2, 4)) },
   });
 
-  // ── For excel-embedded mode: upload just the Excel file ──
+  // ── For excel-embedded AND excel-thumbnails modes: upload just the Excel file ──
+  // No ZIP, no image download — the Excel file is lightweight.
+  // For excel-thumbnails mode, the IMAGE() formulas reference Google Drive
+  // thumbnail URLs directly (no images embedded in the workbook).
   if (job.exportMode !== 'excel-package') {
     const tUploadStart = Date.now();
     const { url, size } = await uploadExportFile(
@@ -853,10 +934,12 @@ async function transitionToBuildingZip(
       },
     });
 
-    await logger.info('stage-building-zip', 'Excel uploaded to Blob (excel-embedded mode)', {
+    await logger.info('stage-building-zip', `Excel uploaded to Blob (${job.exportMode} mode)`, {
+      exportMode: job.exportMode,
       blobUrl: url,
       fileSize: size,
       uploadMs,
+      thumbnailsAdded,
       memoryAfterUploadMb: memAfterUpload.heap,
       totalStageMs: Date.now() - tStageStart,
     });
