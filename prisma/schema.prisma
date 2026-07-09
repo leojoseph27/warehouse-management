@@ -304,32 +304,170 @@ model ImportJob {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// EXPORT JOBS
-// Async export jobs for Excel + Image Package generation
+// EXPORT JOBS (Production-grade chunked pipeline)
+//
+// Storage policy:
+//   - Neon stores: job metadata, progress, cursor, chunk metadata, logs.
+//   - Google Drive stores: all product image binaries (never Neon).
+//   - Final ZIP is built ONCE during the 'building_zip' stage and uploaded
+//     to Vercel Blob (object storage). The download endpoint just streams
+//     the pre-built ZIP from Blob — no rebuild, no image refetch.
+//   - Blobs are auto-deleted after ZIP_RETENTION_HOURS (default 48h).
+//     ExportJob + ExportLog rows are kept permanently for audit.
+//
+// Lifecycle:
+//   created → processing (loading_products → downloading_images →
+//             writing_excel → building_zip → saving_package) → completed
+//   Any stage can transition to failed or cancelled.
 // ─────────────────────────────────────────────────────────────────
 
 model ExportJob {
-  id                String   @id @default(cuid())
-  status            String   @default("pending")  // pending, processing, completed, failed, cancelled
-  stage             String   @default("")          // current stage description
-  percentage        Int      @default(0)           // 0-100
-  exportMode        String   @default("excel-package")  // excel-package, excel-embedded
-  quality           String   @default("high")      // high, medium, low
+  id                String    @id @default(cuid())
+  // pending, created, processing, completed, failed, cancelled, expired
+  status            String    @default("pending")
+  // Human-readable current stage label, e.g. "Downloading images..."
+  stage             String    @default("")
+  // 0-100, derived from completed chunks / total chunks
+  percentage        Int       @default(0)
+  // excel-package | excel-embedded
+  exportMode        String    @default("excel-package")
+  // high | medium | low — controls Google Drive thumbnail size param
+  quality           String    @default("high")
+  // SR filter range (null = all products)
   srFrom            Int?
   srTo              Int?
-  totalProducts     Int      @default(0)
-  processedProducts Int      @default(0)
-  totalImages       Int      @default(0)
-  downloadedImages  Int      @default(0)
-  resultBlob        String?  // Base64-encoded ZIP (for small exports) or null
-  resultSize        Int?     // Size in bytes
+  // Totals (set during 'created' stage after COUNT query)
+  totalProducts     Int       @default(0)
+  totalImages       Int       @default(0)
+  // Progress counters
+  processedProducts Int       @default(0)
+  downloadedImages  Int       @default(0)
+  failedImages      Int       @default(0)
+  // Cursor: last sourceRow successfully committed. null = no chunks done yet.
+  // Used for resume — the next /process call picks up from cursor+1.
+  cursor            Int?
+  // Number of chunks persisted so far (matches max(chunkNumber) on ExportChunk).
+  chunkCount        Int       @default(0)
+  // Number of chunks that failed and need retry.
+  failedChunkCount  Int       @default(0)
+  // Total chunk time accumulated so far (ms). Used for ETA calculation.
+  elapsedMs         Int       @default(0)
+  // Estimated download size in bytes (computed from image count × avg size).
+  estimatedSizeBytes Int?
+  // Actual size of the generated ZIP/Excel file in bytes (set when completed).
+  fileSize          Int?
+  // Vercel Blob URL where the completed ZIP is stored. Set during 'building_zip'
+  // stage. Null until the ZIP is uploaded. After retention expires, this is
+  // cleared (set to null) but the ExportJob row is kept for audit.
+  blobUrl           String?
+  // When the blob should be auto-deleted. Set to completedAt + ZIP_RETENTION_HOURS.
+  // The cleanup cron checks this field and deletes expired blobs.
+  blobExpiresAt     DateTime?
+  // URL the frontend uses to download the result. Always /api/export/[id]/download.
+  downloadUrl       String?
   errorMessage      String?
   startedAt         DateTime?
   completedAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  chunks            ExportChunk[]
+  logs              ExportLog[]
 
   @@index([status])
   @@index([createdAt])
+  @@index([cursor])
+  @@index([blobExpiresAt])
   @@map("export_jobs")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EXPORT CHUNKS (metadata only — no image binaries)
+//
+// One row per successfully processed product batch. Stores:
+//   - chunkNumber (sequential, 1-based)
+//   - firstSourceRow / lastSourceRow (for resumability and verification)
+//   - productIds (JSON array — used to re-fetch for ZIP streaming)
+//   - imageManifest (JSON array of {folder, filename, driveFileId, url})
+//   - excelRowsJson (JSON of precomputed Excel row data — built once,
+//     reused during ZIP assembly)
+//   - timing metrics (dbMs, driveMs, etc.) for performance analysis
+//
+// On finalize, all chunks are loaded in order, Excel rows are concatenated,
+// and images are streamed directly from Google Drive into the archiver —
+// they never touch Neon.
+// ─────────────────────────────────────────────────────────────────
+
+model ExportChunk {
+  id              String   @id @default(cuid())
+  jobId           String
+  // 1-based chunk number (chunk 1 = first N products, etc.)
+  chunkNumber     Int
+  // SR range covered by this chunk — for resumability audits
+  firstSourceRow  Int?
+  lastSourceRow   Int?
+  // Status of this chunk: pending | completed | failed
+  status          String   @default("pending")
+  // Number of products in this chunk (typically = EXPORT_CHUNK_SIZE)
+  productCount    Int      @default(0)
+  // Number of images referenced by this chunk
+  imageCount      Int      @default(0)
+  // Number of images successfully downloaded during this chunk's processing
+  // (used for progress display; final ZIP downloads again on demand)
+  imagesDownloaded Int     @default(0)
+  // JSON array of product IDs in this chunk — used by /download to re-fetch
+  // product data for Excel assembly
+  productIdsJson  String   @default("[]")
+  // JSON array of { folder, filename, driveFileId, url, isPrimary } entries.
+  // Used by /download to stream images from Drive into the ZIP.
+  imageManifestJson String @default("[]")
+  // JSON array of precomputed Excel row objects (one per product).
+  // Precomputed during chunk processing so finalize is fast.
+  excelRowsJson   String   @default("[]")
+  // Timing metrics (milliseconds)
+  dbMs            Int      @default(0)
+  driveMs         Int      @default(0)
+  excelMs         Int      @default(0)
+  totalMs         Int      @default(0)
+  // Memory snapshot at chunk completion (heapUsed in MB)
+  memoryMb        Int      @default(0)
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  job             ExportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, chunkNumber])
+  @@index([jobId, chunkNumber])
+  @@index([jobId, status])
+  @@map("export_chunks")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// EXPORT LOGS
+//
+// Append-only log entries for each export job. Used for:
+//   - Inspecting failed exports after the fact
+//   - Performance analysis (per-chunk timing)
+//   - Debugging stuck jobs
+//
+// Levels: debug | info | warn | error
+// ─────────────────────────────────────────────────────────────────
+
+model ExportLog {
+  id          String   @id @default(cuid())
+  jobId       String
+  timestamp   DateTime @default(now())
+  level       String   @default("info")  // debug | info | warn | error
+  // Short source identifier (e.g., "process", "download", "stage-created")
+  source      String   @default("")
+  message     String
+  // Optional JSON context (chunk number, timings, error stack, etc.)
+  contextJson String?
+
+  job         ExportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, timestamp])
+  @@index([jobId, level])
+  @@map("export_logs")
 }

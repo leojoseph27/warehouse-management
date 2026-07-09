@@ -52,16 +52,21 @@ export function Dashboard() {
   const [showProgressDialog, setShowProgressDialog] = useState(false);
   const [progressExportParams, setProgressExportParams] = useState<any>(null);
   const [progressFilename, setProgressFilename] = useState('');
+  const [resumeJobId, setResumeJobId] = useState<string | null>(null);
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [isLoadingRecent, setIsLoadingRecent] = useState(false);
+  const [resumableJob, setResumableJob] = useState<any | null>(null);
+  const [recentExports, setRecentExports] = useState<any[]>([]);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadStats();
     loadRecentProducts();
+    loadResumableJob();
+    loadRecentExports();
   }, []);
 
   const loadStats = async () => {
@@ -92,6 +97,54 @@ export function Dashboard() {
     } finally {
       setIsLoadingRecent(false);
     }
+  };
+
+  // Resume support: check for in-progress jobs that can be resumed.
+  const loadResumableJob = async () => {
+    try {
+      const res = await fetch('/api/export/list?status=processing&limit=1');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.jobs && data.jobs.length > 0) {
+          setResumableJob(data.jobs[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading resumable job:', error);
+    }
+  };
+
+  // Load recent export history (any status) for the dashboard panel.
+  const loadRecentExports = async () => {
+    try {
+      const res = await fetch('/api/export/list?limit=5');
+      if (res.ok) {
+        const data = await res.json();
+        setRecentExports(data.jobs || []);
+      }
+    } catch (error) {
+      console.error('Error loading recent exports:', error);
+    }
+  };
+
+  // Resume an in-progress job — opens the progress dialog in resume mode.
+  const handleResume = () => {
+    if (!resumableJob) return;
+    setResumeJobId(resumableJob.id);
+    setProgressExportParams(null);
+    setProgressFilename(
+      resumableJob.exportMode === 'excel-package'
+        ? 'product_export_package.zip'
+        : 'products_export.xlsx'
+    );
+    setResumableJob(null);
+    setShowProgressDialog(true);
+    setIsExporting(true);
+  };
+
+  // Dismiss the resume banner without resuming (job continues server-side).
+  const handleDismissResume = () => {
+    setResumableJob(null);
   };
 
   // Build the export URL based on the selected export mode
@@ -243,6 +296,31 @@ export function Dashboard() {
           Add Product
         </Button>
       </div>
+
+      {/* Resume export banner */}
+      {resumableJob && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Loader2 className="h-4 w-4 text-blue-600 shrink-0 animate-spin" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 truncate">
+                Export in progress — {resumableJob.percentage}% complete
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300 truncate">
+                {resumableJob.processedProducts} / {resumableJob.totalProducts} products • stage: {resumableJob.stage}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button size="sm" variant="default" onClick={handleResume} className="h-8">
+              Resume
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleDismissResume} className="h-8">
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Stats - Primary 4 cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -424,6 +502,7 @@ export function Dashboard() {
                         try {
                           if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
                             // Use async export job with progress dialog
+                            setResumeJobId(null);
                             setProgressExportParams({
                               exportMode,
                               quality: imageQuality,
@@ -464,14 +543,29 @@ export function Dashboard() {
                             const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                             if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                             setIsExporting(true);
-                            const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
-                            const filename = exportMode === 'excel-package'
-                              ? `product_export_sr_${from}_${to}.zip`
-                              : `products_sr_${from}_${to}.xlsx`;
-                            downloadBlob(url, filename)
-                              .then(() => { setShowExportMenu(false); setSrRange(''); })
-                              .catch(err => toast.error(err.message || 'Export failed'))
-                              .finally(() => setIsExporting(false));
+                            if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
+                              // Use chunked pipeline for image exports
+                              setResumeJobId(null);
+                              setProgressExportParams({
+                                exportMode,
+                                quality: imageQuality,
+                                srFrom: from,
+                                srTo: to,
+                              });
+                              setProgressFilename(exportMode === 'excel-package'
+                                ? `product_export_sr_${from}_${to}.zip`
+                                : `products_sr_${from}_${to}.xlsx`);
+                              setShowExportMenu(false);
+                              setShowProgressDialog(true);
+                            } else {
+                              // Direct download for excel-only mode
+                              const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
+                              const filename = `products_sr_${from}_${to}.xlsx`;
+                              downloadBlob(url, filename)
+                                .then(() => { setShowExportMenu(false); setSrRange(''); })
+                                .catch(err => toast.error(err.message || 'Export failed'))
+                                .finally(() => setIsExporting(false));
+                            }
                           }
                         }}
                         className="h-11 sm:h-9 text-sm"
@@ -490,14 +584,29 @@ export function Dashboard() {
                           const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
                           if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
                           setIsExporting(true);
-                          const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
-                          const filename = exportMode === 'excel-package'
-                            ? `product_export_sr_${from}_${to}.zip`
-                            : `products_sr_${from}_${to}.xlsx`;
-                          downloadBlob(url, filename)
-                            .then(() => { setShowExportMenu(false); setSrRange(''); })
-                            .catch(err => toast.error(err.message || 'Export failed'))
-                            .finally(() => setIsExporting(false));
+                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded') {
+                            // Use chunked pipeline for image exports
+                            setResumeJobId(null);
+                            setProgressExportParams({
+                              exportMode,
+                              quality: imageQuality,
+                              srFrom: from,
+                              srTo: to,
+                            });
+                            setProgressFilename(exportMode === 'excel-package'
+                              ? `product_export_sr_${from}_${to}.zip`
+                              : `products_sr_${from}_${to}.xlsx`);
+                            setShowExportMenu(false);
+                            setShowProgressDialog(true);
+                          } else {
+                            // Direct download for excel-only mode
+                            const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
+                            const filename = `products_sr_${from}_${to}.xlsx`;
+                            downloadBlob(url, filename)
+                              .then(() => { setShowExportMenu(false); setSrRange(''); })
+                              .catch(err => toast.error(err.message || 'Export failed'))
+                              .finally(() => setIsExporting(false));
+                          }
                         }}
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -682,16 +791,26 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Export Progress Dialog — shown when exporting with images */}
+      {/* Export Progress Dialog — shown when exporting with images OR resuming */}
       <ExportProgressDialog
         open={showProgressDialog}
         exportParams={progressExportParams}
+        resumeJobId={resumeJobId}
         filename={progressFilename}
-        onClose={() => { setShowProgressDialog(false); setIsExporting(false); }}
+        onClose={() => {
+          setShowProgressDialog(false);
+          setIsExporting(false);
+          setResumeJobId(null);
+          setProgressExportParams(null);
+        }}
         onComplete={() => {
           setShowProgressDialog(false);
           setIsExporting(false);
+          setResumeJobId(null);
+          setProgressExportParams(null);
           toast.success('Export completed successfully');
+          // Refresh history now that a new export is done.
+          loadRecentExports();
         }}
       />
     </div>

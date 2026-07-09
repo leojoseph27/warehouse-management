@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
+import { formatEta, formatSpeed } from '@/lib/export-helpers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,12 +9,12 @@ export const dynamic = 'force-dynamic';
  * GET /api/export/[id]/events
  *
  * Server-Sent Events (SSE) endpoint that streams export job progress.
- * The server polls the database every 1s and pushes updates to the client
- * whenever the progress changes. When the job completes, fails, or is
- * cancelled, a final event is sent and the stream closes.
  *
- * The frontend uses EventSource to connect. If the connection drops,
- * EventSource automatically reconnects (built-in browser behavior).
+ * NOTE: The new chunked pipeline no longer uses SSE — the frontend
+ * orchestrator drives progress directly via /api/export/process responses.
+ * This endpoint is retained for backward compatibility (e.g., if an old
+ * client tab is still open during a transition) and for any future
+ * consumers that want push-style updates.
  */
 export async function GET(
   request: NextRequest,
@@ -27,6 +28,8 @@ export async function GET(
     async start(controller) {
       let lastPercentage = -1;
       let lastStage = '';
+      let lastProcessedProducts = -1;
+      let lastDownloadedImages = -1;
       let closed = false;
 
       function sendEvent(data: any) {
@@ -35,10 +38,8 @@ export async function GET(
         controller.enqueue(encoder.encode(event));
       }
 
-      // Send an initial comment to establish the connection
       controller.enqueue(encoder.encode(': connected\n\n'));
 
-      // Poll the database every 1 second for progress changes
       const interval = setInterval(async () => {
         if (closed) return;
 
@@ -50,12 +51,17 @@ export async function GET(
               status: true,
               stage: true,
               percentage: true,
+              cursor: true,
+              chunkCount: true,
               totalProducts: true,
               processedProducts: true,
               totalImages: true,
               downloadedImages: true,
+              failedImages: true,
+              estimatedSizeBytes: true,
+              fileSize: true,
+              blobExpiresAt: true,
               errorMessage: true,
-              resultSize: true,
               startedAt: true,
               completedAt: true,
             },
@@ -69,42 +75,28 @@ export async function GET(
             return;
           }
 
-          // Only send if something changed
           const changed =
             job.percentage !== lastPercentage ||
             job.stage !== lastStage ||
+            job.processedProducts !== lastProcessedProducts ||
+            job.downloadedImages !== lastDownloadedImages ||
             job.status === 'completed' ||
             job.status === 'failed';
 
           if (changed) {
             lastPercentage = job.percentage;
             lastStage = job.stage;
+            lastProcessedProducts = job.processedProducts;
+            lastDownloadedImages = job.downloadedImages;
 
-            // Calculate ETA
-            let eta = 'Calculating...';
-            if (job.percentage >= 5 && job.percentage < 100 && job.startedAt) {
-              const elapsed = (Date.now() - new Date(job.startedAt).getTime()) / 1000;
-              if (elapsed > 2) {
-                const totalEst = elapsed / (job.percentage / 100);
-                const remaining = Math.max(0, totalEst - elapsed);
-                const mins = Math.floor(remaining / 60);
-                const secs = Math.floor(remaining % 60);
-                eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-              }
-            } else if (job.percentage >= 100) {
-              eta = '00:00';
-            }
-
-            // Calculate speed (images/sec or products/sec)
-            let speed = '';
-            if (job.startedAt && job.percentage > 0 && job.percentage < 100) {
-              const elapsed = (Date.now() - new Date(job.startedAt).getTime()) / 1000;
-              if (job.downloadedImages > 0 && elapsed > 0) {
-                speed = `${(job.downloadedImages / elapsed).toFixed(1)} img/s`;
-              } else if (job.processedProducts > 0 && elapsed > 0) {
-                speed = `${(job.processedProducts / elapsed).toFixed(1)} prod/s`;
-              }
-            }
+            const eta = formatEta(job.percentage, job.startedAt);
+            const stageLower = (job.stage || '').toLowerCase();
+            const speed =
+              stageLower.includes('download') || stageLower.includes('image')
+                ? formatSpeed(job.downloadedImages, job.startedAt, 'img')
+                : stageLower.includes('product') || stageLower.includes('load')
+                ? formatSpeed(job.processedProducts, job.startedAt, 'prod')
+                : '';
 
             sendEvent({
               status: job.status,
@@ -116,27 +108,31 @@ export async function GET(
               processedProducts: job.processedProducts,
               totalImages: job.totalImages,
               downloadedImages: job.downloadedImages,
+              failedImages: job.failedImages,
+              chunkCount: job.chunkCount,
+              nextCursor: job.cursor,
+              estimatedSizeBytes: job.estimatedSizeBytes,
+              fileSize: job.fileSize,
+              blobExpiresAt: job.blobExpiresAt,
               error: job.errorMessage,
               done: job.status === 'completed',
-              resultSize: job.resultSize,
+              downloadUrl: job.status === 'completed'
+                ? `/api/export/${job.id}/download`
+                : null,
             });
 
-            // If the job is in a terminal state, close the stream
-            if (job.status === 'completed' || job.status === 'failed') {
+            if (['completed', 'failed', 'cancelled'].includes(job.status)) {
               closed = true;
               clearInterval(interval);
-              // Send a final [DONE] marker
               controller.enqueue(encoder.encode('data: [DONE]\n\n'));
               controller.close();
             }
           }
         } catch (err) {
-          // DB error — keep trying, don't crash the stream
           console.warn(`[export/events ${id}] Polling error:`, err);
         }
       }, 1000);
 
-      // Clean up on abort (client disconnect)
       request.signal.addEventListener('abort', () => {
         closed = true;
         clearInterval(interval);

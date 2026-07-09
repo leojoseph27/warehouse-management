@@ -16,13 +16,18 @@ interface ExportProgressState {
   processedProducts: number;
   totalImages: number;
   downloadedImages: number;
-  imagesFailed: number;
-  productsFailed: number;
+  failedImages: number;
+  chunkCount: number;
+  currentChunk: number | null;
   speed: string;
   estimatedTimeRemaining: string;
+  estimatedSizeBytes: number | null;
+  fileSize: number | null;
+  blobExpiresAt: string | null;
   error: string | null;
   done: boolean;
   jobId: string | null;
+  downloadUrl: string | null;
 }
 
 const INITIAL_STATE: ExportProgressState = {
@@ -32,32 +37,51 @@ const INITIAL_STATE: ExportProgressState = {
   processedProducts: 0,
   totalImages: 0,
   downloadedImages: 0,
-  imagesFailed: 0,
-  productsFailed: 0,
+  failedImages: 0,
+  chunkCount: 0,
+  currentChunk: null,
   speed: '',
   estimatedTimeRemaining: 'Calculating...',
+  estimatedSizeBytes: null,
+  fileSize: null,
+  blobExpiresAt: null,
   error: null,
   done: false,
   jobId: null,
+  downloadUrl: null,
 };
 
 interface ExportProgressDialogProps {
   open: boolean;
-  /** Parameters for starting the export job */
+  /** Parameters for starting a NEW export job. If null and resumeJobId is set, we resume. */
   exportParams: {
     exportMode: string;
     quality: string;
     srFrom?: number | null;
     srTo?: number | null;
   } | null;
+  /** Optional existing jobId to resume. When set, exportParams is ignored. */
+  resumeJobId?: string | null;
   filename: string;
   onClose: () => void;
   onComplete: () => void;
 }
 
+const INTER_CHUNK_DELAY_MS = 300;
+const MAX_CONSECUTIVE_ERRORS = 5;
+
+function formatBytes(bytes: number | null): string {
+  if (!bytes || bytes <= 0) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
 export function ExportProgressDialog({
   open,
   exportParams,
+  resumeJobId,
   filename,
   onClose,
   onComplete,
@@ -65,213 +89,27 @@ export function ExportProgressDialog({
   const [state, setState] = useState<ExportProgressState>(INITIAL_STATE);
   const [isCancelled, setIsCancelled] = useState(false);
   const startTimeRef = useRef<number>(0);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const jobIdRef = useRef<string | null>(null);
+  const cursorRef = useRef<number | null>(null);
+  const isProcessingRef = useRef<boolean>(false);
+  const consecutiveErrorsRef = useRef<number>(0);
+  const cancelledRef = useRef<boolean>(false);
 
-  // Reset state when dialog opens
+  // Reset state when dialog opens.
   useEffect(() => {
     if (open) {
       setState(INITIAL_STATE);
       setIsCancelled(false);
+      cancelledRef.current = false;
       startTimeRef.current = Date.now();
-      jobIdRef.current = null;
-    } else {
-      // Cleanup both SSE and polling when dialog closes
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
+      jobIdRef.current = resumeJobId || null;
+      cursorRef.current = null;
+      isProcessingRef.current = false;
+      consecutiveErrorsRef.current = 0;
     }
-  }, [open]);
+  }, [open, resumeJobId]);
 
-  // Start the export job
-  const startExport = useCallback(async () => {
-    if (!exportParams) return;
-
-    try {
-      // Create the export job
-      const res = await fetch('/api/export/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(exportParams),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
-      }
-
-      const { jobId } = await res.json();
-      jobIdRef.current = jobId;
-      setState(prev => ({ ...prev, jobId, stage: 'Export job started...' }));
-
-      // Try SSE first, fall back to polling
-      let sseFailed = false;
-
-      try {
-        const eventSource = new EventSource(`/api/export/${jobId}/events`);
-        eventSourceRef.current = eventSource;
-
-        eventSource.onmessage = (event) => {
-          if (event.data === '[DONE]') {
-            eventSource.close();
-            eventSourceRef.current = null;
-            return;
-          }
-
-          try {
-            const status = JSON.parse(event.data);
-
-            if (status.error && status.status === 'not_found') {
-              sseFailed = true;
-              eventSource.close();
-              eventSourceRef.current = null;
-              startPolling(jobId);
-              return;
-            }
-
-            setState(prev => ({
-              ...prev,
-              stage: status.stage || prev.stage,
-              percentage: status.percentage || 0,
-              totalProducts: status.totalProducts || 0,
-              processedProducts: status.processedProducts || 0,
-              totalImages: status.totalImages || 0,
-              downloadedImages: status.downloadedImages || 0,
-              speed: status.speed || '',
-              estimatedTimeRemaining: status.eta || 'Calculating...',
-              error: status.error || null,
-              done: status.done || false,
-            }));
-
-            // If completed, download the file
-            if (status.done) {
-              eventSource.close();
-              eventSourceRef.current = null;
-              downloadResult(jobId);
-            }
-
-            // If failed, close SSE
-            if (status.status === 'failed') {
-              eventSource.close();
-              eventSourceRef.current = null;
-            }
-          } catch {
-            // Parse error — ignore
-          }
-        };
-
-        eventSource.onerror = () => {
-          // SSE failed — fall back to polling (only if not already done/failed)
-          if (!sseFailed) {
-            sseFailed = true;
-            eventSource.close();
-            eventSourceRef.current = null;
-
-            setState(prev => {
-              if (!prev.done && !prev.error) {
-                // Start polling as fallback
-                startPolling(jobId);
-              }
-              return prev;
-            });
-          }
-        };
-
-        // Set a timeout: if no SSE message in 5s, fall back to polling
-        setTimeout(() => {
-          if (eventSourceRef.current && !sseFailed) {
-            // Check if we've received any progress yet
-            setState(prev => {
-              if (prev.percentage === 0 && !prev.done && !prev.error) {
-                sseFailed = true;
-                eventSource.close();
-                eventSourceRef.current = null;
-                startPolling(jobId);
-              }
-              return prev;
-            });
-          }
-        }, 5000);
-
-      } catch {
-        // EventSource not supported — fall back to polling
-        startPolling(jobId);
-      }
-    } catch (err: any) {
-      setState(prev => ({
-        ...prev,
-        error: err.message || 'Failed to start export',
-        stage: 'Failed',
-      }));
-    }
-  }, [exportParams, filename, isCancelled]);
-
-  // Polling fallback — prevents overlapping requests
-  const startPolling = useCallback((jobId: string) => {
-    let isRequestPending = false;
-
-    pollingRef.current = setInterval(async () => {
-      if (isCancelled || !jobIdRef.current || isRequestPending) return;
-
-      isRequestPending = true;
-      try {
-        const statusRes = await fetch(`/api/export/${jobId}/status`);
-        if (!statusRes.ok) return;
-
-        const status = await statusRes.json();
-
-        // Calculate ETA
-        let eta = 'Calculating...';
-        if (status.percentage >= 5 && status.percentage < 100) {
-          const elapsed = (Date.now() - startTimeRef.current) / 1000;
-          if (elapsed > 2) {
-            const totalEst = elapsed / (status.percentage / 100);
-            const remaining = Math.max(0, totalEst - elapsed);
-            const mins = Math.floor(remaining / 60);
-            const secs = Math.floor(remaining % 60);
-            eta = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-          }
-        } else if (status.percentage >= 100) {
-          eta = '00:00';
-        }
-
-        setState(prev => ({
-          ...prev,
-          stage: status.stage || prev.stage,
-          percentage: status.percentage || 0,
-          totalProducts: status.totalProducts || 0,
-          processedProducts: status.processedProducts || 0,
-          totalImages: status.totalImages || 0,
-          downloadedImages: status.downloadedImages || 0,
-          estimatedTimeRemaining: eta,
-          error: status.errorMessage || null,
-          done: status.status === 'completed',
-        }));
-
-        if (status.status === 'completed') {
-          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-          downloadResult(jobId);
-        }
-
-        if (status.status === 'failed') {
-          if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-          setState(prev => ({ ...prev, error: status.errorMessage || 'Export failed', stage: 'Failed' }));
-        }
-      } catch {
-        // Network error — keep trying
-      } finally {
-        isRequestPending = false;
-      }
-    }, 2000); // Poll every 2s
-  }, [isCancelled]);
-
-  // Download the result file
+  // ── Download the result file ──
   const downloadResult = useCallback(async (jobId: string) => {
     try {
       const dlRes = await fetch(`/api/export/${jobId}/download`);
@@ -283,21 +121,199 @@ export function ExportProgressDialog({
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+      } else {
+        console.error('Download failed:', dlRes.status, await dlRes.text().catch(() => ''));
       }
     } catch (dlErr) {
       console.error('Download failed:', dlErr);
     }
   }, [filename]);
 
-  // Start export when dialog opens
+  // ── Process ONE chunk ──
+  const processOneChunk = useCallback(async (jobId: string): Promise<boolean> => {
+    if (cancelledRef.current) return true;
+
+    const res = await fetch('/api/export/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId, cursor: cursorRef.current }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    cursorRef.current = data.nextCursor ?? null;
+
+    setState(prev => ({
+      ...prev,
+      jobId,
+      stage: data.stage || prev.stage,
+      percentage: data.percentage || 0,
+      totalProducts: data.totalProducts || 0,
+      processedProducts: data.processedProducts || 0,
+      totalImages: data.totalImages || 0,
+      downloadedImages: data.downloadedImages || 0,
+      failedImages: data.failedImages || 0,
+      chunkCount: data.chunkCount || 0,
+      currentChunk: data.currentChunk ?? null,
+      speed: data.speed || '',
+      estimatedTimeRemaining: data.eta || 'Calculating...',
+      estimatedSizeBytes: data.estimatedSizeBytes ?? null,
+      fileSize: data.fileSize ?? null,
+      blobExpiresAt: data.blobExpiresAt ?? null,
+      downloadUrl: data.downloadUrl ?? null,
+      error: data.error || null,
+      done: data.done || false,
+    }));
+
+    if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+      return true;
+    }
+    return false;
+  }, []);
+
+  // ── Main orchestrator loop ──
+  const runOrchestrator = useCallback(async (jobId: string) => {
+    while (!cancelledRef.current) {
+      if (isProcessingRef.current) {
+        await new Promise(r => setTimeout(r, 100));
+        continue;
+      }
+      isProcessingRef.current = true;
+
+      try {
+        const done = await processOneChunk(jobId);
+        consecutiveErrorsRef.current = 0;
+
+        if (done) {
+          isProcessingRef.current = false;
+          return;
+        }
+      } catch (err: any) {
+        consecutiveErrorsRef.current++;
+        console.error(
+          `[export-orchestrator] Chunk error #${consecutiveErrorsRef.current}:`,
+          err?.message
+        );
+
+        if (consecutiveErrorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
+          setState(prev => ({
+            ...prev,
+            error: `Export failed after ${MAX_CONSECUTIVE_ERRORS} consecutive errors. Last error: ${err?.message || 'unknown'}`,
+            stage: 'Failed',
+          }));
+          isProcessingRef.current = false;
+          return;
+        }
+
+        // Brief backoff before retrying.
+        await new Promise(r => setTimeout(r, 1500));
+      } finally {
+        isProcessingRef.current = false;
+      }
+
+      await new Promise(r => setTimeout(r, INTER_CHUNK_DELAY_MS));
+    }
+  }, [processOneChunk]);
+
+  // ── Kickoff: create the job (or resume), then start orchestrator ──
+  const startExport = useCallback(async () => {
+    try {
+      let jobId: string | null = jobIdRef.current;
+
+      // If we have a resumeJobId, skip creation and go straight to processing.
+      if (!jobId) {
+        if (!exportParams) return;
+
+        const startRes = await fetch('/api/export/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(exportParams),
+        });
+
+        if (!startRes.ok) {
+          const body = await startRes.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${startRes.status}`);
+        }
+
+        const startData = await startRes.json();
+        jobId = startData.jobId;
+        jobIdRef.current = jobId;
+        setState(prev => ({
+          ...prev,
+          jobId,
+          stage: 'Initializing export...',
+          percentage: 1,
+        }));
+      } else {
+        // Resuming — fetch current status first so we display accurate state.
+        const statusRes = await fetch(`/api/export/${jobId}/status`);
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          cursorRef.current = status.cursor ?? null;
+          setState(prev => ({
+            ...prev,
+            jobId,
+            stage: status.stage || 'Resuming...',
+            percentage: status.percentage || 0,
+            totalProducts: status.totalProducts || 0,
+            processedProducts: status.processedProducts || 0,
+            totalImages: status.totalImages || 0,
+            downloadedImages: status.downloadedImages || 0,
+            failedImages: status.failedImages || 0,
+            chunkCount: status.chunkCount || 0,
+            estimatedSizeBytes: status.estimatedSizeBytes ?? null,
+            fileSize: status.fileSize ?? null,
+            blobExpiresAt: status.blobExpiresAt ?? null,
+            downloadUrl: status.downloadUrl ?? null,
+            done: status.status === 'completed',
+            error: status.status === 'failed' ? (status.errorMessage || 'Export failed') : null,
+          }));
+          // If already terminal, don't start the orchestrator.
+          if (['completed', 'failed', 'cancelled'].includes(status.status)) {
+            if (status.status === 'completed') {
+              downloadResult(jobId);
+            }
+            return;
+          }
+        }
+      }
+
+      // At this point jobId is guaranteed non-null (we either had one or threw above).
+      if (!jobId) return;
+      await runOrchestrator(jobId);
+
+      if (!cancelledRef.current) {
+        setState(prev => {
+          if (prev.done && !prev.error) {
+            downloadResult(jobId!);
+          }
+          return prev;
+        });
+      }
+    } catch (err: any) {
+      setState(prev => ({
+        ...prev,
+        error: err.message || 'Failed to start export',
+        stage: 'Failed',
+      }));
+    }
+  }, [exportParams, runOrchestrator, downloadResult]);
+
+  // Start the export when the dialog opens.
   useEffect(() => {
     if (open && !state.jobId && !state.error && !isCancelled) {
       const timer = setTimeout(() => startExport(), 100);
       return () => clearTimeout(timer);
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Intentionally only re-run when `open` changes — we don't want to restart
+    // the export on every state update.
+  }, [open]);
 
-  // Auto-close after completion
+  // Auto-close after completion (give the download a moment to start).
   useEffect(() => {
     if (state.done) {
       const timer = setTimeout(() => {
@@ -307,38 +323,46 @@ export function ExportProgressDialog({
     }
   }, [state.done, onComplete]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
-
-  const handleCancel = () => {
+  // ── Cancel handler ──
+  const handleCancel = useCallback(async () => {
+    if (cancelledRef.current) return;
+    cancelledRef.current = true;
     setIsCancelled(true);
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
+    isProcessingRef.current = false;
+
+    if (jobIdRef.current) {
+      try {
+        await fetch(`/api/export/${jobIdRef.current}/cancel`, { method: 'POST' });
+      } catch (err) {
+        console.warn('Cancel request failed:', err);
+      }
     }
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    setState(prev => ({ ...prev, stage: 'Cancelled', error: 'Export cancelled by user' }));
-  };
+
+    setState(prev => ({
+      ...prev,
+      stage: 'Cancelled',
+      error: 'Export cancelled by user',
+    }));
+  }, []);
 
   const handleRetry = () => {
     setState(INITIAL_STATE);
     setIsCancelled(false);
+    cancelledRef.current = false;
     startTimeRef.current = Date.now();
     jobIdRef.current = null;
+    cursorRef.current = null;
+    isProcessingRef.current = false;
+    consecutiveErrorsRef.current = 0;
     setTimeout(() => startExport(), 100);
   };
+
+  // ── Manual re-download button (for completed jobs) ──
+  const handleRedownload = useCallback(() => {
+    if (state.jobId) {
+      downloadResult(state.jobId);
+    }
+  }, [state.jobId, downloadResult]);
 
   if (!open) return null;
 
@@ -357,14 +381,25 @@ export function ExportProgressDialog({
             <div className="text-sm text-muted-foreground space-y-1 mb-3">
               <p>Products exported: <span className="font-medium text-foreground">{state.totalProducts}</span></p>
               <p>Images exported: <span className="font-medium text-foreground">{state.downloadedImages}</span></p>
-              {state.imagesFailed > 0 && (
-                <p className="text-red-600">Images failed: {state.imagesFailed}</p>
+              <p>Chunks processed: <span className="font-medium text-foreground">{state.chunkCount}</span></p>
+              <p>File size: <span className="font-medium text-foreground">{formatBytes(state.fileSize ?? state.estimatedSizeBytes)}</span></p>
+              {state.blobExpiresAt && (
+                <p className="text-[10px] text-muted-foreground">
+                  Available until {new Date(state.blobExpiresAt).toLocaleString()}
+                </p>
+              )}
+              {state.failedImages > 0 && (
+                <p className="text-amber-600">Images failed: {state.failedImages}</p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mb-3">
               <Download className="h-3 w-3 inline mr-1" />
               Download starting...
             </p>
+            <Button variant="outline" size="sm" onClick={handleRedownload}>
+              <Download className="h-4 w-4 mr-1" />
+              Download again
+            </Button>
           </div>
         ) : state.error ? (
           /* Error state */
@@ -399,7 +434,7 @@ export function ExportProgressDialog({
                 <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
               </div>
               <div className="flex-1">
-                <h2 className="text-base font-bold">Preparing Export...</h2>
+                <h2 className="text-base font-bold">Exporting Products...</h2>
                 <p className="text-xs text-muted-foreground">{state.stage}</p>
               </div>
             </div>
@@ -438,22 +473,34 @@ export function ExportProgressDialog({
                   </p>
                 </div>
               )}
+              {state.chunkCount > 0 && (
+                <div className="bg-muted/50 rounded-md p-2">
+                  <p className="text-muted-foreground">Chunks</p>
+                  <p className="font-medium">{state.chunkCount}</p>
+                </div>
+              )}
               {state.speed && (
                 <div className="bg-muted/50 rounded-md p-2">
                   <p className="text-muted-foreground">Speed</p>
                   <p className="font-medium">{state.speed}</p>
                 </div>
               )}
-              {state.imagesFailed > 0 && (
-                <div className="bg-red-50 dark:bg-red-950/20 rounded-md p-2">
+              {state.estimatedSizeBytes != null && state.estimatedSizeBytes > 0 && (
+                <div className="bg-muted/50 rounded-md p-2">
+                  <p className="text-muted-foreground">Est. size</p>
+                  <p className="font-medium">{formatBytes(state.estimatedSizeBytes)}</p>
+                </div>
+              )}
+              {state.failedImages > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 rounded-md p-2">
                   <p className="text-muted-foreground">Failed</p>
-                  <p className="font-medium text-red-600">{state.imagesFailed} images</p>
+                  <p className="font-medium text-amber-600">{state.failedImages} images</p>
                 </div>
               )}
             </div>
 
             <p className="text-[10px] text-muted-foreground mt-4 text-center">
-              You may continue using the application while the export runs in the background.
+              Processing in chunks — you may close this dialog and resume later.
             </p>
 
             <div className="flex justify-center mt-3">
