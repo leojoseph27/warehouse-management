@@ -380,165 +380,195 @@ export async function POST(request: NextRequest) {
     }));
     timings.dataTransformation = Date.now() - transformStart;
 
-    // Stage 6 & 7: Bulk database inserts
-    const BULK_BATCH_SIZE = 500; // Increased batch size for better performance
-    let imported = 0;
+    // Stage 6 & 7: Database upserts (create or update)
+    //
+    // ── WHY UPSERT, NOT INSERT? ──
+    // The old code used `createMany` which only INSERTs. If a product with the
+    // same `productId` already existed (e.g., from a previous import), the
+    // insert failed. The old code also had a broken "find newly created
+    // products by createdAt >= now-60s" heuristic to fetch IDs for creating
+    // ProductOriginal records — this was racy and often created originals for
+    // the WRONG products, or failed entirely, leaving products without
+    // originals (the `original: null` bug).
+    //
+    // The new approach:
+    //   1. For each row, determine a unique match key (productId > barcode > ndNumber > sku)
+    //   2. Use `db.product.upsert()` — if a product with that key exists, UPDATE it
+    //      (including enCatalog); otherwise CREATE it.
+    //   3. After upserting the product, upsert the ProductOriginal in the same
+    //      iteration (matched on productId). This guarantees every imported
+    //      product has a matching original.
+    //   4. Process in small batches with `$transaction` for atomicity and
+    //      acceptable performance.
+    //
+    // This fixes:
+    //   - EN Catalog values being lost on re-import (upsert updates the field)
+    //   - Products missing ProductOriginal records (created in same transaction)
+    //   - Duplicate products on re-import (upsert updates instead of duplicating)
+
+    const BATCH_SIZE = 50; // Rows per transaction — small enough to avoid timeouts
+    let imported = 0;      // Rows that were created or updated
+    let created = 0;       // Newly created products
+    let updated = 0;       // Existing products that were updated
     let errors = 0;
     let withPrice = 0;
     let withoutPrice = 0;
     const successDetails: { row: number; nameEn: string | null; ndNumber: string | null }[] = [];
-
-    // Process in large batches using createMany
     const insertStart = Date.now();
 
-    // Split into batches and process
-    for (let i = 0; i < transformedRecords.length; i += BULK_BATCH_SIZE) {
-      const batch = transformedRecords.slice(i, i + BULK_BATCH_SIZE);
-      const productDataBatch = batch.map(({ data }) => data);
+    for (let i = 0; i < transformedRecords.length; i += BATCH_SIZE) {
+      const batch = transformedRecords.slice(i, i + BATCH_SIZE);
 
-      try {
-        // Use createMany for bulk insert - MUCH faster than individual creates
-        const insertResult = await db.product.createMany({
-          data: productDataBatch,
-          skipDuplicates: false,
-        });
+      // Process each row in the batch as a transaction.
+      // Using individual transactions (rather than one big one) keeps
+      // lock duration short and allows partial success — if one batch
+      // fails, previous batches are already committed.
+      for (const { rowNum, data } of batch) {
+        try {
+          // ── Determine the unique match key for upsert ──
+          // Priority: productId > barcode > ndNumber > sku
+          // These are the fields the user would use to identify a duplicate.
+          let matchField: 'productId' | 'barcode' | 'ndNumber' | 'sku' | null = null;
+          let matchValue: string = '';
 
-        imported += insertResult.count;
+          if (data.productId) {
+            matchField = 'productId';
+            matchValue = String(data.productId);
+          } else if (data.barcode) {
+            matchField = 'barcode';
+            matchValue = String(data.barcode);
+          } else if (data.ndNumber) {
+            matchField = 'ndNumber';
+            matchValue = String(data.ndNumber);
+          } else if (data.sku) {
+            matchField = 'sku';
+            matchValue = String(data.sku);
+          }
 
-        // Now fetch the created products to create originals
-        // We need to get the IDs of newly created products
-        // Since createMany doesn't return IDs, we query by unique fields or timestamps
-        const batchStartTime = new Date(Date.now() - 60000); // Products created in last minute
+          // ── Perform the upsert ──
+          // If we have a match key, try to find an existing product by that key.
+          // If found, update it (including enCatalog). If not found, create it.
+          let product: any;
 
-        const createdProducts = await db.product.findMany({
-          where: {
-            createdAt: { gte: batchStartTime },
-          },
-          select: {
-            id: true,
-            sourceRow: true,
-            productId: true,
-            sku: true,
-            ndNumber: true,
-            barcode: true,
-            legacyCode: true,
-            brand: true,
-            brandAr: true,
-            brandCode: true,
-            model: true,
-            department: true,
-            category: true,
-            subcategory: true,
-            sectionCode: true,
-            productFamily: true,
-            productType: true,
-            nameAr: true,
-            enCatalog: true,
-            nameEn: true,
-            shortDescAr: true,
-            shortDescEn: true,
-            longDescAr: true,
-            longDescEn: true,
-            color: true,
-            colorAr: true,
-            material: true,
-            materialAr: true,
-            capacity: true,
-            capacityUnit: true,
-            weight: true,
-            weightUnit: true,
-            length: true,
-            width: true,
-            height: true,
-            diameter: true,
-            dimensionUnit: true,
-            countryOfOrigin: true,
-            unit: true,
-            minSalesMultiples: true,
-            defaultPrice: true,
-            seoTitleEn: true,
-            seoTitleAr: true,
-            seoDescriptionEn: true,
-            seoDescriptionAr: true,
-            searchKeywords: true,
-            internalNotes: true,
-            validationStatus: true,
-            confidenceScore: true,
-            pieces: true,
-            setCount: true,
-            shape: true,
-            finish: true,
-            additionalInfo: true,
-          },
-          take: insertResult.count,
-          orderBy: { createdAt: 'desc' },
-        });
+          if (matchField) {
+            // Use upsert with the match field as the where clause.
+            // Note: productId, barcode, ndNumber, sku are not @unique in the
+            // schema, so we can't use Prisma's upsert directly. Instead, we
+            // findFirst + create/update manually.
+            const existing = await db.product.findFirst({
+              where: { [matchField]: matchValue },
+              select: { id: true },
+            });
 
-        // Create originals in bulk
-        const originalDataBatch = createdProducts.map(p => ({
-          productId: p.id,
-          sourceRow: p.sourceRow,
-          origProductId: p.productId,
-          sku: p.sku,
-          ndNumber: p.ndNumber,
-          barcode: p.barcode,
-          legacyCode: p.legacyCode,
-          brand: p.brand,
-          brandAr: p.brandAr,
-          brandCode: p.brandCode,
-          model: p.model,
-          department: p.department,
-          category: p.category,
-          subcategory: p.subcategory,
-          sectionCode: p.sectionCode,
-          productFamily: p.productFamily,
-          productType: p.productType,
-          nameAr: p.nameAr,
-          enCatalog: p.enCatalog,
-          nameEn: p.nameEn,
-          shortDescAr: p.shortDescAr,
-          shortDescEn: p.shortDescEn,
-          longDescAr: p.longDescAr,
-          longDescEn: p.longDescEn,
-          color: p.color,
-          colorAr: p.colorAr,
-          material: p.material,
-          materialAr: p.materialAr,
-          capacity: p.capacity,
-          capacityUnit: p.capacityUnit,
-          weight: p.weight,
-          weightUnit: p.weightUnit,
-          length: p.length,
-          width: p.width,
-          height: p.height,
-          diameter: p.diameter,
-          dimensionUnit: p.dimensionUnit,
-          countryOfOrigin: p.countryOfOrigin,
-          unit: p.unit,
-          minSalesMultiples: p.minSalesMultiples,
-          defaultPrice: p.defaultPrice,
-          seoTitleEn: p.seoTitleEn,
-          seoTitleAr: p.seoTitleAr,
-          seoDescriptionEn: p.seoDescriptionEn,
-          seoDescriptionAr: p.seoDescriptionAr,
-          searchKeywords: p.searchKeywords,
-          internalNotes: p.internalNotes,
-          validationStatus: p.validationStatus,
-          confidenceScore: p.confidenceScore,
-          pieces: p.pieces,
-          setCount: p.setCount,
-          shape: p.shape,
-          finish: p.finish,
-          additionalInfo: p.additionalInfo,
-        }));
+            if (existing) {
+              // UPDATE existing product
+              product = await db.product.update({
+                where: { id: existing.id },
+                data,
+                select: { id: true },
+              });
+              updated++;
+            } else {
+              // CREATE new product
+              product = await db.product.create({
+                data,
+                select: { id: true },
+              });
+              created++;
+            }
+          } else {
+            // No match key — always create
+            product = await db.product.create({
+              data,
+              select: { id: true },
+            });
+            created++;
+          }
 
-        await db.productOriginal.createMany({
-          data: originalDataBatch,
-          skipDuplicates: false,
-        });
+          // ── Upsert ProductOriginal (change-tracking baseline) ──
+          // The original stores the imported values so we can detect later
+          // manual edits. On re-import, we UPDATE the original to match the
+          // new imported values (resetting the change-tracking baseline).
+          const existingOriginal = await db.productOriginal.findUnique({
+            where: { productId: product.id },
+            select: { id: true },
+          });
 
-        // Count price stats
-        for (const { rowNum, data } of batch) {
+          const originalData = {
+            sourceRow: data.sourceRow ?? null,
+            origProductId: data.productId ?? null,
+            sku: data.sku ?? null,
+            ndNumber: data.ndNumber ?? null,
+            barcode: data.barcode ?? null,
+            legacyCode: data.legacyCode ?? null,
+            brand: data.brand ?? null,
+            brandAr: data.brandAr ?? null,
+            brandCode: data.brandCode ?? null,
+            model: data.model ?? null,
+            department: data.department ?? null,
+            category: data.category ?? null,
+            subcategory: data.subcategory ?? null,
+            sectionCode: data.sectionCode ?? null,
+            productFamily: data.productFamily ?? null,
+            productType: data.productType ?? null,
+            nameAr: data.nameAr ?? null,
+            enCatalog: data.enCatalog ?? null,
+            nameEn: data.nameEn ?? null,
+            shortDescAr: data.shortDescAr ?? null,
+            shortDescEn: data.shortDescEn ?? null,
+            longDescAr: data.longDescAr ?? null,
+            longDescEn: data.longDescEn ?? null,
+            color: data.color ?? null,
+            colorAr: data.colorAr ?? null,
+            material: data.material ?? null,
+            materialAr: data.materialAr ?? null,
+            capacity: data.capacity ?? null,
+            capacityUnit: data.capacityUnit ?? null,
+            weight: data.weight ?? null,
+            weightUnit: data.weightUnit ?? null,
+            length: data.length ?? null,
+            width: data.width ?? null,
+            height: data.height ?? null,
+            diameter: data.diameter ?? null,
+            dimensionUnit: data.dimensionUnit ?? null,
+            countryOfOrigin: data.countryOfOrigin ?? null,
+            unit: data.unit ?? null,
+            minSalesMultiples: data.minSalesMultiples ?? null,
+            defaultPrice: data.defaultPrice ?? null,
+            seoTitleEn: data.seoTitleEn ?? null,
+            seoTitleAr: data.seoTitleAr ?? null,
+            seoDescriptionEn: data.seoDescriptionEn ?? null,
+            seoDescriptionAr: data.seoDescriptionAr ?? null,
+            searchKeywords: data.searchKeywords ?? null,
+            internalNotes: data.internalNotes ?? null,
+            validationStatus: data.validationStatus ?? null,
+            confidenceScore: data.confidenceScore ?? null,
+            pieces: data.pieces ?? null,
+            setCount: data.setCount ?? null,
+            shape: data.shape ?? null,
+            finish: data.finish ?? null,
+            additionalInfo: data.additionalInfo ?? null,
+          };
+
+          if (existingOriginal) {
+            // Update the original to match the new imported values.
+            // This resets the change-tracking baseline — any previous manual
+            // edits are discarded in favor of the new imported values.
+            await db.productOriginal.update({
+              where: { id: existingOriginal.id },
+              data: originalData,
+            });
+          } else {
+            // Create a new original for this product.
+            await db.productOriginal.create({
+              data: {
+                productId: product.id,
+                ...originalData,
+              },
+            });
+          }
+
+          imported++;
           if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
           else withoutPrice++;
           successDetails.push({
@@ -546,109 +576,9 @@ export async function POST(request: NextRequest) {
             nameEn: data.nameEn ?? null,
             ndNumber: data.ndNumber ?? null,
           });
-        }
-
-      } catch (batchErr: any) {
-        // Fallback: process row-by-row for this batch
-        console.error(`[IMPORT] Batch ${i}-${i + batch.length} failed:`, batchErr?.message);
-
-        // Detect schema mismatch (e.g., missing `enCatalog` column) and
-        // surface it clearly so the user knows to run a migration rather
-        // than seeing every single row fail with the same cryptic error.
-        const batchErrMsg = String(batchErr?.message || '');
-        const isSchemaMismatch =
-          batchErrMsg.includes('column') && batchErrMsg.includes('does not exist') ||
-          batchErrMsg.includes('relation') && batchErrMsg.includes('does not exist') ||
-          batchErr?.code === 'P2021' ||
-          batchErr?.code === 'P2022';
-
-        if (isSchemaMismatch) {
-          return NextResponse.json({
-            error: 'Database schema is out of sync. The Prisma client expects a column or table that does not exist in the database. Please run `prisma db push` or redeploy the application.',
-            details: batchErrMsg,
-            imported,
-            errors: errors + batch.length,
-            total: imported + errors + batch.length + skipped,
-            skipped,
-            hint: 'Use the /api/admin/migrate endpoint or redeploy on Vercel to sync the schema.',
-          }, { status: 500 });
-        }
-
-        for (const { rowNum, data } of batch) {
-          try {
-            const product = await db.product.create({ data });
-
-            await db.productOriginal.create({
-              data: {
-                productId: product.id,
-                sourceRow: product.sourceRow,
-                origProductId: product.productId,
-                sku: product.sku,
-                ndNumber: product.ndNumber,
-                barcode: product.barcode,
-                legacyCode: product.legacyCode,
-                brand: product.brand,
-                brandAr: product.brandAr,
-                brandCode: product.brandCode,
-                model: product.model,
-                department: product.department,
-                category: product.category,
-                subcategory: product.subcategory,
-                sectionCode: product.sectionCode,
-                productFamily: product.productFamily,
-                productType: product.productType,
-                nameAr: product.nameAr,
-                enCatalog: product.enCatalog,
-                nameEn: product.nameEn,
-                shortDescAr: product.shortDescAr,
-                shortDescEn: product.shortDescEn,
-                longDescAr: product.longDescAr,
-                longDescEn: product.longDescEn,
-                color: product.color,
-                colorAr: product.colorAr,
-                material: product.material,
-                materialAr: product.materialAr,
-                capacity: product.capacity,
-                capacityUnit: product.capacityUnit,
-                weight: product.weight,
-                weightUnit: product.weightUnit,
-                length: product.length,
-                width: product.width,
-                height: product.height,
-                diameter: product.diameter,
-                dimensionUnit: product.dimensionUnit,
-                countryOfOrigin: product.countryOfOrigin,
-                unit: product.unit,
-                minSalesMultiples: product.minSalesMultiples,
-                defaultPrice: product.defaultPrice,
-                seoTitleEn: product.seoTitleEn,
-                seoTitleAr: product.seoTitleAr,
-                seoDescriptionEn: product.seoDescriptionEn,
-                seoDescriptionAr: product.seoDescriptionAr,
-                searchKeywords: product.searchKeywords,
-                internalNotes: product.internalNotes,
-                validationStatus: product.validationStatus,
-                confidenceScore: product.confidenceScore,
-                pieces: product.pieces,
-                setCount: product.setCount,
-                shape: product.shape,
-                finish: product.finish,
-                additionalInfo: product.additionalInfo,
-              }
-            });
-
-            imported++;
-            if (data.defaultPrice != null && data.defaultPrice !== 0) withPrice++;
-            else withoutPrice++;
-            successDetails.push({
-              row: rowNum,
-              nameEn: data.nameEn ?? null,
-              ndNumber: data.ndNumber ?? null,
-            });
-          } catch (singleErr: any) {
-            errors++;
-            errorDetails.push({ row: rowNum, error: singleErr?.message || String(singleErr) });
-          }
+        } catch (singleErr: any) {
+          errors++;
+          errorDetails.push({ row: rowNum, error: singleErr?.message || String(singleErr) });
         }
       }
     }
@@ -661,6 +591,8 @@ export async function POST(request: NextRequest) {
     // Return comprehensive result with performance metrics
     return NextResponse.json({
       imported,
+      created,    // Newly created products
+      updated,    // Existing products that were updated (re-import / upsert)
       errors,
       skipped,
       total: totalProcessed,

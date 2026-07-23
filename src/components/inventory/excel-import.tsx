@@ -21,6 +21,8 @@ interface StageTiming {
 
 interface ImportResult {
   imported: number;
+  created?: number;   // Newly created products
+  updated?: number;   // Existing products updated (re-import / upsert)
   errors: number;
   skipped: number;
   total: number;
@@ -127,10 +129,13 @@ export function ExcelImport() {
 
       if (res.ok) {
         setResult(data);
+        const createdStr = data.created != null ? `${data.created} created` : '';
+        const updatedStr = data.updated != null && data.updated > 0 ? `${data.updated} updated` : '';
+        const breakdown = [createdStr, updatedStr].filter(Boolean).join(', ');
         if (data.imported > 0 && data.errors === 0) {
-          toast.success(`Successfully imported ${data.imported} products in ${data.timings?.total || `${totalTime}ms`}`);
+          toast.success(`Imported ${data.imported} products${breakdown ? ` (${breakdown})` : ''} in ${data.timings?.total || `${totalTime}ms`}`);
         } else if (data.imported > 0 && data.errors > 0) {
-          toast.warning(`Imported ${data.imported} products with ${data.errors} errors`);
+          toast.warning(`Imported ${data.imported} products${breakdown ? ` (${breakdown})` : ''} with ${data.errors} errors`);
         } else if (data.imported === 0) {
           toast.error('No products were imported');
         }
@@ -307,7 +312,13 @@ export function ExcelImport() {
                     <p className="font-medium text-sm sm:text-base">Import Complete</p>
                     <div className="text-xs sm:text-sm text-muted-foreground mt-1 space-y-0.5">
                       <p>Total rows: {result.total}</p>
-                      <p className="text-emerald-600">Inserted: {result.imported}</p>
+                      <p className="text-emerald-600">Processed: {result.imported}</p>
+                      {result.created != null && result.created > 0 && (
+                        <p className="text-emerald-600">  - Created: {result.created}</p>
+                      )}
+                      {result.updated != null && result.updated > 0 && (
+                        <p className="text-blue-600">  - Updated: {result.updated}</p>
+                      )}
                       {result.withPrice != null && (
                         <p className="text-emerald-600">With price: {result.withPrice}</p>
                       )}
@@ -339,7 +350,13 @@ export function ExcelImport() {
                     <p className="font-medium text-sm sm:text-base">Import Issues</p>
                     <div className="text-xs sm:text-sm text-muted-foreground mt-1 space-y-0.5">
                       <p>Total rows: {result.total}</p>
-                      <p>Inserted: {result.imported}</p>
+                      <p>Processed: {result.imported}</p>
+                      {result.created != null && result.created > 0 && (
+                        <p>  - Created: {result.created}</p>
+                      )}
+                      {result.updated != null && result.updated > 0 && (
+                        <p>  - Updated: {result.updated}</p>
+                      )}
                       {result.skipped > 0 && <p>Skipped: {result.skipped}</p>}
                       {result.errors > 0 && <p>Failed: {result.errors}</p>}
                       {result.elapsedMs != null && (
