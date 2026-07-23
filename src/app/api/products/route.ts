@@ -327,9 +327,31 @@ export async function GET(request: NextRequest) {
     const mappedProducts = products.map(p => serializeProduct(p));
 
     return NextResponse.json({ products: mappedProducts, total, page, limit });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching products:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+
+    // Detect Prisma "column does not exist" errors (P2021 / raw PG error).
+    // These happen when the DB schema is out of sync with the Prisma client
+    // (e.g., a migration wasn't applied). Return a clear, actionable message.
+    const errMsg = String(error?.message || '');
+    const isSchemaMismatch =
+      errMsg.includes('column') && errMsg.includes('does not exist') ||
+      errMsg.includes('relation') && errMsg.includes('does not exist') ||
+      error?.code === 'P2021' || // TableDoesNotExist
+      error?.code === 'P2022';   // ColumnDoesNotExist
+
+    if (isSchemaMismatch) {
+      return NextResponse.json({
+        error: 'Database schema is out of sync with the application. Please redeploy or run `prisma db push` to apply pending schema changes.',
+        details: errMsg,
+        hint: 'The Prisma client expects a column or table that does not exist in the database. This usually means a migration was not applied.',
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      error: 'Failed to fetch products',
+      details: errMsg,
+    }, { status: 500 });
   }
 }
 

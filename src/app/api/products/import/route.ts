@@ -552,6 +552,28 @@ export async function POST(request: NextRequest) {
         // Fallback: process row-by-row for this batch
         console.error(`[IMPORT] Batch ${i}-${i + batch.length} failed:`, batchErr?.message);
 
+        // Detect schema mismatch (e.g., missing `enCatalog` column) and
+        // surface it clearly so the user knows to run a migration rather
+        // than seeing every single row fail with the same cryptic error.
+        const batchErrMsg = String(batchErr?.message || '');
+        const isSchemaMismatch =
+          batchErrMsg.includes('column') && batchErrMsg.includes('does not exist') ||
+          batchErrMsg.includes('relation') && batchErrMsg.includes('does not exist') ||
+          batchErr?.code === 'P2021' ||
+          batchErr?.code === 'P2022';
+
+        if (isSchemaMismatch) {
+          return NextResponse.json({
+            error: 'Database schema is out of sync. The Prisma client expects a column or table that does not exist in the database. Please run `prisma db push` or redeploy the application.',
+            details: batchErrMsg,
+            imported,
+            errors: errors + batch.length,
+            total: imported + errors + batch.length + skipped,
+            skipped,
+            hint: 'Use the /api/admin/migrate endpoint or redeploy on Vercel to sync the schema.',
+          }, { status: 500 });
+        }
+
         for (const { rowNum, data } of batch) {
           try {
             const product = await db.product.create({ data });

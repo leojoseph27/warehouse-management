@@ -62,23 +62,53 @@ export async function GET() {
     // For modified products, use a simplified check on key fields
     // PostgreSQL: IS DISTINCT FROM for null-safe comparison.
     // Double-quote camelCase column names so PG preserves case.
-    const modifiedProductsResult = await db.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*) as count FROM products p
-      INNER JOIN product_originals po ON p.id = po."productId"
-      WHERE
-        (p."productId" IS DISTINCT FROM po."origProductId") OR
-        (p."ndNumber" IS DISTINCT FROM po."ndNumber") OR
-        (p.barcode IS DISTINCT FROM po.barcode) OR
-        (p.brand IS DISTINCT FROM po.brand) OR
-        (p."nameEn" IS DISTINCT FROM po."nameEn") OR
-        (p."nameAr" IS DISTINCT FROM po."nameAr") OR
-        (p."enCatalog" IS DISTINCT FROM po."enCatalog") OR
-        (p."defaultPrice" IS DISTINCT FROM po."defaultPrice") OR
-        (p.department IS DISTINCT FROM po.department) OR
-        (p.category IS DISTINCT FROM po.category) OR
-        (p.color IS DISTINCT FROM po.color) OR
-        (p.material IS DISTINCT FROM po.material)
-    `;
+    //
+    // NOTE: This query references "enCatalog" which was added in migration
+    // 20260709020000_add_en_catalog. If that migration hasn't been applied
+    // to the DB, this query will fail. The catch block below falls back
+    // to a simpler query that doesn't reference "enCatalog".
+    let modifiedProducts = 0;
+    try {
+      const modifiedProductsResult = await db.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*) as count FROM products p
+        INNER JOIN product_originals po ON p.id = po."productId"
+        WHERE
+          (p."productId" IS DISTINCT FROM po."origProductId") OR
+          (p."ndNumber" IS DISTINCT FROM po."ndNumber") OR
+          (p.barcode IS DISTINCT FROM po.barcode) OR
+          (p.brand IS DISTINCT FROM po.brand) OR
+          (p."nameEn" IS DISTINCT FROM po."nameEn") OR
+          (p."nameAr" IS DISTINCT FROM po."nameAr") OR
+          (p."enCatalog" IS DISTINCT FROM po."enCatalog") OR
+          (p."defaultPrice" IS DISTINCT FROM po."defaultPrice") OR
+          (p.department IS DISTINCT FROM po.department) OR
+          (p.category IS DISTINCT FROM po.category) OR
+          (p.color IS DISTINCT FROM po.color) OR
+          (p.material IS DISTINCT FROM po.material)
+      `;
+      modifiedProducts = Number(modifiedProductsResult[0]?.count ?? 0);
+    } catch (modifiedErr: any) {
+      // Fallback: if the enCatalog column doesn't exist (migration not
+      // applied), retry without it so stats still work.
+      console.error('[stats] modified-products query failed, retrying without enCatalog:', modifiedErr?.message);
+      const modifiedProductsResult = await db.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*) as count FROM products p
+        INNER JOIN product_originals po ON p.id = po."productId"
+        WHERE
+          (p."productId" IS DISTINCT FROM po."origProductId") OR
+          (p."ndNumber" IS DISTINCT FROM po."ndNumber") OR
+          (p.barcode IS DISTINCT FROM po.barcode) OR
+          (p.brand IS DISTINCT FROM po.brand) OR
+          (p."nameEn" IS DISTINCT FROM po."nameEn") OR
+          (p."nameAr" IS DISTINCT FROM po."nameAr") OR
+          (p."defaultPrice" IS DISTINCT FROM po."defaultPrice") OR
+          (p.department IS DISTINCT FROM po.department) OR
+          (p.category IS DISTINCT FROM po.category) OR
+          (p.color IS DISTINCT FROM po.color) OR
+          (p.material IS DISTINCT FROM po.material)
+      `;
+      modifiedProducts = Number(modifiedProductsResult[0]?.count ?? 0);
+    }
 
     // Total Variant Groups
     const totalVariantGroups = await db.variantGroup.count();
@@ -97,7 +127,7 @@ export async function GET() {
       productsMissingClassification: Number(agg.missing_classification),
       productsMissingNameEn: Number(agg.missing_name_en),
       productsMissingPrice: Number(agg.missing_price),
-      productsWithModifications: Number(modifiedProductsResult[0]?.count ?? 0),
+      productsWithModifications: modifiedProducts,
       totalVariantGroups,
     };
 
