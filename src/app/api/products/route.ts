@@ -346,7 +346,7 @@ const PRODUCT_FIELDS = [
   'department', 'category', 'subcategory', 'sectionCode',
   'productFamily', 'productType',
   // Product Information
-  'nameAr', 'nameEn', 'shortDescAr', 'shortDescEn',
+  'nameAr', 'enCatalog', 'nameEn', 'shortDescAr', 'shortDescEn',
   'longDescAr', 'longDescEn',
   // Attributes
   'color', 'colorAr', 'material', 'materialAr',
@@ -425,6 +425,7 @@ export async function POST(request: NextRequest) {
         productFamily: product.productFamily,
         productType: product.productType,
         nameAr: product.nameAr,
+        enCatalog: product.enCatalog,
         nameEn: product.nameEn,
         shortDescAr: product.shortDescAr,
         shortDescEn: product.shortDescEn,

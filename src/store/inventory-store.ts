@@ -33,6 +33,7 @@ export interface ProductOriginal {
   productFamily: string | null;
   productType: string | null;
   nameAr: string | null;
+  enCatalog: string | null;
   nameEn: string | null;
   shortDescAr: string | null;
   shortDescEn: string | null;
@@ -152,6 +153,7 @@ export interface Product {
 
   // Product Information Group
   nameAr: string | null;
+  enCatalog: string | null;
   nameEn: string | null;
   shortDescAr: string | null;
   shortDescEn: string | null;
@@ -214,7 +216,7 @@ export interface Product {
 const TRACKED_FIELDS: (keyof Product)[] = [
   'productId', 'sku', 'ndNumber', 'barcode', 'legacyCode', 'brand', 'model',
   'department', 'category', 'subcategory', 'productFamily', 'productType',
-  'nameAr', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn',
+  'nameAr', 'enCatalog', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn',
   'color', 'material', 'capacity', 'capacityUnit', 'weight', 'weightUnit',
   'length', 'width', 'height', 'diameter', 'dimensionUnit',
   'countryOfOrigin', 'unit', 'minSalesMultiples', 'defaultPrice',

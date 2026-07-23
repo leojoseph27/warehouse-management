@@ -41,53 +41,54 @@ model Product {
   productFamily       String?         // O: Taxonomy level 4 (dependent on Subcategory)
   productType         String?         // P: Taxonomy level 5 (dependent on Product Family)
 
-  // ── Product Information Group (Q–V) ──
+  // ── Product Information Group (Q–W) ──
   nameAr              String?         // Q: Full product name in Arabic
-  nameEn              String?         // R: Full product name in English
-  shortDescAr         String?         // S: Short description AR (defaults to Name AR)
-  shortDescEn         String?         // T: Short description EN (defaults to Name EN)
-  longDescAr          String?         // U: Long description AR (optional)
-  longDescEn          String?         // V: Long description EN (auto-generated from Brand + Name EN)
+  enCatalog           String?         // R: English catalog name (third name, alongside Name AR and Name EN)
+  nameEn              String?         // S: Full product name in English
+  shortDescAr         String?         // T: Short description AR (defaults to Name AR)
+  shortDescEn         String?         // U: Short description EN (defaults to Name EN)
+  longDescAr          String?         // V: Long description AR (optional)
+  longDescEn          String?         // W: Long description EN (auto-generated from Brand + Name EN)
 
-  // ── Attributes Group (W–AI) ──
-  color               String?         // W: Color EN (controlled list, 15 values)
-  colorAr             String?         // X: Color AR (auto-derived from Color)
-  material            String?         // Y: Material EN (controlled list, ~15 values)
-  materialAr          String?         // Z: Material AR (auto-derived from Material)
-  capacity            Float?          // AA: Numeric capacity/volume/weight
-  capacityUnit        String?         // AB: L, ml, kg, g
-  weight              Float?          // AC: Product weight (decimal)
-  weightUnit          String?         // AD: kg, g
-  length              Float?          // AE: Length in Dimension Unit
-  width               Float?          // AF: Width in Dimension Unit
-  height              Float?          // AG: Height in Dimension Unit
-  diameter            Float?          // AH: Diameter for round products
-  dimensionUnit       String?         // AI: cm, mm, inch (defaults to cm)
+  // ── Attributes Group (X–AJ) ──
+  color               String?         // X: Color EN (controlled list, 15 values)
+  colorAr             String?         // Y: Color AR (auto-derived from Color)
+  material            String?         // Z: Material EN (controlled list, ~15 values)
+  materialAr          String?         // AA: Material AR (auto-derived from Material)
+  capacity            Float?          // AB: Numeric capacity/volume/weight
+  capacityUnit        String?         // AC: L, ml, kg, g
+  weight              Float?          // AD: Product weight (decimal)
+  weightUnit          String?         // AE: kg, g
+  length              Float?          // AF: Length in Dimension Unit
+  width               Float?          // AG: Width in Dimension Unit
+  height              Float?          // AH: Height in Dimension Unit
+  diameter            Float?          // AI: Diameter for round products
+  dimensionUnit       String?         // AJ: cm, mm, inch (defaults to cm)
 
-  // ── Logistics Group (AJ–AL) ──
-  countryOfOrigin     String?         // AJ: Country (ISO 3166, controlled list)
-  unit                String?         // AK: Unit of sale (PCS, PKT, CTN, ROLL, BUNDLE)
-  minSalesMultiples   String?         // AL: Yes/No for minimum sales quantity
+  // ── Logistics Group (AK–AM) ──
+  countryOfOrigin     String?         // AK: Country (ISO 3166, controlled list)
+  unit                String?         // AL: Unit of sale (PCS, PKT, CTN, ROLL, BUNDLE)
+  minSalesMultiples   String?         // AM: Yes/No for minimum sales quantity
 
-  // ── Commercial Group (AM) ──
-  defaultPrice        Float?          // AM: Retail price in KWD (3 decimal places)
+  // ── Commercial Group (AN) ──
+  defaultPrice        Float?          // AN: Retail price in KWD (3 decimal places)
 
-  // ── SEO Group (AN–AR) ──
-  seoTitleEn          String?         // AN: SEO title English (< 60 chars)
-  seoTitleAr          String?         // AO: SEO title Arabic (defaults to Name AR)
-  seoDescriptionEn    String?         // AP: SEO meta description English
-  seoDescriptionAr    String?         // AQ: SEO meta description Arabic
-  searchKeywords      String?         // AR: Pipe-separated keywords
+  // ── SEO Group (AO–AS) ──
+  seoTitleEn          String?         // AO: SEO title English (< 60 chars)
+  seoTitleAr          String?         // AP: SEO title Arabic (defaults to Name AR)
+  seoDescriptionEn    String?         // AQ: SEO meta description English
+  seoDescriptionAr    String?         // AR: SEO meta description Arabic
+  searchKeywords      String?         // AS: Pipe-separated keywords
 
-  // ── Internal Group (AS–AZ) ──
-  internalNotes       String?         // AS: Internal staff notes
-  validationStatus    String?         // AT: Validated, Pending Review, Draft, Rejected
-  confidenceScore     Int?            // AU: 0–100 translation quality score
-  pieces              Int?            // AV: Number of pieces in set
-  setCount            Int?            // AW: Number of items in coordinated set
-  shape               String?         // AX: Square, Round, Rectangular, Oval, Circular
-  finish              String?         // AY: Coated, Chrome, Black Chrome, Polished, Matte, Powder-coated
-  additionalInfo      String?         // AZ: Extra attributes (with Lid, Glass Lid, etc.)
+  // ── Internal Group (AT–BA) ──
+  internalNotes       String?         // AT: Internal staff notes
+  validationStatus    String?         // AU: Validated, Pending Review, Draft, Rejected
+  confidenceScore     Int?            // AV: 0–100 translation quality score
+  pieces              Int?            // AW: Number of pieces in set
+  setCount            Int?            // AX: Number of items in coordinated set
+  shape               String?         // AY: Square, Round, Rectangular, Oval, Circular
+  finish              String?         // AZ: Coated, Chrome, Black Chrome, Polished, Matte, Powder-coated
+  additionalInfo      String?         // BA: Extra attributes (with Lid, Glass Lid, etc.)
 
   // ── Legacy fields (kept for backward compatibility) ──
   photo               String?         // Legacy — no longer used in API
@@ -153,6 +154,7 @@ model ProductOriginal {
 
   // ── Product Information Group ──
   nameAr              String?
+  enCatalog           String?
   nameEn              String?
   shortDescAr         String?
   shortDescEn         String?

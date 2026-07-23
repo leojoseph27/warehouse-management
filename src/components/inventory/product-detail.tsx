@@ -440,6 +440,7 @@ export function ProductDetail() {
           <div className="space-y-0 divide-y divide-border">
             <FieldRow label="Name (English)" value={product.nameEn} />
             <FieldRow label="Name (Arabic)" value={product.nameAr} isArabic />
+            <FieldRow label="EN Catalog" value={product.enCatalog} />
           </div>
           
           {(product.shortDescEn || product.shortDescAr) && (

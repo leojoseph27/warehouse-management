@@ -9,7 +9,7 @@ export const maxDuration = 300;
 export const runtime = 'nodejs';
 
 /**
- * Excel Export Route — Al-Nassim Master Catalog 52-Column Schema
+ * Excel Export Route — Al-Nassim Master Catalog 53-Column Schema
  * 
  * Features:
  *   - Two-row header format (group headers + column headers)
@@ -21,25 +21,25 @@ export const runtime = 'nodejs';
  *   Row 1: Group headers (merged cells spanning their column ranges)
  *     - Product Identity (cols 0–9, 10 cols)
  *     - Classification (cols 10–15, 6 cols)
- *     - Product Information (cols 16–21, 6 cols)
- *     - Attributes (cols 22–34, 13 cols)
- *     - Logistics (cols 35–37, 3 cols)
- *     - Commercial (col 38, 1 col)
- *     - SEO (cols 39–43, 5 cols)
- *     - Internal (cols 44–51, 8 cols)
- *     - Media (col 52, 1 col — Image Links)
+ *     - Product Information (cols 16–22, 7 cols)
+ *     - Attributes (cols 23–35, 13 cols)
+ *     - Logistics (cols 36–38, 3 cols)
+ *     - Commercial (col 39, 1 col)
+ *     - SEO (cols 40–44, 5 cols)
+ *     - Internal (cols 45–52, 8 cols)
+ *     - Media (cols 53–54, 2 cols — Image Links + Variants)
  *   Row 2: Actual column headers from COLUMN_DEFS
  *   Row 3+: Data rows
  */
 
-// Column widths for each of the 53 columns (52 original + 1 Image Links)
+// Column widths for each of the 55 columns (53 product + Image Links + Variants)
 const COL_WIDTHS = [
   // Product Identity (10)
   10, 14, 14, 14, 16, 12, 18, 16, 10, 14,
   // Classification (6)
   22, 20, 20, 12, 18, 18,
-  // Product Information (6)
-  30, 30, 28, 28, 30, 30,
+  // Product Information (7)
+  30, 30, 30, 28, 28, 30, 30,
   // Attributes (13)
   12, 14, 16, 16, 10, 12, 10, 10, 8, 8, 8, 10, 12,
   // Logistics (3)
@@ -60,7 +60,7 @@ const COL_WIDTHS = [
 const TRACKED_FIELDS = new Set([
   'productId', 'sku', 'ndNumber', 'barcode', 'legacyCode', 'brand', 'model',
   'department', 'category', 'subcategory', 'productFamily', 'productType',
-  'nameAr', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn',
+  'nameAr', 'enCatalog', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn',
   'color', 'material', 'capacity', 'capacityUnit', 'weight', 'weightUnit',
   'length', 'width', 'height', 'diameter', 'dimensionUnit',
   'countryOfOrigin', 'unit', 'minSalesMultiples', 'defaultPrice',

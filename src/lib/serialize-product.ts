@@ -55,6 +55,7 @@ interface ProductOriginalRow {
   productFamily: string | null;
   productType: string | null;
   nameAr: string | null;
+  enCatalog: string | null;
   nameEn: string | null;
   shortDescAr: string | null;
   shortDescEn: string | null;
@@ -133,6 +134,7 @@ interface ProductRow {
   productType: string | null;
   // Product Information
   nameAr: string | null;
+  enCatalog: string | null;
   nameEn: string | null;
   shortDescAr: string | null;
   shortDescEn: string | null;
@@ -206,6 +208,7 @@ export function serializeProduct(p: ProductRow) {
     productType: p.productType,
     // Product Information
     nameAr: p.nameAr,
+    enCatalog: p.enCatalog,
     nameEn: p.nameEn,
     shortDescAr: p.shortDescAr,
     shortDescEn: p.shortDescEn,
@@ -283,6 +286,7 @@ export function serializeProduct(p: ProductRow) {
       productFamily: p.original.productFamily,
       productType: p.original.productType,
       nameAr: p.original.nameAr,
+      enCatalog: p.original.enCatalog,
       nameEn: p.original.nameEn,
       shortDescAr: p.original.shortDescAr,
       shortDescEn: p.original.shortDescEn,

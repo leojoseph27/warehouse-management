@@ -30,6 +30,7 @@ const FIELD_LABELS: Record<string, string> = {
   productFamily: 'Product Family',
   productType: 'Product Type',
   nameAr: 'Name AR',
+  enCatalog: 'EN Catalog',
   nameEn: 'Name EN',
   shortDescAr: 'Short Desc AR',
   shortDescEn: 'Short Desc EN',
@@ -69,7 +70,7 @@ const FIELD_LABELS: Record<string, string> = {
 const FIELD_GROUPS = {
   'Product Identity': ['productId', 'sku', 'ndNumber', 'barcode', 'legacyCode', 'brand', 'model'],
   'Classification': ['department', 'category', 'subcategory', 'productFamily', 'productType'],
-  'Product Information': ['nameAr', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn'],
+  'Product Information': ['nameAr', 'enCatalog', 'nameEn', 'shortDescAr', 'shortDescEn', 'longDescAr', 'longDescEn'],
   'Attributes': ['color', 'material', 'capacity', 'capacityUnit', 'weight', 'weightUnit', 'length', 'width', 'height', 'diameter', 'dimensionUnit'],
   'Logistics': ['countryOfOrigin', 'unit', 'minSalesMultiples'],
   'Commercial': ['defaultPrice'],

@@ -72,6 +72,7 @@ export async function GET() {
         (p.brand IS DISTINCT FROM po.brand) OR
         (p."nameEn" IS DISTINCT FROM po."nameEn") OR
         (p."nameAr" IS DISTINCT FROM po."nameAr") OR
+        (p."enCatalog" IS DISTINCT FROM po."enCatalog") OR
         (p."defaultPrice" IS DISTINCT FROM po."defaultPrice") OR
         (p.department IS DISTINCT FROM po.department) OR
         (p.category IS DISTINCT FROM po.category) OR

@@ -91,6 +91,7 @@ interface FormData {
   productFamily: string;
   productType: string;
   nameAr: string;
+  enCatalog: string;
   nameEn: string;
   shortDescAr: string;
   shortDescEn: string;
@@ -146,6 +147,7 @@ const EMPTY_FORM: FormData = {
   productFamily: '',
   productType: '',
   nameAr: '',
+  enCatalog: '',
   nameEn: '',
   shortDescAr: '',
   shortDescEn: '',
@@ -575,6 +577,7 @@ export function ProductForm({ mode }: ProductFormProps) {
         productFamily: p.productFamily || '',
         productType: p.productType || '',
         nameAr: p.nameAr || '',
+        enCatalog: p.enCatalog || '',
         nameEn: p.nameEn || '',
         shortDescAr: p.shortDescAr || '',
         shortDescEn: p.shortDescEn || '',
@@ -719,6 +722,7 @@ export function ProductForm({ mode }: ProductFormProps) {
       productFamily: toStr(formData.productFamily),
       productType: toStr(formData.productType),
       nameAr: toStr(formData.nameAr),
+      enCatalog: toStr(formData.enCatalog),
       nameEn: toStr(formData.nameEn),
       shortDescAr: toStr(formData.shortDescAr),
       shortDescEn: toStr(formData.shortDescEn),
@@ -1314,11 +1318,11 @@ export function ProductForm({ mode }: ProductFormProps) {
       </SectionCard>
 
       {/* ═══════════════════════════════════════════════════════
-          SECTION 3: Product Information (6 fields)
+          SECTION 3: Product Information (7 fields)
           ═══════════════════════════════════════════════════════ */}
       <SectionCard
         title="Product Information"
-        fieldCount={6}
+        fieldCount={7}
         open={expandedSections.has('Product Information')}
         onToggle={() => toggleSection('Product Information')}
       >
@@ -1350,6 +1354,18 @@ export function ProductForm({ mode }: ProductFormProps) {
             <FieldError field="nameEn" />
           </div>
         </Grid2>
+
+        {/* EN CATALOG (catalog name — third name alongside Name AR / Name EN) */}
+        <div className="space-y-2">
+          <FieldLabel htmlFor="enCatalog">EN CATALOG</FieldLabel>
+          <Input
+            id="enCatalog"
+            value={formData.enCatalog}
+            onChange={(e) => updateField('enCatalog', e.target.value)}
+            placeholder="English catalog name"
+            className="h-11"
+          />
+        </div>
 
         <Grid2>
           {/* Short Desc AR (auto-derived, but editable) */}

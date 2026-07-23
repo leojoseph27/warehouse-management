@@ -11,7 +11,7 @@ const PRODUCT_FIELDS = [
   'department', 'category', 'subcategory', 'sectionCode',
   'productFamily', 'productType',
   // Product Information
-  'nameAr', 'nameEn', 'shortDescAr', 'shortDescEn',
+  'nameAr', 'enCatalog', 'nameEn', 'shortDescAr', 'shortDescEn',
   'longDescAr', 'longDescEn',
   // Attributes
   'color', 'colorAr', 'material', 'materialAr',
