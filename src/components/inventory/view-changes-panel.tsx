@@ -1,18 +1,20 @@
 'use client';
 
-import { Fragment } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Eye, Edit3 } from 'lucide-react';
+import { Eye, Edit3, Undo2, RotateCcw, Loader2 } from 'lucide-react';
 import { FieldChange, Product } from '@/store/inventory-store';
+import { toast } from 'sonner';
 
 interface ViewChangesPanelProps {
   product: Product;
   changes: FieldChange[];
+  /** Called after a successful undo to refresh the product in the parent. */
+  onUndoComplete?: (updatedProduct: Product) => void;
 }
 
 // Field label mapping for display
@@ -80,9 +82,14 @@ const FIELD_GROUPS = {
 
 /**
  * Panel component that shows a comparison between original imported values
- * and current edited values for a product.
+ * and current edited values for a product. Includes undo buttons to revert
+ * individual fields or all fields back to the original imported values.
  */
-export function ViewChangesPanel({ product, changes }: ViewChangesPanelProps) {
+export function ViewChangesPanel({ product, changes, onUndoComplete }: ViewChangesPanelProps) {
+  const [undoingField, setUndoingField] = useState<string | null>(null);
+  const [undoingAll, setUndoingAll] = useState(false);
+  const [open, setOpen] = useState(false);
+
   if (changes.length === 0) {
     return null;
   }
@@ -104,8 +111,57 @@ export function ViewChangesPanel({ product, changes }: ViewChangesPanelProps) {
     }
   }
 
+  /** Undo a single field by calling the undo API with that one field. */
+  const handleUndoField = async (field: string) => {
+    setUndoingField(field);
+    try {
+      const res = await fetch(`/api/products/${product.id}/undo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: [field] }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to undo field');
+      }
+      toast.success(`Reverted ${FIELD_LABELS[field] || field} to original value`);
+      if (onUndoComplete && data.product) {
+        onUndoComplete(data.product as Product);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to undo field');
+    } finally {
+      setUndoingField(null);
+    }
+  };
+
+  /** Undo all modified fields at once. */
+  const handleUndoAll = async () => {
+    setUndoingAll(true);
+    try {
+      const res = await fetch(`/api/products/${product.id}/undo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: [] }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to undo all changes');
+      }
+      toast.success(`Reverted all ${changes.length} modified field(s) to original values`);
+      if (onUndoComplete && data.product) {
+        onUndoComplete(data.product as Product);
+      }
+      setOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to undo all changes');
+    } finally {
+      setUndoingAll(false);
+    }
+  };
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-9 gap-2">
           <Eye className="h-4 w-4" />
@@ -117,12 +173,26 @@ export function ViewChangesPanel({ product, changes }: ViewChangesPanelProps) {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
             <Edit3 className="h-5 w-5 text-red-500" />
             Modified Fields
             <Badge variant="outline" className="text-muted-foreground">
               {product.ndNumber || product.sourceRow || 'New Product'}
             </Badge>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleUndoAll}
+              disabled={undoingAll || undoingField !== null}
+              className="ml-auto h-8 gap-1.5"
+            >
+              {undoingAll ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RotateCcw className="h-3.5 w-3.5" />
+              )}
+              Undo All
+            </Button>
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="h-[60vh] pr-4">
@@ -139,7 +209,10 @@ export function ViewChangesPanel({ product, changes }: ViewChangesPanelProps) {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {sectionChanges.map((change) => (
-                    <div key={change.field} className="grid grid-cols-3 gap-2 text-sm">
+                    <div
+                      key={change.field}
+                      className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-sm items-center"
+                    >
                       <div className="font-medium text-muted-foreground">
                         {FIELD_LABELS[change.field] || change.field}
                       </div>
@@ -149,14 +222,35 @@ export function ViewChangesPanel({ product, changes }: ViewChangesPanelProps) {
                       <div className="text-red-600 font-medium truncate" title={change.current || 'Empty'}>
                         {change.current || <span className="text-gray-400 italic">empty</span>}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUndoField(change.field)}
+                        disabled={undoingAll || undoingField !== null}
+                        className="h-7 px-2 gap-1 text-xs shrink-0"
+                        title={`Revert ${FIELD_LABELS[change.field] || change.field} to original`}
+                      >
+                        {undoingField === change.field ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Undo2 className="h-3 w-3" />
+                        )}
+                        Undo
+                      </Button>
                     </div>
                   ))}
                 </CardContent>
               </Card>
             ))}
-            <div className="text-xs text-muted-foreground pt-2">
-              <span className="font-medium">Legend:</span>
-              <span className="ml-2">Original → Current (modified)</span>
+            <div className="text-xs text-muted-foreground pt-2 space-y-1">
+              <div>
+                <span className="font-medium">Legend:</span>
+                <span className="ml-2">Original → Current (modified)</span>
+              </div>
+              <div className="text-amber-600">
+                <Undo2 className="h-3 w-3 inline mr-1" />
+                Undo reverts the field to its original imported value. The red highlight will disappear.
+              </div>
             </div>
           </div>
         </ScrollArea>

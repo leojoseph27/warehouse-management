@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ImageGallery } from './image-gallery';
+import { ViewChangesPanel } from './view-changes-panel';
 import { useInventoryStore, Product, hasModifications, getFieldChanges } from '@/store/inventory-store';
 import {
   ArrowLeft,
@@ -338,6 +339,16 @@ export function ProductDetail() {
                   <Edit3 className="h-3 w-3" />
                   {modifications.length} Modified
                 </Badge>
+              )}
+              {hasMods && (
+                <ViewChangesPanel
+                  product={product}
+                  changes={modifications}
+                  onUndoComplete={(updated) => {
+                    setProduct(updated);
+                    setCurrentProduct(updated);
+                  }}
+                />
               )}
             </div>
           </div>

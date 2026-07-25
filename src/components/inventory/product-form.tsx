@@ -703,6 +703,19 @@ export function ProductForm({ mode }: ProductFormProps) {
     return Object.keys(errors).length === 0;
   }, [formData]);
 
+  // ── Handle undo completion (from ViewChangesPanel) ────────
+  // After an undo API call succeeds, the backend returns the updated product.
+  // We need to:
+  //   1. Update currentProduct in the store (so the "modified" badge disappears)
+  //   2. Reset the form data from the reverted product values
+  //   3. Reset formInitializedRef so the useEffect re-populates the form
+  const handleUndoComplete = useCallback((updatedProduct: Product) => {
+    setCurrentProduct(updatedProduct);
+    formInitializedRef.current = false;
+    // Clear validation errors since the values changed
+    setValidationErrors({});
+  }, [setCurrentProduct]);
+
   // ── Build save payload ─────────────────────────────────────
   const buildPayload = useCallback(() => {
     const toNum = (v: string): number | null => {
@@ -1071,6 +1084,7 @@ export function ProductForm({ mode }: ProductFormProps) {
                 <ViewChangesPanel
                   product={currentProduct}
                   changes={getFieldChanges(currentProduct)}
+                  onUndoComplete={handleUndoComplete}
                 />
               </div>
             )}
