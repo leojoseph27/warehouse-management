@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, touchProductUpdatedAt } from '@/lib/db';
 import {
   uploadToDrive,
   isDriveConfigured,
@@ -197,6 +197,12 @@ export async function POST(request: NextRequest) {
       logError('step 7 (Prisma create productImage)', err);
       throw err;
     }
+
+    // ── STEP 7.5: Touch product's updatedAt ──
+    // Image upload is a product modification — touching updatedAt ensures the
+    // product appears in the "Recently Updated" filter (onlyModified=1).
+    logStep('step 7.5: touching product updatedAt', { productId });
+    await touchProductUpdatedAt(productId);
 
     // ── STEP 8: Return response ──
     logStep('step 8: building response');

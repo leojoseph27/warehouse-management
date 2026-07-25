@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, touchProductUpdatedAt } from '@/lib/db';
 import {
   uploadToDrive,
   deleteFromDrive,
@@ -54,6 +54,10 @@ export async function DELETE(
       }
     }
 
+    // Image deletion is a product modification — touch updatedAt so the
+    // product appears in the "Recently Updated" filter.
+    await touchProductUpdatedAt(image.productId);
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting image:', error);
@@ -91,6 +95,10 @@ export async function PATCH(
       where: { id },
       data: updateData,
     });
+
+    // Image reordering / set-primary is a product modification — touch
+    // updatedAt so the product appears in the "Recently Updated" filter.
+    await touchProductUpdatedAt(updatedImage.productId);
 
     return NextResponse.json({
       id: updatedImage.id,
@@ -185,6 +193,10 @@ export async function PUT(
         // isPrimary and displayOrder are NOT updated — preserved as-is
       },
     });
+
+    // Image replacement is a product modification — touch updatedAt so the
+    // product appears in the "Recently Updated" filter.
+    await touchProductUpdatedAt(updated.productId);
 
     return NextResponse.json({
       id: updated.id,
