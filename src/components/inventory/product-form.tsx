@@ -9,10 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { SearchableSingleSelect } from './searchable-single-select';
+import { SearchableMultiSelect } from './searchable-multi-select';
 import { ImageGallery } from './image-gallery';
 import { BarcodeScanner as BarcodeScannerModal } from './barcode-scanner-modal';
 import { BarcodePhotoCapture } from './barcode-photo-capture';
 import { NamedMultiValueInput, type NamedMultiValueInputHandle } from './named-multi-value-input';
+import { parseMultiValueSimple, serializeMultiValueSimple } from '@/lib/multi-value';
 import { Camera, Barcode } from 'lucide-react';
 import { ViewChangesPanel } from './view-changes-panel';
 import { VariantManager } from './variant-manager';
@@ -1475,15 +1477,15 @@ export function ProductForm({ mode }: ProductFormProps) {
         onToggle={() => toggleSection('Attributes')}
       >
         <Grid2>
-          {/* Color */}
+          {/* Color (multi-value — products can have multiple colors) */}
           <div className="space-y-2">
             <FieldLabel>Color</FieldLabel>
-            <SearchableSingleSelect
+            <SearchableMultiSelect
               label="Color"
-              value={formData.color}
-              onChange={(v) => updateField('color', v)}
+              values={parseMultiValueSimple(formData.color || null)}
+              onChange={(vals) => updateField('color', serializeMultiValueSimple(vals) || '')}
               suggestions={COLOR_OPTIONS}
-              placeholder="Select color..."
+              placeholder="Select colors..."
               emptyMessage="No color found."
             />
           </div>
@@ -1494,18 +1496,18 @@ export function ProductForm({ mode }: ProductFormProps) {
               <FieldLabel>Color AR</FieldLabel>
               <AutoBadge />
             </div>
-            <ReadOnlyInput value={formData.colorAr} placeholder="Auto-filled from Color" dir="rtl" />
+            <ReadOnlyInput value={formData.colorAr} placeholder="Auto-filled from Color(s)" dir="rtl" />
           </div>
 
-          {/* Material */}
+          {/* Material (multi-value — products can have multiple materials) */}
           <div className="space-y-2">
             <FieldLabel>Material</FieldLabel>
-            <SearchableSingleSelect
+            <SearchableMultiSelect
               label="Material"
-              value={formData.material}
-              onChange={(v) => updateField('material', v)}
+              values={parseMultiValueSimple(formData.material || null)}
+              onChange={(vals) => updateField('material', serializeMultiValueSimple(vals) || '')}
               suggestions={MATERIAL_OPTIONS}
-              placeholder="Select material..."
+              placeholder="Select materials..."
               emptyMessage="No material found."
             />
           </div>
@@ -1516,7 +1518,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               <FieldLabel>Material AR</FieldLabel>
               <AutoBadge />
             </div>
-            <ReadOnlyInput value={formData.materialAr} placeholder="Auto-filled from Material" dir="rtl" />
+            <ReadOnlyInput value={formData.materialAr} placeholder="Auto-filled from Material(s)" dir="rtl" />
           </div>
         </Grid2>
 
