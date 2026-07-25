@@ -28,10 +28,11 @@ const PRODUCT_FIELDS = [
   'pieces', 'setCount', 'shape', 'finish', 'additionalInfo',
 ] as const;
 
-/** Numeric fields that should be coerced to numbers or null */
+/** Numeric fields that should be coerced to numbers or null.
+ *  NOTE: capacity/weight/length/width/height/diameter are NOT in this set —
+ *  they are stored as TEXT to support multi-value (comma-separated) storage. */
 const NUMERIC_FIELDS = new Set([
-  'sourceRow', 'capacity', 'weight', 'length', 'width', 'height',
-  'diameter', 'defaultPrice', 'confidenceScore', 'pieces', 'setCount',
+  'sourceRow', 'defaultPrice', 'confidenceScore', 'pieces', 'setCount',
 ]);
 
 function coerceFieldValue(field: string, value: any): any {

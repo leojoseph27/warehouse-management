@@ -51,19 +51,25 @@ model Product {
   longDescEn          String?         // W: Long description EN (auto-generated from Brand + Name EN)
 
   // ── Attributes Group (X–AJ) ──
-  color               String?         // X: Color EN (controlled list, 15 values)
+  // NOTE: capacity, weight, length, width, height, diameter are stored as
+  // TEXT (not Float) to support multi-value storage for boxed sets. A single
+  // value like "23" is stored as the string "23". Multiple values are stored
+  // as a comma-separated string like "23, 32, 43". Named values (one per item
+  // in a set) use the format "Knife: 23, Scissors: 32, Peeler: 43".
+  // Backward compatible: existing Float values are cast to text by the migration.
+  color               String?         // X: Color EN (controlled list, 15 values; multi-value: "Red, Blue")
   colorAr             String?         // Y: Color AR (auto-derived from Color)
-  material            String?         // Z: Material EN (controlled list, ~15 values)
+  material            String?         // Z: Material EN (controlled list; multi-value: "Steel, Plastic")
   materialAr          String?         // AA: Material AR (auto-derived from Material)
-  capacity            Float?          // AB: Numeric capacity/volume/weight
-  capacityUnit        String?         // AC: L, ml, kg, g
-  weight              Float?          // AD: Product weight (decimal)
-  weightUnit          String?         // AE: kg, g
-  length              Float?          // AF: Length in Dimension Unit
-  width               Float?          // AG: Width in Dimension Unit
-  height              Float?          // AH: Height in Dimension Unit
-  diameter            Float?          // AI: Diameter for round products
-  dimensionUnit       String?         // AJ: cm, mm, inch (defaults to cm)
+  capacity            String?         // AB: Capacity/volume — multi-value: "1.5, 2.0" or "Cup: 1.5, Jug: 2.0"
+  capacityUnit        String?         // AC: L, ml, kg, g (single unit applies to all capacity values)
+  weight              String?         // AD: Product weight — multi-value: "0.5, 0.8" or "Knife: 0.2, Scissors: 0.3"
+  weightUnit          String?         // AE: kg, g (single unit applies to all weight values)
+  length              String?         // AF: Length — multi-value: "23, 32, 43" or "Knife: 23, Scissors: 32"
+  width               String?         // AG: Width — multi-value
+  height              String?         // AH: Height — multi-value
+  diameter            String?         // AI: Diameter — multi-value
+  dimensionUnit       String?         // AJ: cm, mm, inch (single unit applies to all dimension values)
 
   // ── Logistics Group (AK–AM) ──
   countryOfOrigin     String?         // AK: Country (ISO 3166, controlled list)
@@ -162,18 +168,20 @@ model ProductOriginal {
   longDescEn          String?
 
   // ── Attributes Group ──
+  // (capacity/weight/length/width/height/diameter are String to support
+  //  multi-value storage — see Product model comment for format details)
   color               String?
   colorAr             String?
   material            String?
   materialAr          String?
-  capacity            Float?
+  capacity            String?
   capacityUnit        String?
-  weight              Float?
+  weight              String?
   weightUnit          String?
-  length              Float?
-  width               Float?
-  height              Float?
-  diameter            Float?
+  length              String?
+  width               String?
+  height              String?
+  diameter            String?
   dimensionUnit       String?
 
   // ── Logistics Group ──

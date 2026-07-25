@@ -65,14 +65,16 @@ interface ProductOriginalRow {
   colorAr: string | null;
   material: string | null;
   materialAr: string | null;
-  capacity: number | null;
+  // Multi-value fields: stored as comma-separated string, e.g. "23, 32, 43"
+  // or named "Knife: 23, Scissors: 32". See schema.prisma for format details.
+  capacity: string | null;
   capacityUnit: string | null;
-  weight: number | null;
+  weight: string | null;
   weightUnit: string | null;
-  length: number | null;
-  width: number | null;
-  height: number | null;
-  diameter: number | null;
+  length: string | null;
+  width: string | null;
+  height: string | null;
+  diameter: string | null;
   dimensionUnit: string | null;
   countryOfOrigin: string | null;
   unit: string | null;
@@ -145,14 +147,14 @@ interface ProductRow {
   colorAr: string | null;
   material: string | null;
   materialAr: string | null;
-  capacity: number | null;
+  capacity: string | null;
   capacityUnit: string | null;
-  weight: number | null;
+  weight: string | null;
   weightUnit: string | null;
-  length: number | null;
-  width: number | null;
-  height: number | null;
-  diameter: number | null;
+  length: string | null;
+  width: string | null;
+  height: string | null;
+  diameter: string | null;
   dimensionUnit: string | null;
   // Logistics
   countryOfOrigin: string | null;

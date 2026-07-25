@@ -12,6 +12,7 @@ import { SearchableSingleSelect } from './searchable-single-select';
 import { ImageGallery } from './image-gallery';
 import { BarcodeScanner as BarcodeScannerModal } from './barcode-scanner-modal';
 import { BarcodePhotoCapture } from './barcode-photo-capture';
+import { NamedMultiValueInput, type NamedMultiValueInputHandle } from './named-multi-value-input';
 import { Camera, Barcode } from 'lucide-react';
 import { ViewChangesPanel } from './view-changes-panel';
 import { VariantManager } from './variant-manager';
@@ -326,6 +327,14 @@ export function ProductForm({ mode }: ProductFormProps) {
   // ── Track whether form has been initialized (to prevent reset on image upload) ──
   const formInitializedRef = useRef(false);
 
+  // ── Refs for multi-value inputs (flush pending values before save) ──
+  const lengthMultiRef = useRef<NamedMultiValueInputHandle>(null);
+  const widthMultiRef = useRef<NamedMultiValueInputHandle>(null);
+  const heightMultiRef = useRef<NamedMultiValueInputHandle>(null);
+  const diameterMultiRef = useRef<NamedMultiValueInputHandle>(null);
+  const weightMultiRef = useRef<NamedMultiValueInputHandle>(null);
+  const capacityMultiRef = useRef<NamedMultiValueInputHandle>(null);
+
   // ── Section collapse state ─────────────────────────────────
   const [expandedSections, setExpandedSections] = useState<Set<SectionName>>(
     new Set(['Product Identity', 'Classification'])
@@ -456,6 +465,8 @@ export function ProductForm({ mode }: ProductFormProps) {
         }
 
         // ── Dimensions → default Dimension Unit to 'cm' ──
+        // Multi-value fields are strings like "23" or "23, 32, 43" — treat
+        // any non-empty string as a value being set.
         if (['length', 'width', 'height', 'diameter'].includes(field)) {
           if (value && !next.dimensionUnit) {
             next.dimensionUnit = 'cm';
@@ -587,14 +598,14 @@ export function ProductForm({ mode }: ProductFormProps) {
         colorAr: p.colorAr || '',
         material: p.material || '',
         materialAr: p.materialAr || '',
-        capacity: p.capacity?.toString() || '',
+        capacity: p.capacity || '',
         capacityUnit: p.capacityUnit || '',
-        weight: p.weight?.toString() || '',
+        weight: p.weight || '',
         weightUnit: p.weightUnit || '',
-        length: p.length?.toString() || '',
-        width: p.width?.toString() || '',
-        height: p.height?.toString() || '',
-        diameter: p.diameter?.toString() || '',
+        length: p.length || '',
+        width: p.width || '',
+        height: p.height || '',
+        diameter: p.diameter || '',
         dimensionUnit: p.dimensionUnit || '',
         countryOfOrigin: p.countryOfOrigin || '',
         unit: p.unit || '',
@@ -732,14 +743,15 @@ export function ProductForm({ mode }: ProductFormProps) {
       colorAr: toStr(formData.colorAr),
       material: toStr(formData.material),
       materialAr: toStr(formData.materialAr),
-      capacity: toNum(formData.capacity),
+      // Multi-value fields: stored as comma-separated string in DB
+      capacity: toStr(formData.capacity),
       capacityUnit: toStr(formData.capacityUnit),
-      weight: toNum(formData.weight),
+      weight: toStr(formData.weight),
       weightUnit: toStr(formData.weightUnit),
-      length: toNum(formData.length),
-      width: toNum(formData.width),
-      height: toNum(formData.height),
-      diameter: toNum(formData.diameter),
+      length: toStr(formData.length),
+      width: toStr(formData.width),
+      height: toStr(formData.height),
+      diameter: toStr(formData.diameter),
       dimensionUnit: toStr(formData.dimensionUnit),
       countryOfOrigin: toStr(formData.countryOfOrigin),
       unit: toStr(formData.unit),
@@ -804,6 +816,16 @@ export function ProductForm({ mode }: ProductFormProps) {
 
     setSaving(true);
     try {
+      // Flush any pending values in multi-value inputs before building payload.
+      // This ensures values typed but not yet committed (e.g. user typed "44"
+      // in the new-entry input but didn't press Enter or click "+") are included.
+      lengthMultiRef.current?.flush();
+      widthMultiRef.current?.flush();
+      heightMultiRef.current?.flush();
+      diameterMultiRef.current?.flush();
+      weightMultiRef.current?.flush();
+      capacityMultiRef.current?.flush();
+
       const payload = buildPayload();
       let res: Response | undefined;
 
@@ -1486,16 +1508,16 @@ export function ProductForm({ mode }: ProductFormProps) {
 
         {/* Capacity + Capacity Unit */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="space-y-2 sm:col-span-2">
-            <FieldLabel htmlFor="capacity">Capacity</FieldLabel>
-            <Input
-              id="capacity"
-              type="number"
+          <div className="space-y-2 sm:col-span-3">
+            <NamedMultiValueInput
+              ref={capacityMultiRef}
+              label="Capacity"
+              value={formData.capacity || null}
+              onChange={(v) => updateField('capacity', v || '')}
+              inputType="number"
               step="0.01"
-              value={formData.capacity}
-              onChange={(e) => updateField('capacity', e.target.value)}
               placeholder="0"
-              className="h-11"
+              namePlaceholder="Item name (e.g. Cup)"
             />
           </div>
           <div className="space-y-2">
@@ -1513,16 +1535,16 @@ export function ProductForm({ mode }: ProductFormProps) {
 
         {/* Weight + Weight Unit */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="space-y-2 sm:col-span-2">
-            <FieldLabel htmlFor="weight">Weight</FieldLabel>
-            <Input
-              id="weight"
-              type="number"
+          <div className="space-y-2 sm:col-span-3">
+            <NamedMultiValueInput
+              ref={weightMultiRef}
+              label="Weight"
+              value={formData.weight || null}
+              onChange={(v) => updateField('weight', v || '')}
+              inputType="number"
               step="0.01"
-              value={formData.weight}
-              onChange={(e) => updateField('weight', e.target.value)}
               placeholder="0"
-              className="h-11"
+              namePlaceholder="Item name (e.g. Knife)"
             />
           </div>
           <div className="space-y-2">
@@ -1539,68 +1561,65 @@ export function ProductForm({ mode }: ProductFormProps) {
         </div>
 
         {/* Dimensions (L, W, H, Diameter) + Dimension Unit */}
-        <div className="space-y-2">
-          <FieldLabel>Dimensions</FieldLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div>
-              <span className="text-[10px] text-muted-foreground pl-1">Length</span>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.length}
-                onChange={(e) => updateField('length', e.target.value)}
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-muted-foreground pl-1">Width</span>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.width}
-                onChange={(e) => updateField('width', e.target.value)}
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-muted-foreground pl-1">Height</span>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.height}
-                onChange={(e) => updateField('height', e.target.value)}
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-muted-foreground pl-1">Diameter</span>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.diameter}
-                onChange={(e) => updateField('diameter', e.target.value)}
-                placeholder="0"
-                className="h-11"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-muted-foreground pl-1">Unit</span>
-              <SearchableSingleSelect
-                label="Dimension Unit"
-                value={formData.dimensionUnit}
-                onChange={(v) => updateField('dimensionUnit', v)}
-                suggestions={[...DIMENSION_UNIT_OPTIONS]}
-                placeholder="cm"
-                emptyMessage="No unit found."
-              />
-            </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <NamedMultiValueInput
+              ref={lengthMultiRef}
+              label="Length"
+              value={formData.length || null}
+              onChange={(v) => updateField('length', v || '')}
+              inputType="number"
+              step="0.01"
+              placeholder="0"
+              namePlaceholder="Item name (e.g. Knife)"
+            />
+            <NamedMultiValueInput
+              ref={widthMultiRef}
+              label="Width"
+              value={formData.width || null}
+              onChange={(v) => updateField('width', v || '')}
+              inputType="number"
+              step="0.01"
+              placeholder="0"
+              namePlaceholder="Item name (e.g. Knife)"
+            />
           </div>
-          {formData.dimensionUnit && (
-            <p className="text-xs text-muted-foreground">All dimension values are in {formData.dimensionUnit}</p>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <NamedMultiValueInput
+              ref={heightMultiRef}
+              label="Height"
+              value={formData.height || null}
+              onChange={(v) => updateField('height', v || '')}
+              inputType="number"
+              step="0.01"
+              placeholder="0"
+              namePlaceholder="Item name (e.g. Knife)"
+            />
+            <NamedMultiValueInput
+              ref={diameterMultiRef}
+              label="Diameter"
+              value={formData.diameter || null}
+              onChange={(v) => updateField('diameter', v || '')}
+              inputType="number"
+              step="0.01"
+              placeholder="0"
+              namePlaceholder="Item name (e.g. Lid)"
+            />
+          </div>
+          <div className="space-y-2">
+            <FieldLabel>Dimension Unit</FieldLabel>
+            <SearchableSingleSelect
+              label="Dimension Unit"
+              value={formData.dimensionUnit}
+              onChange={(v) => updateField('dimensionUnit', v)}
+              suggestions={[...DIMENSION_UNIT_OPTIONS]}
+              placeholder="cm"
+              emptyMessage="No unit found."
+            />
+            {formData.dimensionUnit && (
+              <p className="text-xs text-muted-foreground">All dimension values are in {formData.dimensionUnit}</p>
+            )}
+          </div>
         </div>
       </SectionCard>
 

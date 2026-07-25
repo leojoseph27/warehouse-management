@@ -500,19 +500,19 @@ export function ProductDetail() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Length</p>
-                <p className="text-sm sm:text-base font-semibold">{displayValue(product.length)}</p>
+                <p className="text-sm sm:text-base font-semibold whitespace-pre-wrap break-words">{displayValue(product.length)}</p>
               </div>
               <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Width</p>
-                <p className="text-sm sm:text-base font-semibold">{displayValue(product.width)}</p>
+                <p className="text-sm sm:text-base font-semibold whitespace-pre-wrap break-words">{displayValue(product.width)}</p>
               </div>
               <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Height</p>
-                <p className="text-sm sm:text-base font-semibold">{displayValue(product.height)}</p>
+                <p className="text-sm sm:text-base font-semibold whitespace-pre-wrap break-words">{displayValue(product.height)}</p>
               </div>
               <div className="bg-muted/50 rounded p-2 sm:p-2.5">
                 <p className="text-xs text-muted-foreground">Diameter</p>
-                <p className="text-sm sm:text-base font-semibold">{displayValue(product.diameter)}</p>
+                <p className="text-sm sm:text-base font-semibold whitespace-pre-wrap break-words">{displayValue(product.diameter)}</p>
               </div>
             </div>
             {product.dimensionUnit && (

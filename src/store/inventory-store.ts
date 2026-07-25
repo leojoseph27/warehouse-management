@@ -43,14 +43,16 @@ export interface ProductOriginal {
   colorAr: string | null;
   material: string | null;
   materialAr: string | null;
-  capacity: number | null;
+  // Multi-value fields: stored as comma-separated string in the DB.
+  // e.g. "23, 32, 43" or "Knife: 23, Scissors: 32"
+  capacity: string | null;
   capacityUnit: string | null;
-  weight: number | null;
+  weight: string | null;
   weightUnit: string | null;
-  length: number | null;
-  width: number | null;
-  height: number | null;
-  diameter: number | null;
+  length: string | null;
+  width: string | null;
+  height: string | null;
+  diameter: string | null;
   dimensionUnit: string | null;
   countryOfOrigin: string | null;
   unit: string | null;
@@ -165,14 +167,15 @@ export interface Product {
   colorAr: string | null;
   material: string | null;
   materialAr: string | null;
-  capacity: number | null;
+  // Multi-value: stored as comma-separated string
+  capacity: string | null;
   capacityUnit: string | null;
-  weight: number | null;
+  weight: string | null;
   weightUnit: string | null;
-  length: number | null;
-  width: number | null;
-  height: number | null;
-  diameter: number | null;
+  length: string | null;
+  width: string | null;
+  height: string | null;
+  diameter: string | null;
   dimensionUnit: string | null;
 
   // Logistics Group
