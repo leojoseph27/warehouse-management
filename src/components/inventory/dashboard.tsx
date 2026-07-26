@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { useInventoryStore, DashboardStats, Product } from '@/store/inventory-store';
 import {
   Package,
@@ -18,7 +16,6 @@ import {
   Search,
   Trash2,
   Loader2,
-  FileDown,
   FileText,
   Tag,
   Type,
@@ -41,38 +38,25 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { ExportProgressDialog } from './export-progress-dialog';
 import { PdfExportDialog } from './pdf-export-dialog';
+import { ExcelExportDialog } from './excel-export-dialog';
 
 export function Dashboard() {
   const { setView, stats, setStats, setLoading } = useInventoryStore();
   const [isClearing, setIsClearing] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [isCheckingFolders, setIsCheckingFolders] = useState(false);
-  const [exportMode, setExportMode] = useState<'excel-only' | 'excel-package' | 'excel-embedded' | 'excel-thumbnails'>('excel-only');
-  const [imageQuality, setImageQuality] = useState<'high' | 'medium' | 'low'>('high');
-  const [thumbnailQuality, setThumbnailQuality] = useState<'small' | 'medium' | 'large'>('medium');
-  const [showProgressDialog, setShowProgressDialog] = useState(false);
-  const [progressExportParams, setProgressExportParams] = useState<any>(null);
-  const [progressFilename, setProgressFilename] = useState('');
-  const [resumeJobId, setResumeJobId] = useState<string | null>(null);
-  const [srRange, setSrRange] = useState('');
-  const [srRangeError, setSrRangeError] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [isLoadingRecent, setIsLoadingRecent] = useState(false);
-  const [resumableJob, setResumableJob] = useState<any | null>(null);
   const [recentExports, setRecentExports] = useState<any[]>([]);
-  const completionNotifiedRef = useRef<string | null>(null);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
 
-  // ── PDF export dialog state ──
+  // ── Export dialog state ──
   const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [showExcelDialog, setShowExcelDialog] = useState(false);
 
   useEffect(() => {
     loadStats();
     loadRecentProducts();
-    loadResumableJob();
     loadRecentExports();
   }, []);
 
@@ -106,21 +90,6 @@ export function Dashboard() {
     }
   };
 
-  // Resume support: check for in-progress jobs that can be resumed.
-  const loadResumableJob = async () => {
-    try {
-      const res = await fetch('/api/export/list?status=processing&limit=1');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.jobs && data.jobs.length > 0) {
-          setResumableJob(data.jobs[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading resumable job:', error);
-    }
-  };
-
   // Load recent export history (any status) for the dashboard panel.
   const loadRecentExports = async () => {
     try {
@@ -132,78 +101,6 @@ export function Dashboard() {
     } catch (error) {
       console.error('Error loading recent exports:', error);
     }
-  };
-
-  // Resume an in-progress job — opens the progress dialog in resume mode.
-  const handleResume = () => {
-    if (!resumableJob) return;
-    setResumeJobId(resumableJob.id);
-    setProgressExportParams(null);
-    setProgressFilename(
-      resumableJob.exportMode === 'excel-package'
-        ? 'product_export_package.zip'
-        : 'products_export.xlsx'
-    );
-    setResumableJob(null);
-    setShowProgressDialog(true);
-    setIsExporting(true);
-  };
-
-  // Dismiss the resume banner without resuming (job continues server-side).
-  const handleDismissResume = () => {
-    setResumableJob(null);
-  };
-
-  // Memoized callbacks for ExportProgressDialog — stable identity prevents
-  // the dialog's useEffects from re-firing on every parent re-render.
-  const handleProgressDialogClose = useCallback(() => {
-    setShowProgressDialog(false);
-    setIsExporting(false);
-    setResumeJobId(null);
-    setProgressExportParams(null);
-  }, []);
-
-  const handleProgressDialogComplete = useCallback(() => {
-    setShowProgressDialog(false);
-    setIsExporting(false);
-    setResumeJobId(null);
-    setProgressExportParams(null);
-    // GUARDED toast: only fire once per job. The ref stores the last jobId
-    // we notified, so if onComplete fires again for the same job (e.g.,
-    // due to React StrictMode double-invocation), we skip the duplicate.
-    // The dialog also has its own completionHandledRef guard.
-    toast.success('Export completed successfully');
-    // Refresh history now that a new export is done.
-    loadRecentExports();
-  }, []);
-
-  // Build the export URL based on the selected export mode
-  const getExportUrl = (baseUrl: string): string => {
-    const url = new URL(baseUrl, window.location.origin);
-    if (exportMode === 'excel-package') {
-      url.pathname = url.pathname.replace('/api/products/export', '/api/products/export-package');
-      url.searchParams.set('quality', imageQuality);
-    } else if (exportMode === 'excel-embedded') {
-      url.searchParams.set('mode', 'embedded');
-      url.searchParams.set('quality', imageQuality);
-    }
-    return url.toString();
-  };
-
-  // Download a blob from a URL and trigger a file download
-  const downloadBlob = async (url: string, filename: string) => {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || 'Export failed');
-    }
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(blobUrl);
   };
 
   // Check and fix Google Drive folder organization — ensures every product's
@@ -327,31 +224,6 @@ export function Dashboard() {
         </Button>
       </div>
 
-      {/* Resume export banner */}
-      {resumableJob && (
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Loader2 className="h-4 w-4 text-blue-600 shrink-0 animate-spin" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 truncate">
-                Export in progress — {resumableJob.percentage}% complete
-              </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300 truncate">
-                {resumableJob.processedProducts} / {resumableJob.totalProducts} products • stage: {resumableJob.stage}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Button size="sm" variant="default" onClick={handleResume} className="h-8">
-              Resume
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleDismissResume} className="h-8">
-              Dismiss
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Main Stats - Primary 4 cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {mainStats.map((card) => (
@@ -433,262 +305,21 @@ export function Dashboard() {
               <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
               <span className="text-xs">Import Excel</span>
             </Button>
-            <div className="relative" ref={exportMenuRef}>
-              <Button
-                variant="outline"
-                className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 w-full min-h-[44px]"
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                disabled={isExporting}
-              >
-                {isExporting ? (
-                  <span className="h-5 w-5 sm:h-6 sm:w-6 border-2 border-purple-600 border-t-transparent animate-spin rounded-full" />
-                ) : (
-                  <Download className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-                )}
-                <span className="text-xs">Export Excel</span>
-              </Button>
-
-              {showExportMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => { setShowExportMenu(false); setSrRangeError(''); }} />
-                  <div className="absolute left-0 right-0 sm:left-0 sm:right-auto sm:w-80 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-3 space-y-3 max-h-[80vh] overflow-y-auto">
-                    <p className="text-sm font-medium">Export Excel</p>
-
-                    {/* Export Mode selector */}
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">Export Mode</p>
-                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-                        <input
-                          type="radio"
-                          name="exportMode"
-                          checked={exportMode === 'excel-only'}
-                          onChange={() => setExportMode('excel-only')}
-                          className="accent-purple-600"
-                        />
-                        <div>
-                          <p className="text-sm">Excel Only</p>
-                          <p className="text-[10px] text-muted-foreground">Standard export, no images</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-                        <input
-                          type="radio"
-                          name="exportMode"
-                          checked={exportMode === 'excel-package'}
-                          onChange={() => setExportMode('excel-package')}
-                          className="accent-purple-600"
-                        />
-                        <div>
-                          <p className="text-sm">Excel + Image Package</p>
-                          <p className="text-[10px] text-muted-foreground">ZIP with organized image folders</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-                        <input
-                          type="radio"
-                          name="exportMode"
-                          checked={exportMode === 'excel-thumbnails'}
-                          onChange={() => setExportMode('excel-thumbnails')}
-                          className="accent-purple-600"
-                        />
-                        <div>
-                          <p className="text-sm">Excel + Live Primary Image <Badge variant="secondary" className="text-[9px] ml-1">Excel 365 Recommended</Badge></p>
-                          <p className="text-[10px] text-muted-foreground">Primary image displayed live in cell via IMAGE() (no embedding)</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-                        <input
-                          type="radio"
-                          name="exportMode"
-                          checked={exportMode === 'excel-embedded'}
-                          onChange={() => setExportMode('excel-embedded')}
-                          className="accent-purple-600"
-                        />
-                        <div>
-                          <p className="text-sm">Excel + Embedded Images</p>
-                          <p className="text-[10px] text-muted-foreground">Primary images embedded in workbook</p>
-                        </div>
-                      </label>
-                    </div>
-
-                    {/* Image Quality selector — only for image export modes */}
-                    {(exportMode === 'excel-package' || exportMode === 'excel-embedded') && (
-                      <div className="space-y-2 border-t pt-2">
-                        <p className="text-xs font-medium text-muted-foreground">Image Quality</p>
-                        <div className="flex gap-2">
-                          {(['high', 'medium', 'low'] as const).map(q => (
-                            <button
-                              key={q}
-                              onClick={() => setImageQuality(q)}
-                              className={`flex-1 h-9 rounded-md text-xs capitalize border transition-colors ${
-                                imageQuality === q
-                                  ? 'bg-purple-600 text-white border-purple-600'
-                                  : 'bg-background hover:bg-accent border-border'
-                              }`}
-                            >
-                              {q}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Primary Image Quality selector — only for excel-thumbnails mode */}
-                    {exportMode === 'excel-thumbnails' && (
-                      <div className="space-y-2 border-t pt-2">
-                        <p className="text-xs font-medium text-muted-foreground">Primary Image Quality</p>
-                        <div className="flex gap-2">
-                          {(['small', 'medium', 'large'] as const).map(q => (
-                            <button
-                              key={q}
-                              onClick={() => setThumbnailQuality(q)}
-                              className={`flex-1 h-9 rounded-md text-xs capitalize border transition-colors ${
-                                thumbnailQuality === q
-                                  ? 'bg-purple-600 text-white border-purple-600'
-                                  : 'bg-background hover:bg-accent border-border'
-                              }`}
-                            >
-                              {q === 'small' ? 'Small (200px)' : q === 'medium' ? 'Medium (300px)' : 'Large (600px)'}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">
-                          Controls the image resolution loaded by IMAGE(). Does not affect downloaded images.
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="border-t" />
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start h-11 sm:h-9"
-                      onClick={async () => {
-                        setIsExporting(true);
-                        setShowExportMenu(false);
-                        try {
-                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
-                            // Use async export job with progress dialog
-                            setResumeJobId(null);
-                            setProgressExportParams({
-                              exportMode,
-                              // For excel-thumbnails mode, quality carries the thumbnail quality.
-                              // For excel-package/excel-embedded, quality carries the image quality.
-                              quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
-                            });
-                            setProgressFilename(exportMode === 'excel-package' ? 'product_export_package.zip' : 'products_export.xlsx');
-                            setShowProgressDialog(true);
-                          } else {
-                            // Standard Excel-only export (direct download)
-                            const url = getExportUrl('/api/products/export');
-                            await downloadBlob(url, 'products_export.xlsx');
-                            setIsExporting(false);
-                          }
-                        } catch (err: any) {
-                          toast.error(err.message || 'Export failed');
-                          setIsExporting(false);
-                        }
-                      }}
-                      disabled={isExporting}
-                    >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Export All Products
-                    </Button>
-
-                    <div className="border-t" />
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">Export by Serial Number Range</p>
-                      <Input
-                        placeholder="e.g. 1-7, 25-40"
-                        value={srRange}
-                        onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            setSrRangeError('');
-                            const trimmed = srRange.trim();
-                            const m = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-                            if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40'); return; }
-                            const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
-                            if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
-                            setIsExporting(true);
-                            if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
-                              // Use chunked pipeline for image exports
-                              setResumeJobId(null);
-                              setProgressExportParams({
-                                exportMode,
-                                quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
-                                srFrom: from,
-                                srTo: to,
-                              });
-                              setProgressFilename(exportMode === 'excel-package'
-                                ? `product_export_sr_${from}_${to}.zip`
-                                : `products_sr_${from}_${to}.xlsx`);
-                              setShowExportMenu(false);
-                              setShowProgressDialog(true);
-                            } else {
-                              // Direct download for excel-only mode
-                              const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
-                              const filename = `products_sr_${from}_${to}.xlsx`;
-                              downloadBlob(url, filename)
-                                .then(() => { setShowExportMenu(false); setSrRange(''); })
-                                .catch(err => toast.error(err.message || 'Export failed'))
-                                .finally(() => setIsExporting(false));
-                            }
-                          }
-                        }}
-                        className="h-11 sm:h-9 text-sm"
-                        disabled={isExporting}
-                      />
-                      {srRangeError && <p className="text-xs text-destructive">{srRangeError}</p>}
-                      <Button
-                        size="sm"
-                        className="w-full h-11 sm:h-9"
-                        disabled={isExporting || !srRange.trim()}
-                        onClick={() => {
-                          setSrRangeError('');
-                          const trimmed = srRange.trim();
-                          const m = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-                          if (!m) { setSrRangeError('Invalid format. Use: 1-7, 25-40'); return; }
-                          const from = parseInt(m[1], 10), to = parseInt(m[2], 10);
-                          if (from > to) { setSrRangeError('Start cannot be greater than end.'); return; }
-                          setIsExporting(true);
-                          if (exportMode === 'excel-package' || exportMode === 'excel-embedded' || exportMode === 'excel-thumbnails') {
-                            // Use chunked pipeline for image exports
-                            setResumeJobId(null);
-                            setProgressExportParams({
-                              exportMode,
-                              quality: exportMode === 'excel-thumbnails' ? thumbnailQuality : imageQuality,
-                              srFrom: from,
-                              srTo: to,
-                            });
-                            setProgressFilename(exportMode === 'excel-package'
-                              ? `product_export_sr_${from}_${to}.zip`
-                              : `products_sr_${from}_${to}.xlsx`);
-                            setShowExportMenu(false);
-                            setShowProgressDialog(true);
-                          } else {
-                            // Direct download for excel-only mode
-                            const url = getExportUrl(`/api/products/export?srFrom=${from}&srTo=${to}`);
-                            const filename = `products_sr_${from}_${to}.xlsx`;
-                            downloadBlob(url, filename)
-                              .then(() => { setShowExportMenu(false); setSrRange(''); })
-                              .catch(err => toast.error(err.message || 'Export failed'))
-                              .finally(() => setIsExporting(false));
-                          }
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Export Range
-                      </Button>
-                    </div>
-                  </div>
-                </>
+            <Button
+              variant="outline"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
+              onClick={() => setShowExcelDialog(true)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <span className="h-5 w-5 sm:h-6 sm:w-6 border-2 border-green-600 border-t-transparent animate-spin rounded-full" />
+              ) : (
+                <Download className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
               )}
-            </div>
-            {/* Export PDF — generates a multi-page PDF with primary images
-                and selected product fields. Same filters as Excel export. */}
+              <span className="text-xs">Export Excel</span>
+            </Button>
+            {/* Export PDF — opens the Print Report page with column selection
+                and primary images. Same dataset as Excel export. */}
             <Button
               variant="outline"
               className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
@@ -872,17 +503,13 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Export Progress Dialog — shown when exporting with images OR resuming */}
-      <ExportProgressDialog
-        open={showProgressDialog}
-        exportParams={progressExportParams}
-        resumeJobId={resumeJobId}
-        filename={progressFilename}
-        onClose={handleProgressDialogClose}
-        onComplete={handleProgressDialogComplete}
+      {/* Excel Export Dialog — column selection + SR range + Excel Only/With Images */}
+      <ExcelExportDialog
+        open={showExcelDialog}
+        onOpenChange={setShowExcelDialog}
       />
 
-      {/* PDF Export Dialog — client-side PDF generation with column selection */}
+      {/* PDF Export Dialog — opens Print Report page with column selection */}
       <PdfExportDialog
         open={showPdfDialog}
         onOpenChange={setShowPdfDialog}
