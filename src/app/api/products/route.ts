@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { serializeProduct, applyAutoDerivations } from '@/lib/serialize-product';
+import { backfillUpdatedListSerials } from '@/lib/updated-list-serial';
 import {
   BRAND_OPTIONS,
   DEPARTMENTS,
@@ -344,6 +345,24 @@ export async function GET(request: NextRequest) {
       ];
     } else {
       orderBy = { [finalSortColumn]: finalOrderDir };
+    }
+
+    // ── Backfill Updated List serials BEFORE fetching the page ──
+    // The Updated List sends `updatedListSort=1`. Before returning the page,
+    // make sure every modified product (updatedAt > createdAt) has a serial
+    // number. Products modified before this feature shipped (or via paths that
+    // don't go through PUT) have updatedListSerial = NULL, which is why only
+    // "1" and "2" were showing. This is a single atomic UPDATE that is a cheap
+    // no-op once every modified product has a serial, so it's safe to run on
+    // every Updated List load. See src/lib/updated-list-serial.ts.
+    if (updatedListSort) {
+      try {
+        await backfillUpdatedListSerials();
+      } catch (err) {
+        // Non-fatal: the list still loads; any still-unnumbered products sort
+        // last (nulls: 'last') and display '-'. The next load retries.
+        console.error('backfillUpdatedListSerials failed:', err);
+      }
     }
 
     const [total, products] = await Promise.all([
