@@ -296,11 +296,22 @@ async function exportExcelWithImages(data: any[], cols: ColumnDef[]): Promise<Bu
   imageHeaderCell.value = 'Image';
   imageHeaderCell.font = { bold: true };
   imageHeaderCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  imageHeaderCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE5E7EB' },
+  };
+  imageHeaderCell.border = {
+    top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+  };
   sheet.mergeCells(1, 1, 2, 1);
 
-  // Row 2: Column headers (already set by sheet.columns, but style them)
-  for (let c = 0; c <= cols.length; c++) {
-    const cell = sheet.getCell(2, c + 1);
+  // Row 2: Column headers (skip column 1 — it's merged with row 1 above)
+  for (let c = 0; c < cols.length; c++) {
+    const cell = sheet.getCell(2, c + 2); // c+2 because column 1 is the image column
     cell.font = { bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
     cell.fill = {
