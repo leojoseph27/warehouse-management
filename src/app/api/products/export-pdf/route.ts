@@ -218,8 +218,12 @@ export async function GET(request: NextRequest) {
       bufferPages: true, // enable page buffer so we can add page numbers
     });
 
-    // Set default font
-    doc.registerFont('Helvetica', 'Helvetica'); // built-in, no font file needed
+    // Set default font.
+    // NOTE: Do NOT call doc.registerFont() for 'Helvetica' — it's a built-in
+    // PDF font (one of the 14 standard PDF fonts) and is available by default.
+    // Calling registerFont('Helvetica', 'Helvetica') would try to load a font
+    // file from disk, which fails on Vercel serverless with:
+    //   ENOENT: no such file or directory, open '.../node_modules/pdfkit/js/data/Helvetica.afm'
     doc.font('Helvetica');
 
     const pageWidth = doc.page.width;
