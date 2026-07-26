@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,15 +35,45 @@ function isFieldModified(product: Product, field: string): boolean {
   return currentStr !== originalStr;
 }
 
+/**
+ * Get the primary image URL for a product.
+ *
+ * This mirrors the EXACT same logic used by the ImageGallery component
+ * (src/components/inventory/image-gallery.tsx line 146-154) that successfully
+ * renders images on the Product Details page:
+ *
+ *   1. If driveFileId is available → build a thumbnail URL with a size param
+ *      (this is the most reliable URL for Google Drive images)
+ *   2. Else if thumbnailUrl is available → use it directly
+ *   3. Else if imageUrl is available → use it as a fallback
+ *
+ * The Google Drive "uc?export=view" URL (stored in imageUrl) sometimes
+ * doesn't load in <img> tags due to redirect chains. The thumbnail URL
+ * (https://drive.google.com/thumbnail?id=...&sz=w1000) is more reliable.
+ *
+ * We use sz=w400 here (smaller than the w1000/w2000 used in ImageGallery)
+ * because the report shows small 40px thumbnails — no need for high-res.
+ */
 function getPrimaryImageUrl(product: Product): string | null {
   if (!product.images || product.images.length === 0) return null;
+  // Sort: primary image first, then by displayOrder
   const sorted = [...product.images].sort((a, b) => {
     if (a.isPrimary && !b.isPrimary) return -1;
     if (!a.isPrimary && b.isPrimary) return 1;
     return (a.displayOrder || 0) - (b.displayOrder || 0);
   });
   const img = sorted[0];
-  return img.thumbnailUrl || img.imageUrl || null;
+
+  // Same priority as ImageGallery.openPreview():
+  // 1. driveFileId → build thumbnail URL (most reliable)
+  // 2. thumbnailUrl → use as-is
+  // 3. imageUrl → fallback
+  if (img.driveFileId) {
+    return `https://drive.google.com/thumbnail?id=${img.driveFileId}&sz=w400`;
+  }
+  if (img.thumbnailUrl) return img.thumbnailUrl;
+  if (img.imageUrl) return img.imageUrl;
+  return null;
 }
 
 function getCellValue(product: Product, def: ColumnDef, allProducts: Product[]): string {
@@ -75,7 +105,6 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
   const [error, setError] = useState<string | null>(null);
   const [fetchProgress, setFetchProgress] = useState<FetchProgress>({ current: 0, total: 0 });
   const [imagesLoaded, setImagesLoaded] = useState(0);
-  const printedRef = useRef(false);
 
   // Determine which columns to include
   const cols: ColumnDef[] = useMemo(() => {
@@ -137,18 +166,10 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
     return () => { cancelled = true; };
   }, [srFrom, srTo]);
 
-  // Auto-trigger print after images load (only once)
-  useEffect(() => {
-    if (loading || error || products.length === 0 || printedRef.current) return;
-    // Wait a bit for images to render, then auto-open print dialog
-    const timer = setTimeout(() => {
-      if (!printedRef.current) {
-        printedRef.current = true;
-        window.print();
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [loading, error, products.length]);
+  // NOTE: Auto-print is DISABLED until image rendering is verified.
+  // The user must click the "Print / Save as PDF" button manually.
+  // This is intentional — the preview must be the source of truth, and
+  // we need to confirm images render correctly before enabling print.
 
   const totalImages = products.filter((p) => getPrimaryImageUrl(p)).length;
   const reportDate = new Date().toLocaleString();
@@ -225,8 +246,12 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
           </div>
         </div>
         <div className="toolbar-right">
-          <Badge variant="secondary" className="text-xs">
-            {imagesLoaded}/{totalImages} images loaded
+          <Badge
+            variant={imagesLoaded === totalImages ? 'default' : imagesLoaded > 0 ? 'secondary' : 'destructive'}
+            className="text-xs"
+            title="Number of images successfully loaded"
+          >
+            {imagesLoaded}/{totalImages} images
           </Badge>
           <Button onClick={() => window.print()} className="gap-2" size="sm">
             <Printer className="h-4 w-4" />
@@ -276,11 +301,26 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
                       alt={product.nameEn || `Product ${product.sourceRow}`}
                       className="product-image"
                       loading="lazy"
+                      // referrerPolicy="no-referrer" is CRITICAL for Google Drive
+                      // images. Without it, Google Drive may reject the request
+                      // based on the Referer header, causing the image to fail
+                      // loading (showing a blank/broken image icon).
+                      // The Product Details page's ImageGallery also benefits
+                      // from this implicitly because it's loaded within the
+                      // main app shell, but the print-report page is a standalone
+                      // route that needs this explicitly.
+                      referrerPolicy="no-referrer"
                       onLoad={() => setImagesLoaded((prev) => prev + 1)}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent) parent.innerHTML = '<span class="no-image">—</span>';
+                        console.error('[PrintReport] Image failed to load:', url);
+                        const imgEl = e.target as HTMLImageElement;
+                        imgEl.style.display = 'none';
+                        // Show a small "img" text placeholder so we can see
+                        // which images failed (for debugging)
+                        const parent = imgEl.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<span class="no-image" title="Failed: ' + url + '">✗</span>';
+                        }
                       }}
                     />
                   );
