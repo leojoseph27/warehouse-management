@@ -3,18 +3,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, Printer, ArrowLeft, AlertCircle } from 'lucide-react';
 import {
   COLUMN_DEFS,
-  COLUMN_GROUPS,
   resolveImageLinks,
   resolveVariants,
   type ColumnDef,
 } from '@/lib/lookups';
 import type { Product } from '@/store/inventory-store';
 
-// ── Fields tracked for change detection (same as Excel export) ──
+// Fields tracked for change detection (same set as Excel export)
 const TRACKED_FIELDS = new Set([
   'productId', 'sku', 'ndNumber', 'barcode', 'legacyCode', 'brand', 'model',
   'department', 'category', 'subcategory', 'productFamily', 'productType',
@@ -38,36 +36,20 @@ function isFieldModified(product: Product, field: string): boolean {
 /**
  * Get the primary image URL for a product.
  *
- * This mirrors the EXACT same logic used by the ImageGallery component
- * (src/components/inventory/image-gallery.tsx line 146-154) that successfully
- * renders images on the Product Details page:
- *
- *   1. If driveFileId is available → build a thumbnail URL with a size param
- *      (this is the most reliable URL for Google Drive images)
- *   2. Else if thumbnailUrl is available → use it directly
- *   3. Else if imageUrl is available → use it as a fallback
- *
- * The Google Drive "uc?export=view" URL (stored in imageUrl) sometimes
- * doesn't load in <img> tags due to redirect chains. The thumbnail URL
- * (https://drive.google.com/thumbnail?id=...&sz=w1000) is more reliable.
- *
- * We use sz=w400 here (smaller than the w1000/w2000 used in ImageGallery)
- * because the report shows small 40px thumbnails — no need for high-res.
+ * Mirrors the same logic used by the ImageGallery component that renders
+ * images on the Product Details page:
+ *   1. driveFileId → build a thumbnail URL (most reliable for Google Drive)
+ *   2. thumbnailUrl → use as-is
+ *   3. imageUrl → fallback
  */
 function getPrimaryImageUrl(product: Product): string | null {
   if (!product.images || product.images.length === 0) return null;
-  // Sort: primary image first, then by displayOrder
   const sorted = [...product.images].sort((a, b) => {
     if (a.isPrimary && !b.isPrimary) return -1;
     if (!a.isPrimary && b.isPrimary) return 1;
     return (a.displayOrder || 0) - (b.displayOrder || 0);
   });
   const img = sorted[0];
-
-  // Same priority as ImageGallery.openPreview():
-  // 1. driveFileId → build thumbnail URL (most reliable)
-  // 2. thumbnailUrl → use as-is
-  // 3. imageUrl → fallback
   if (img.driveFileId) {
     return `https://drive.google.com/thumbnail?id=${img.driveFileId}&sz=w400`;
   }
@@ -83,7 +65,6 @@ function getCellValue(product: Product, def: ColumnDef, allProducts: Product[]):
   else value = (product as any)[def.field];
   if (value == null) return '';
   const str = String(value);
-  // For multi-line values, show only first line in the report table
   return str.split('\n')[0] || '';
 }
 
@@ -104,7 +85,6 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fetchProgress, setFetchProgress] = useState<FetchProgress>({ current: 0, total: 0 });
-  const [imagesLoaded, setImagesLoaded] = useState(0);
 
   // Determine which columns to include
   const cols: ColumnDef[] = useMemo(() => {
@@ -166,12 +146,6 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
     return () => { cancelled = true; };
   }, [srFrom, srTo]);
 
-  // NOTE: Auto-print is DISABLED until image rendering is verified.
-  // The user must click the "Print / Save as PDF" button manually.
-  // This is intentional — the preview must be the source of truth, and
-  // we need to confirm images render correctly before enabling print.
-
-  const totalImages = products.filter((p) => getPrimaryImageUrl(p)).length;
   const reportDate = new Date().toLocaleString();
 
   if (loading) {
@@ -222,7 +196,7 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
 
   return (
     <div className={`report-container ${orientation}`}>
-      {/* Dynamic page orientation style — @page can't be scoped via CSS class,
+      {/* Dynamic page orientation — @page can't be scoped via CSS class,
           so we inject it here based on the selected orientation. */}
       <style>{`@page { size: A4 ${orientation}; margin: 10mm; }`}</style>
 
@@ -246,53 +220,10 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
           </div>
         </div>
         <div className="toolbar-right">
-          <Badge
-            variant={imagesLoaded === totalImages ? 'default' : imagesLoaded > 0 ? 'secondary' : 'destructive'}
-            className="text-xs"
-            title="Number of images successfully loaded"
-          >
-            {imagesLoaded}/{totalImages} images
-          </Badge>
           <Button onClick={() => window.print()} className="gap-2" size="sm">
             <Printer className="h-4 w-4" />
             Print / Save as PDF
           </Button>
-        </div>
-      </div>
-
-      {/* ── Debug panel (screen only, hidden in print) ── */}
-      {/* Shows the first 5 products' image URLs and load status so we can
-          diagnose why images might not be rendering. */}
-      <div className="no-print" style={{ padding: '8px 24px', background: '#fef3c7', borderBottom: '1px solid #fcd34d', fontSize: '11px' }}>
-        <strong>Debug — Image Status:</strong> {imagesLoaded}/{totalImages} loaded.
-        First 5 products with images:
-        <div style={{ marginTop: '4px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '4px' }}>
-          {products.slice(0, 10).map((p, i) => {
-            const url = getPrimaryImageUrl(p);
-            const hasImg = !!url;
-            return (
-              <div key={i} style={{ background: 'white', padding: '4px', borderRadius: '3px', border: '1px solid #e5e7eb' }}>
-                <span style={{ fontWeight: 600 }}>SR {p.sourceRow}:</span>{' '}
-                {hasImg ? (
-                  <span style={{ color: '#059669' }} title={url}>
-                    ✓ {url.slice(0, 60)}...
-                  </span>
-                ) : (
-                  <span style={{ color: '#dc2626' }}>✗ No image URL</span>
-                )}
-                {hasImg && (
-                  <img
-                    src={url}
-                    alt=""
-                    style={{ display: 'block', width: '40px', height: '40px', marginTop: '2px', objectFit: 'contain', border: '1px solid #ccc' }}
-                    referrerPolicy="no-referrer"
-                    onLoad={() => console.log('[Debug] Image loaded:', url)}
-                    onError={() => console.error('[Debug] Image FAILED:', url)}
-                  />
-                )}
-              </div>
-            );
-          })}
         </div>
       </div>
 
@@ -337,27 +268,7 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
                       alt={product.nameEn || `Product ${product.sourceRow}`}
                       className="product-image"
                       loading="lazy"
-                      // referrerPolicy="no-referrer" is CRITICAL for Google Drive
-                      // images. Without it, Google Drive may reject the request
-                      // based on the Referer header, causing the image to fail
-                      // loading (showing a blank/broken image icon).
-                      // The Product Details page's ImageGallery also benefits
-                      // from this implicitly because it's loaded within the
-                      // main app shell, but the print-report page is a standalone
-                      // route that needs this explicitly.
                       referrerPolicy="no-referrer"
-                      onLoad={() => setImagesLoaded((prev) => prev + 1)}
-                      onError={(e) => {
-                        console.error('[PrintReport] Image failed to load:', url);
-                        const imgEl = e.target as HTMLImageElement;
-                        imgEl.style.display = 'none';
-                        // Show a small "img" text placeholder so we can see
-                        // which images failed (for debugging)
-                        const parent = imgEl.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<span class="no-image" title="Failed: ' + url + '">✗</span>';
-                        }
-                      }}
                     />
                   );
                 })()}
@@ -369,7 +280,6 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
                   <td
                     key={def.field}
                     className={modified ? 'modified-cell' : ''}
-                    title={modified ? 'Modified from original' : undefined}
                   >
                     {value || <span className="empty-value">—</span>}
                   </td>
@@ -380,7 +290,7 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
         </tbody>
       </table>
 
-      {/* ── Report footer (page number via CSS @page) ── */}
+      {/* ── Report footer ── */}
       <div className="report-footer">
         <p>End of report — {products.length} products</p>
       </div>
