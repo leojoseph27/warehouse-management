@@ -499,6 +499,15 @@ export async function GET(request: NextRequest) {
     // Filter to only modified products if requested
     if (onlyModified) {
       data = filterModified(data);
+      // Sort by updatedListSerial (products with no serial go last, sorted by sourceRow)
+      data.sort((a: any, b: any) => {
+        const aSerial = a.updatedListSerial;
+        const bSerial = b.updatedListSerial;
+        if (aSerial != null && bSerial != null) return aSerial - bSerial;
+        if (aSerial != null) return -1;
+        if (bSerial != null) return 1;
+        return (a.sourceRow || 0) - (b.sourceRow || 0);
+      });
     }
 
     if (data.length === 0) {

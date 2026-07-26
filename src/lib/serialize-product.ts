@@ -185,6 +185,8 @@ interface ProductRow {
   original: ProductOriginalRow | null;
   // Old Value Tracking (JSON column)
   oldValues: string | null;
+  // Updated List Serial Number
+  updatedListSerial: number | null;
   // Variants
   variantMemberships: VariantMemberRow[];
 }
@@ -273,6 +275,7 @@ export function serializeProduct(p: ProductRow) {
     updatedAt: p.updatedAt.toISOString(),
     // Old Value Tracking (raw JSON + parsed individual fields)
     oldValues: p.oldValues,
+    updatedListSerial: p.updatedListSerial,
     ...oldValuesMap,
     images: (p.images ?? []).map((img) => ({
       id: img.id,

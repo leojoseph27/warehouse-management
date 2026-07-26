@@ -149,8 +149,8 @@ export function ExcelExportDialog({ open, onOpenChange, onlyModified }: ExcelExp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-green-600" />
             Export Excel
@@ -268,7 +268,7 @@ export function ExcelExportDialog({ open, onOpenChange, onlyModified }: ExcelExp
               </div>
             </div>
 
-            <ScrollArea className="h-[30vh] border rounded-md p-2">
+            <ScrollArea className="max-h-[35vh] border rounded-md p-2 overflow-hidden">
               <div className="space-y-3">
                 {COLUMN_GROUPS.map((group) => {
                   const fields = group.fields;
@@ -293,14 +293,15 @@ export function ExcelExportDialog({ open, onOpenChange, onlyModified }: ExcelExp
                         {fields.map((field) => (
                           <label
                             key={field.field}
-                            className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-accent text-xs"
+                            className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-accent text-xs min-w-0"
                           >
                             <Checkbox
                               checked={selectedFields.has(field.field)}
                               onCheckedChange={() => toggleField(field.field)}
                               disabled={isExporting}
+                              className="shrink-0"
                             />
-                            <span className="truncate">{field.header}</span>
+                            <span className="truncate overflow-hidden">{field.header}</span>
                           </label>
                         ))}
                       </div>
@@ -312,7 +313,7 @@ export function ExcelExportDialog({ open, onOpenChange, onlyModified }: ExcelExp
           </div>
         )}
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting}>
             Cancel
           </Button>

@@ -102,7 +102,7 @@ export async function PUT(
     // value, the old value is preserved in the `oldValues` JSON column.
     const currentProduct = await db.product.findUnique({
       where: { id },
-      select: { oldValues: true },
+      select: { oldValues: true, updatedListSerial: true, createdAt: true, updatedAt: true },
     });
 
     if (currentProduct) {
@@ -117,6 +117,29 @@ export async function PUT(
         // Only update oldValues if there's something to store
         if (updatedOldValues !== currentProduct.oldValues) {
           data.oldValues = updatedOldValues;
+        }
+
+        // ── Assign Updated List Serial Number ──
+        // If this is the first time the product is being modified (no serial
+        // number yet) AND the product wasn't already modified (updatedAt ==
+        // createdAt), assign the next available serial number.
+        const isAlreadyModified = currentProduct.updatedAt > currentProduct.createdAt;
+        if (!currentProduct.updatedListSerial && !isAlreadyModified) {
+          // Find the max serial number and increment by 1
+          const maxResult = await db.product.aggregate({
+            _max: { updatedListSerial: true },
+          });
+          const nextSerial = (maxResult._max.updatedListSerial || 0) + 1;
+          data.updatedListSerial = nextSerial;
+        }
+        // If the product is already modified but has no serial (e.g., products
+        // that were modified before this feature was deployed), assign one now
+        if (!currentProduct.updatedListSerial && isAlreadyModified) {
+          const maxResult = await db.product.aggregate({
+            _max: { updatedListSerial: true },
+          });
+          const nextSerial = (maxResult._max.updatedListSerial || 0) + 1;
+          data.updatedListSerial = nextSerial;
         }
       }
     }

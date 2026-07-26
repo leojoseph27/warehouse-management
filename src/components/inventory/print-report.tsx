@@ -155,6 +155,21 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation, onlyMod
         }
 
         setProducts(all);
+
+        // When onlyModified, sort by updatedListSerial for consistent ordering
+        if (onlyModified) {
+          setProducts((prev) => {
+            const sorted = [...prev].sort((a: any, b: any) => {
+              const aSerial = a.updatedListSerial;
+              const bSerial = b.updatedListSerial;
+              if (aSerial != null && bSerial != null) return aSerial - bSerial;
+              if (aSerial != null) return -1;
+              if (bSerial != null) return 1;
+              return (a.sourceRow || 0) - (b.sourceRow || 0);
+            });
+            return sorted;
+          });
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to load products');
       } finally {

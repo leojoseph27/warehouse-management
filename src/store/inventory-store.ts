@@ -210,6 +210,10 @@ export interface Product {
 
   // Change Tracking
   original: ProductOriginal | null;
+  // Old Value Tracking (JSON column — raw)
+  oldValues?: string | null;
+  // Updated List Serial Number
+  updatedListSerial?: number | null;
 
   // Variants
   variantMemberships: VariantMember[];

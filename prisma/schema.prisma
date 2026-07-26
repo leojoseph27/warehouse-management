@@ -112,6 +112,14 @@ model Product {
   // preserved and never overwritten on subsequent edits).
   oldValues           String?
 
+  // ── Updated List Serial Number ──
+  // A sequential number assigned when a product first becomes "modified"
+  // (i.e., when it first appears in the Updated List). Once assigned, it
+  // never changes — even if the product is edited again or other products
+  // are deleted. New products get the next available number.
+  // null = product has not been modified yet (not in the Updated List).
+  updatedListSerial   Int?
+
   // ── System fields ──
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -133,6 +141,7 @@ model Product {
   @@index([updatedAt])
   @@index([defaultPrice])
   @@index([validationStatus])
+  @@index([updatedListSerial])
 
   @@map("products")
 }
