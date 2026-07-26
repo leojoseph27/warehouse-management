@@ -308,6 +308,40 @@ function SectionCard({
 }
 
 // ─────────────────────────────────────────────────────────────
+// Helper: Grid2 — two-column responsive grid
+// ─────────────────────────────────────────────────────────────
+// IMPORTANT: This MUST be defined at module scope (outside ProductForm),
+// NOT inside the component body. If defined inside the component, it gets
+// a new function identity on every render, causing React to unmount and
+// remount all children — which makes <Input> fields lose focus after
+// every keystroke.
+function Grid2({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>;
+}
+
+function Grid3({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{children}</div>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Helper: Field error message
+// ─────────────────────────────────────────────────────────────
+// IMPORTANT: Also at module scope for the same reason as Grid2.
+// validationErrors is passed as a prop so the component doesn't need
+// to be recreated when the parent re-renders.
+function FieldError({
+  field,
+  validationErrors,
+}: {
+  field: string;
+  validationErrors: Record<string, string>;
+}) {
+  const err = validationErrors[field];
+  if (!err) return null;
+  return <p className="text-xs text-red-500 mt-1">{err}</p>;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
 
@@ -1015,21 +1049,11 @@ export function ProductForm({ mode }: ProductFormProps) {
   // ── Duplicate warnings ─────────────────────────────────────
   const hasDuplicates = duplicates && (duplicates.ndNumber || duplicates.barcode || duplicates.productId || duplicates.sku);
 
-  // ── Grid layout helper ─────────────────────────────────────
-  /** 2-column grid on desktop, 1-column on mobile */
-  const Grid2 = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
-  );
-
-  const Grid3 = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{children}</div>
-  );
-
-  // ── Error message helper ───────────────────────────────────
-  const FieldError = ({ field }: { field: keyof FormData }) => {
-    if (!validationErrors[field]) return null;
-    return <p className="text-xs text-red-500 mt-1">{validationErrors[field]}</p>;
-  };
+  // NOTE: Grid2, Grid3, and FieldError are defined at module scope (above)
+  // to prevent input focus loss. If they were defined here (inside the
+  // component body), they would get a new function identity on every
+  // render, causing React to unmount/remount all children — including
+  // <Input> fields — which makes them lose focus after every keystroke.
 
   // ═══════════════════════════════════════════════════════════
   // RENDER
@@ -1145,7 +1169,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="e.g. 123456789012"
               className="h-11"
             />
-            <FieldError field="productId" />
+            <FieldError field="productId" validationErrors={validationErrors} />
           </div>
 
           {/* SKU * */}
@@ -1158,7 +1182,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="e.g. 123456789012"
               className="h-11"
             />
-            <FieldError field="sku" />
+            <FieldError field="sku" validationErrors={validationErrors} />
           </div>
 
           {/* ND Number */}
@@ -1171,7 +1195,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="ND-1000"
               className="h-11"
             />
-            <FieldError field="ndNumber" />
+            <FieldError field="ndNumber" validationErrors={validationErrors} />
           </div>
 
           {/* Barcode * + Pro Scanner */}
@@ -1195,7 +1219,7 @@ export function ProductForm({ mode }: ProductFormProps) {
                 <Barcode className="h-4 w-4" />
               </Button>
             </div>
-            <FieldError field="barcode" />
+            <FieldError field="barcode" validationErrors={validationErrors} />
           </div>
 
           {/* Legacy Code */}
@@ -1222,7 +1246,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               emptyMessage="No brand found."
               allowAddNew
             />
-            <FieldError field="brand" />
+            <FieldError field="brand" validationErrors={validationErrors} />
           </div>
 
           {/* Brand AR (auto) */}
@@ -1278,7 +1302,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="Select department..."
               emptyMessage="No department found."
             />
-            <FieldError field="department" />
+            <FieldError field="department" validationErrors={validationErrors} />
           </div>
 
           {/* Category * (dependent on Department) */}
@@ -1292,7 +1316,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder={formData.department ? 'Select category...' : 'Select a department first...'}
               emptyMessage="No categories found."
             />
-            <FieldError field="category" />
+            <FieldError field="category" validationErrors={validationErrors} />
           </div>
 
           {/* Subcategory (dependent on Category) */}
@@ -1336,7 +1360,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder={formData.subcategory ? 'Select product family...' : 'Select a subcategory first...'}
               emptyMessage="No product families found."
             />
-            <FieldError field="productFamily" />
+            <FieldError field="productFamily" validationErrors={validationErrors} />
           </div>
 
           {/* Product Type * (dependent on Product Family) */}
@@ -1350,7 +1374,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder={formData.productFamily ? 'Select product type...' : 'Select a product family first...'}
               emptyMessage="No product types found."
             />
-            <FieldError field="productType" />
+            <FieldError field="productType" validationErrors={validationErrors} />
           </div>
         </Grid2>
       </SectionCard>
@@ -1376,7 +1400,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               className="h-11"
               dir="rtl"
             />
-            <FieldError field="nameAr" />
+            <FieldError field="nameAr" validationErrors={validationErrors} />
           </div>
 
           {/* Name EN * */}
@@ -1389,7 +1413,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="Product name in English"
               className="h-11"
             />
-            <FieldError field="nameEn" />
+            <FieldError field="nameEn" validationErrors={validationErrors} />
           </div>
         </Grid2>
 
@@ -1674,7 +1698,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="Select unit..."
               emptyMessage="No unit found."
             />
-            <FieldError field="unit" />
+            <FieldError field="unit" validationErrors={validationErrors} />
           </div>
 
           {/* Min Sales Multiples * */}
@@ -1688,7 +1712,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="Select..."
               emptyMessage="No option found."
             />
-            <FieldError field="minSalesMultiples" />
+            <FieldError field="minSalesMultiples" validationErrors={validationErrors} />
           </div>
         </Grid2>
       </SectionCard>
@@ -1868,7 +1892,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="Select status..."
               emptyMessage="No status found."
             />
-            <FieldError field="validationStatus" />
+            <FieldError field="validationStatus" validationErrors={validationErrors} />
           </div>
 
           {/* Confidence Score * */}
@@ -1885,7 +1909,7 @@ export function ProductForm({ mode }: ProductFormProps) {
               placeholder="0-100"
               className="h-11"
             />
-            <FieldError field="confidenceScore" />
+            <FieldError field="confidenceScore" validationErrors={validationErrors} />
           </div>
 
           {/* Pieces */}
