@@ -19,6 +19,7 @@ import {
   Trash2,
   Loader2,
   FileDown,
+  FileText,
   Tag,
   Type,
   DollarSign,
@@ -41,6 +42,7 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ExportProgressDialog } from './export-progress-dialog';
+import { PdfExportDialog } from './pdf-export-dialog';
 
 export function Dashboard() {
   const { setView, stats, setStats, setLoading } = useInventoryStore();
@@ -63,6 +65,11 @@ export function Dashboard() {
   const [recentExports, setRecentExports] = useState<any[]>([]);
   const completionNotifiedRef = useRef<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // ── PDF export dialog state ──
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [pdfSrFrom, setPdfSrFrom] = useState<number | null>(null);
+  const [pdfSrTo, setPdfSrTo] = useState<number | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -682,6 +689,21 @@ export function Dashboard() {
                 </>
               )}
             </div>
+            {/* Export PDF — generates a multi-page PDF with primary images
+                and selected product fields. Same filters as Excel export. */}
+            <Button
+              variant="outline"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
+              onClick={() => {
+                setPdfSrFrom(null);
+                setPdfSrTo(null);
+                setShowPdfDialog(true);
+              }}
+              disabled={isExporting}
+            >
+              <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
+              <span className="text-xs">Export PDF</span>
+            </Button>
             {/* Check Drive Folders — ensures all product images are in the
                 correct folder (ND Number or Product ID) on Google Drive */}
             <Button
@@ -864,6 +886,15 @@ export function Dashboard() {
         filename={progressFilename}
         onClose={handleProgressDialogClose}
         onComplete={handleProgressDialogComplete}
+      />
+
+      {/* PDF Export Dialog — column selection + SR range filter */}
+      <PdfExportDialog
+        open={showPdfDialog}
+        onOpenChange={setShowPdfDialog}
+        baseUrl="/api/products/export-pdf"
+        srFrom={pdfSrFrom}
+        srTo={pdfSrTo}
       />
     </div>
   );
