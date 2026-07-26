@@ -251,21 +251,16 @@ async function exportExcelWithImages(data: any[], cols: ColumnDef[]): Promise<Bu
     views: [{ state: 'frozen', ySplit: 2 }], // freeze the 2 header rows
   });
 
-  // Define columns: first column is the image, rest are selected fields
-  const imageColHeader: Partial<ExcelJS.Column> = {
-    header: 'Image',
-    key: '_image',
-    width: 14, // ~100px wide
-  };
-  const dataColHeaders: Partial<ExcelJS.Column>[] = cols.map((def) => ({
-    header: def.header,
-    key: def.field,
-    width: Math.max(10, Math.min(40, def.header.length + 5)),
-  }));
+  // Define column widths only (no header — we set headers manually to avoid
+  // merge conflicts with the two-row group/column header layout)
+  sheet.columns = [
+    { key: '_image', width: 14 },
+    ...cols.map((def) => ({
+      key: def.field,
+      width: Math.max(10, Math.min(40, def.header.length + 5)),
+    })),
+  ];
 
-  sheet.columns = [imageColHeader, ...dataColHeaders];
-
-  // Row 1: Group headers (merged cells)
   // Build active groups based on selected columns
   const activeGroups = COLUMN_GROUPS
     .map((group) => ({
@@ -274,9 +269,23 @@ async function exportExcelWithImages(data: any[], cols: ColumnDef[]): Promise<Bu
     }))
     .filter((g) => g.fields.length > 0);
 
-  // Insert a row at the top for group headers
-  sheet.spliceRows(1, 0, []);
-  let groupColOffset = 1; // start at column 2 (column 1 is the image column)
+  // ── Row 1: Group headers ──
+  // Image column spans rows 1-2 (merged vertically)
+  const imgCell = sheet.getCell(1, 1);
+  imgCell.value = 'Image';
+  imgCell.font = { bold: true };
+  imgCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  imgCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+  imgCell.border = {
+    top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+  };
+  sheet.mergeCells(1, 1, 2, 1);
+
+  // Group headers (row 1, columns 2+)
+  let groupColOffset = 2;
   for (const group of activeGroups) {
     const span = group.fields.length;
     const startCol = groupColOffset;
@@ -285,40 +294,36 @@ async function exportExcelWithImages(data: any[], cols: ColumnDef[]): Promise<Bu
     cell.value = group.name;
     cell.font = { bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+      right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    };
     if (span > 1) {
       sheet.mergeCells(1, startCol, 1, endCol);
+      // Apply border to all cells in the merged range
+      for (let c = startCol + 1; c <= endCol; c++) {
+        const bc = sheet.getCell(1, c);
+        bc.border = {
+          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        };
+      }
     }
     groupColOffset = endCol + 1;
   }
 
-  // The image column header on row 1 (merge rows 1-2 for the image column)
-  const imageHeaderCell = sheet.getCell(1, 1);
-  imageHeaderCell.value = 'Image';
-  imageHeaderCell.font = { bold: true };
-  imageHeaderCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  imageHeaderCell.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE5E7EB' },
-  };
-  imageHeaderCell.border = {
-    top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-    bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-    left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-    right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-  };
-  sheet.mergeCells(1, 1, 2, 1);
-
-  // Row 2: Column headers (skip column 1 — it's merged with row 1 above)
+  // ── Row 2: Column headers (skip column 1 — merged with row 1) ──
   for (let c = 0; c < cols.length; c++) {
-    const cell = sheet.getCell(2, c + 2); // c+2 because column 1 is the image column
+    const cell = sheet.getCell(2, c + 2);
+    cell.value = cols[c].header;
     cell.font = { bold: true };
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE5E7EB' },
-    };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
     cell.border = {
       top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
       bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
