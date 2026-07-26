@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { Loader2, FileText, FileImage } from 'lucide-react';
+import { FileText, FileImage, Printer, Columns } from 'lucide-react';
 import { COLUMN_DEFS, COLUMN_GROUPS, type ColumnDef } from '@/lib/lookups';
-import { generatePdfCatalog, type PdfProgress } from '@/lib/pdf-generator';
 import { toast } from 'sonner';
 
 interface PdfExportDialogProps {
@@ -19,30 +17,24 @@ interface PdfExportDialogProps {
 }
 
 /**
- * Dialog for configuring and triggering a client-side PDF export.
+ * Dialog for configuring and opening the Print Report page.
  *
- * The PDF is generated entirely in the browser using jsPDF + jsPDF-AutoTable.
- * No server-side function is needed — product data is fetched from the
- * existing /api/products endpoint, and images are loaded directly from
- * Google Drive URLs.
+ * Instead of generating a PDF with a library, this opens a dedicated
+ * /print-report page in a new browser tab. That page renders an HTML
+ * report with print-optimized CSS, and the user prints/saves-as-PDF
+ * via the browser's native print dialog (Ctrl+P / Cmd+P).
  *
- * Features:
- *   - Optional serial-number range filter (same as Excel export)
- *   - "All columns" (default) vs "Select specific columns" toggle
- *   - Column selection with checkboxes, grouped by section
- *   - Group-level select-all/deselect-all with indeterminate state
- *   - Progress indicator during fetching, image loading, and generation
- *   - Multi-page PDF with repeating headers, red font for modified fields,
- *     and primary image as the first column
+ * Benefits:
+ *   - No PDF library dependencies (no jsPDF, no pdfkit, no font files)
+ *   - Browser handles image rendering natively (best quality)
+ *   - Native print dialog gives full control (page size, margins, etc.)
+ *   - HTML/CSS is easier to maintain than library-specific code
+ *   - Works on every device/browser with zero configuration
  */
-export function PdfExportDialog({
-  open,
-  onOpenChange,
-}: PdfExportDialogProps) {
+export function PdfExportDialog({ open, onOpenChange }: PdfExportDialogProps) {
   const [mode, setMode] = useState<'all' | 'select'>('all');
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
-  const [isExporting, setIsExporting] = useState(false);
-  const [progress, setProgress] = useState<PdfProgress | null>(null);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [srRange, setSrRange] = useState('');
   const [srRangeError, setSrRangeError] = useState('');
 
@@ -71,13 +63,8 @@ export function PdfExportDialog({
     });
   };
 
-  const selectAll = () => {
-    setSelectedFields(new Set(COLUMN_DEFS.map((d) => d.field)));
-  };
-
-  const deselectAll = () => {
-    setSelectedFields(new Set());
-  };
+  const selectAll = () => setSelectedFields(new Set(COLUMN_DEFS.map((d) => d.field)));
+  const deselectAll = () => setSelectedFields(new Set());
 
   const parseSrRange = (input: string): { from: number; to: number } | null => {
     const trimmed = input.trim();
@@ -90,7 +77,8 @@ export function PdfExportDialog({
     return { from, to };
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
+    // Validate SR range if provided
     let srFrom: number | null = null;
     let srTo: number | null = null;
     if (srRange.trim()) {
@@ -103,40 +91,34 @@ export function PdfExportDialog({
       srTo = parsed.to;
     }
     setSrRangeError('');
-    setIsExporting(true);
-    setProgress({ stage: 'fetching', current: 0, total: 0, message: 'Starting…' });
 
-    try {
-      await generatePdfCatalog({
-        srFrom,
-        srTo,
-        selectedFields: mode === 'select' ? Array.from(selectedFields) : null,
-        onProgress: (p) => setProgress(p),
-      });
-      toast.success('PDF generated and downloaded successfully.');
-      onOpenChange(false);
-    } catch (err: any) {
-      console.error('PDF export error:', err);
-      toast.error(err.message || 'Failed to generate PDF');
-      setProgress({ stage: 'error', current: 0, total: 0, message: err.message || 'Failed' });
-    } finally {
-      setIsExporting(false);
+    // Build the /print-report URL with query params
+    const params = new URLSearchParams();
+    params.set('orientation', orientation);
+    if (srFrom != null && srTo != null) {
+      params.set('srFrom', String(srFrom));
+      params.set('srTo', String(srTo));
     }
-  };
+    if (mode === 'select' && selectedCount > 0) {
+      params.set('columns', Array.from(selectedFields).join(','));
+    }
 
-  // Progress percentage for the progress bar
-  const progressPercent = useMemo(() => {
-    if (!progress || progress.total === 0) return 0;
-    return Math.round((progress.current / progress.total) * 100);
-  }, [progress]);
+    const url = `/print-report?${params.toString()}`;
+
+    // Open in a new tab so the user keeps the dashboard open
+    window.open(url, '_blank');
+
+    toast.success('Opening print report in a new tab…');
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-purple-600" />
-            Export PDF Catalog
+            <Printer className="h-5 w-5 text-purple-600" />
+            Print Report / Export PDF
           </DialogTitle>
         </DialogHeader>
 
@@ -145,96 +127,111 @@ export function PdfExportDialog({
           <FileImage className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
           <div className="text-xs text-purple-800 space-y-1">
             <p>
-              Generates a <strong>multi-page PDF</strong> with the product's <strong>primary image</strong> as the
-              first column, followed by the selected fields — same order as the Excel export.
+              Opens a <strong>print-optimized report</strong> in a new tab with the product's primary image
+              as the first column, followed by the selected fields.
             </p>
             <p>
-              Includes repeating headers, red font for modified fields, and auto-fitted columns.
-              Generated in your browser — no server processing required.
+              Use the browser's <strong>Print</strong> dialog (Ctrl+P / Cmd+P) to print or save as PDF.
+              The report includes repeating headers, page breaks, and red font for modified fields.
             </p>
           </div>
         </div>
 
-        {/* Progress indicator (shown during export) */}
-        {isExporting && progress && (
-          <div className="space-y-2 border rounded-md p-3 bg-muted/30">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium">
-                {progress.stage === 'fetching' && 'Fetching products…'}
-                {progress.stage === 'images' && 'Loading primary images…'}
-                {progress.stage === 'generating' && 'Generating PDF…'}
-                {progress.stage === 'done' && 'Complete!'}
-                {progress.stage === 'error' && 'Error'}
-              </span>
-              {progress.total > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {progress.current} / {progress.total}
-                </span>
-              )}
-            </div>
-            <Progress value={progressPercent} className="h-2" />
-            <p className="text-[10px] text-muted-foreground">{progress.message}</p>
+        {/* Orientation selector */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Page Orientation</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setOrientation('portrait')}
+              className={`flex items-center gap-2 p-3 rounded-md border text-left transition-colors ${
+                orientation === 'portrait'
+                  ? 'border-purple-600 bg-purple-50 text-purple-900'
+                  : 'border-border hover:bg-accent'
+              }`}
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-6 h-8 border-2 border-current rounded-sm" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Portrait</p>
+                <p className="text-[10px] text-muted-foreground">A4 vertical — fewer columns</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setOrientation('landscape')}
+              className={`flex items-center gap-2 p-3 rounded-md border text-left transition-colors ${
+                orientation === 'landscape'
+                  ? 'border-purple-600 bg-purple-50 text-purple-900'
+                  : 'border-border hover:bg-accent'
+              }`}
+            >
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-6 border-2 border-current rounded-sm" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Landscape</p>
+                <p className="text-[10px] text-muted-foreground">A4 horizontal — more columns</p>
+              </div>
+            </button>
           </div>
-        )}
+        </div>
 
         {/* SR Range filter (optional) */}
-        {!isExporting && (
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">Serial Number Range (optional)</p>
-            <Input
-              placeholder="e.g. 1-7, 25-40 (leave empty for all products)"
-              value={srRange}
-              onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
-              disabled={isExporting}
-              className="h-9"
-            />
-            {srRangeError && <p className="text-xs text-destructive">{srRangeError}</p>}
-            <p className="text-[10px] text-muted-foreground">
-              Only export products within a specific source-row range. Leave empty to export all.
-            </p>
-          </div>
-        )}
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-muted-foreground">Serial Number Range (optional)</p>
+          <Input
+            placeholder="e.g. 1-7, 25-40 (leave empty for all products)"
+            value={srRange}
+            onChange={(e) => { setSrRange(e.target.value); setSrRangeError(''); }}
+            className="h-9"
+          />
+          {srRangeError && <p className="text-xs text-destructive">{srRangeError}</p>}
+          <p className="text-[10px] text-muted-foreground">
+            Only include products within a specific source-row range. Leave empty to export all.
+          </p>
+        </div>
 
         {/* Mode toggle */}
-        {!isExporting && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Columns to include</p>
-            <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-              <input
-                type="radio"
-                name="pdfMode"
-                checked={mode === 'all'}
-                onChange={() => setMode('all')}
-                className="accent-purple-600"
-              />
-              <div>
-                <p className="text-sm font-medium">Export all columns ({totalColumns} fields)</p>
-                <p className="text-xs text-muted-foreground">Include every product field in the PDF</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
-              <input
-                type="radio"
-                name="pdfMode"
-                checked={mode === 'select'}
-                onChange={() => setMode('select')}
-                className="accent-purple-600"
-              />
-              <div>
-                <p className="text-sm font-medium">Select specific columns</p>
-                <p className="text-xs text-muted-foreground">
-                  Choose which fields to include
-                  {mode === 'select' && selectedCount > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-[10px]">{selectedCount} selected</Badge>
-                  )}
-                </p>
-              </div>
-            </label>
-          </div>
-        )}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Columns className="h-3 w-3" />
+            Columns to include
+          </p>
+          <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+            <input
+              type="radio"
+              name="pdfMode"
+              checked={mode === 'all'}
+              onChange={() => setMode('all')}
+              className="accent-purple-600"
+            />
+            <div>
+              <p className="text-sm font-medium">Export all columns ({totalColumns} fields)</p>
+              <p className="text-xs text-muted-foreground">Include every product field in the report</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-accent">
+            <input
+              type="radio"
+              name="pdfMode"
+              checked={mode === 'select'}
+              onChange={() => setMode('select')}
+              className="accent-purple-600"
+            />
+            <div>
+              <p className="text-sm font-medium">Select specific columns</p>
+              <p className="text-xs text-muted-foreground">
+                Choose which fields to include
+                {mode === 'select' && selectedCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-[10px]">{selectedCount} selected</Badge>
+                )}
+              </p>
+            </div>
+          </label>
+        </div>
 
-        {/* Column selection (only visible in "select" mode, hidden during export) */}
-        {mode === 'select' && !isExporting && (
+        {/* Column selection (only visible in "select" mode) */}
+        {mode === 'select' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted-foreground">Select columns to include</p>
@@ -254,7 +251,7 @@ export function PdfExportDialog({
               </div>
             </div>
 
-            <ScrollArea className="h-[35vh] border rounded-md p-2">
+            <ScrollArea className="h-[30vh] border rounded-md p-2">
               <div className="space-y-3">
                 {COLUMN_GROUPS.map((group) => {
                   const fields = group.fields;
@@ -297,20 +294,16 @@ export function PdfExportDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isExporting}>
-            {isExporting ? 'Close' : 'Cancel'}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
           </Button>
           <Button
             onClick={handleExport}
-            disabled={isExporting || (mode === 'select' && selectedCount === 0)}
+            disabled={mode === 'select' && selectedCount === 0}
             className="gap-2"
           >
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <FileText className="h-4 w-4" />
-            )}
-            {isExporting ? 'Generating…' : 'Export PDF'}
+            <Printer className="h-4 w-4" />
+            Open Print Report
           </Button>
         </DialogFooter>
       </DialogContent>
