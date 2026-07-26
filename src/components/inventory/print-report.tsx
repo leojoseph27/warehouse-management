@@ -260,6 +260,42 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
         </div>
       </div>
 
+      {/* ── Debug panel (screen only, hidden in print) ── */}
+      {/* Shows the first 5 products' image URLs and load status so we can
+          diagnose why images might not be rendering. */}
+      <div className="no-print" style={{ padding: '8px 24px', background: '#fef3c7', borderBottom: '1px solid #fcd34d', fontSize: '11px' }}>
+        <strong>Debug — Image Status:</strong> {imagesLoaded}/{totalImages} loaded.
+        First 5 products with images:
+        <div style={{ marginTop: '4px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '4px' }}>
+          {products.slice(0, 10).map((p, i) => {
+            const url = getPrimaryImageUrl(p);
+            const hasImg = !!url;
+            return (
+              <div key={i} style={{ background: 'white', padding: '4px', borderRadius: '3px', border: '1px solid #e5e7eb' }}>
+                <span style={{ fontWeight: 600 }}>SR {p.sourceRow}:</span>{' '}
+                {hasImg ? (
+                  <span style={{ color: '#059669' }} title={url}>
+                    ✓ {url.slice(0, 60)}...
+                  </span>
+                ) : (
+                  <span style={{ color: '#dc2626' }}>✗ No image URL</span>
+                )}
+                {hasImg && (
+                  <img
+                    src={url}
+                    alt=""
+                    style={{ display: 'block', width: '40px', height: '40px', marginTop: '2px', objectFit: 'contain', border: '1px solid #ccc' }}
+                    referrerPolicy="no-referrer"
+                    onLoad={() => console.log('[Debug] Image loaded:', url)}
+                    onError={() => console.error('[Debug] Image FAILED:', url)}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── Report header (visible in print) ── */}
       <div className="report-header">
         <div className="header-left">
