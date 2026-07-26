@@ -24,6 +24,7 @@ import {
   Layers,
   ArrowRight,
   FolderCheck,
+  ClipboardList,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -328,6 +329,15 @@ export function Dashboard() {
             >
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
               <span className="text-xs">Export PDF</span>
+            </Button>
+            {/* Updated List — dedicated workspace for reviewing modified products */}
+            <Button
+              variant="outline"
+              className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
+              onClick={() => setView('updated-list')}
+            >
+              <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <span className="text-xs">Updated List</span>
             </Button>
             {/* Check Drive Folders — ensures all product images are in the
                 correct folder (ND Number or Product ID) on Google Drive */}

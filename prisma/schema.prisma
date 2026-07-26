@@ -104,6 +104,14 @@ model Product {
   price               Float?          // Legacy — migrated to 'defaultPrice'
   pcs                 Int?            // Legacy — migrated to 'pieces'
 
+  // ── Change History (Old Value Tracking) ──
+  // Stores a JSON map of field names to their original (pre-edit) values.
+  // Example: {"nameEn": "Fruit Knife", "length": "12 cm"}
+  // When a field is changed from a non-null value to a different value,
+  // the old value is saved here (only once — the first original value is
+  // preserved and never overwritten on subsequent edits).
+  oldValues           String?
+
   // ── System fields ──
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

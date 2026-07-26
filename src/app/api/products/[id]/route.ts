@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { serializeProduct, applyAutoDerivations } from '@/lib/serialize-product';
+import { computeUpdatedOldValues } from '@/lib/change-history';
 
 /** All 52 product fields that can be accepted in PUT body */
 const PRODUCT_FIELDS = [
@@ -94,6 +95,31 @@ export async function PUT(
 
     // Apply auto-derivations
     const data = applyAutoDerivations(rawData);
+
+    // ── Change History: capture old values before updating ──
+    // Fetch the current product to compare old vs new values.
+    // When a tracked field changes from a non-null value to a different
+    // value, the old value is preserved in the `oldValues` JSON column.
+    const currentProduct = await db.product.findUnique({
+      where: { id },
+      select: { oldValues: true },
+    });
+
+    if (currentProduct) {
+      // Fetch all current field values for comparison
+      const fullCurrent = await db.product.findUnique({ where: { id } });
+      if (fullCurrent) {
+        const updatedOldValues = computeUpdatedOldValues(
+          currentProduct.oldValues,
+          fullCurrent as any,
+          data
+        );
+        // Only update oldValues if there's something to store
+        if (updatedOldValues !== currentProduct.oldValues) {
+          data.oldValues = updatedOldValues;
+        }
+      }
+    }
 
     const product = await db.product.update({
       where: { id },

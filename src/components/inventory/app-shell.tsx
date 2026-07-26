@@ -9,6 +9,7 @@ import { ProductForm } from './product-form';
 import { ProductDetail } from './product-detail';
 import { ExcelImport } from './excel-import';
 import { VariantExplorer } from './variant-explorer';
+import { UpdatedList } from './updated-list';
 import { AuthScreen } from './auth-screen';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -101,6 +102,12 @@ export function AppShell() {
         return (
           <ErrorBoundary fallbackMessage="Variant Explorer encountered an error. Try refreshing.">
             <VariantExplorer />
+          </ErrorBoundary>
+        );
+      case 'updated-list':
+        return (
+          <ErrorBoundary fallbackMessage="Updated List encountered an error. Try refreshing.">
+            <UpdatedList />
           </ErrorBoundary>
         );
       default:

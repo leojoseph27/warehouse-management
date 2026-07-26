@@ -12,6 +12,7 @@ function PrintReportPageContent() {
   const srTo = searchParams.get('srTo');
   const columns = searchParams.get('columns');
   const orientation = (searchParams.get('orientation') || 'landscape') as 'portrait' | 'landscape';
+  const onlyModified = searchParams.get('onlyModified') === '1';
 
   const srFromNum = srFrom ? parseInt(srFrom, 10) : null;
   const srToNum = srTo ? parseInt(srTo, 10) : null;
@@ -23,6 +24,7 @@ function PrintReportPageContent() {
       srTo={srToNum}
       selectedFields={selectedFields}
       orientation={orientation}
+      onlyModified={onlyModified}
     />
   );
 }

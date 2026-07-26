@@ -183,11 +183,28 @@ interface ProductRow {
   images: ProductImageRow[];
   // Change Tracking
   original: ProductOriginalRow | null;
+  // Old Value Tracking (JSON column)
+  oldValues: string | null;
   // Variants
   variantMemberships: VariantMemberRow[];
 }
 
 export function serializeProduct(p: ProductRow) {
+  // Parse oldValues JSON into individual old* fields for the API response
+  const oldValuesMap: Record<string, string> = {};
+  if (p.oldValues) {
+    try {
+      const parsed = JSON.parse(p.oldValues);
+      if (typeof parsed === 'object' && parsed !== null) {
+        for (const [key, value] of Object.entries(parsed)) {
+          oldValuesMap[`old${key.charAt(0).toUpperCase()}${key.slice(1)}`] = String(value);
+        }
+      }
+    } catch {
+      // Invalid JSON — skip
+    }
+  }
+
   return {
     id: p.id,
     // Product Identity
@@ -254,6 +271,9 @@ export function serializeProduct(p: ProductRow) {
     // System
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
+    // Old Value Tracking (raw JSON + parsed individual fields)
+    oldValues: p.oldValues,
+    ...oldValuesMap,
     images: (p.images ?? []).map((img) => ({
       id: img.id,
       productId: img.productId,

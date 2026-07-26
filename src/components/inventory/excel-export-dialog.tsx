@@ -14,6 +14,9 @@ import { toast } from 'sonner';
 interface ExcelExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When true, the export is filtered to only show modified products
+   *  (used by the Updated List page). */
+  onlyModified?: boolean;
 }
 
 /**
@@ -31,7 +34,7 @@ interface ExcelExportDialogProps {
  * The dialog builds a URL with query params and triggers a direct download
  * via a hidden anchor element.
  */
-export function ExcelExportDialog({ open, onOpenChange }: ExcelExportDialogProps) {
+export function ExcelExportDialog({ open, onOpenChange, onlyModified }: ExcelExportDialogProps) {
   const [mode, setMode] = useState<'all' | 'select'>('all');
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
   const [exportType, setExportType] = useState<'excel-only' | 'excel-with-images'>('excel-only');
@@ -104,6 +107,9 @@ export function ExcelExportDialog({ open, onOpenChange }: ExcelExportDialogProps
     }
     if (mode === 'select' && selectedCount > 0) {
       params.set('columns', Array.from(selectedFields).join(','));
+    }
+    if (onlyModified) {
+      params.set('onlyModified', '1');
     }
 
     const url = `/api/products/export?${params.toString()}`;

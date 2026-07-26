@@ -112,10 +112,27 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   }
 }
 
-/** Resolve a cell value for a given product + column def. */
+/** Resolve a cell value for a given product + column def.
+ *  Handles special fields: imageLinks, variants, and old* (change history). */
 function resolveCellValue(product: any, def: ColumnDef, allProducts: any[]): any {
   if (def.field === 'imageLinks') return resolveImageLinks(product);
   if (def.field === 'variants') return resolveVariants(product, allProducts);
+
+  // Handle "Old {field}" columns — read from the oldValues JSON
+  if (def.field.startsWith('old') && def.field.length > 3) {
+    const originalField = def.field.charAt(3).toLowerCase() + def.field.slice(4);
+    if (!product.oldValues) return '';
+    try {
+      const parsed = JSON.parse(product.oldValues);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed[originalField] ?? '';
+      }
+    } catch {
+      // Invalid JSON
+    }
+    return '';
+  }
+
   return product[def.field];
 }
 
@@ -143,6 +160,16 @@ function buildWhereClause(searchParams: URLSearchParams): any {
     where.sourceRow = { gte: from, lte: to };
   }
   return where;
+}
+
+/** Filter products to only include modified ones (updatedAt > createdAt).
+ *  Used when onlyModified=true (from the Updated List page). */
+function filterModified(products: any[]): any[] {
+  return products.filter((p) => {
+    const created = new Date(p.createdAt).getTime();
+    const updated = new Date(p.updatedAt).getTime();
+    return updated > created;
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -455,8 +482,11 @@ export async function GET(request: NextRequest) {
     // Build the where clause (supports both srFrom/srTo and sourceRowMin/Max)
     const where = buildWhereClause(searchParams);
 
+    // Check if only modified products should be exported (Updated List)
+    const onlyModified = searchParams.get('onlyModified') === '1';
+
     // Fetch products with relations
-    const data = await db.product.findMany({
+    let data = await db.product.findMany({
       where,
       include: {
         images: { orderBy: { displayOrder: 'asc' } },
@@ -465,6 +495,11 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { sourceRow: 'asc' },
     });
+
+    // Filter to only modified products if requested
+    if (onlyModified) {
+      data = filterModified(data);
+    }
 
     if (data.length === 0) {
       return NextResponse.json(

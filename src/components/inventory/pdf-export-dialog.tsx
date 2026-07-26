@@ -14,6 +14,9 @@ import { toast } from 'sonner';
 interface PdfExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When true, the export is filtered to only show modified products
+   *  (used by the Updated List page). */
+  onlyModified?: boolean;
 }
 
 /**
@@ -31,7 +34,7 @@ interface PdfExportDialogProps {
  *   - HTML/CSS is easier to maintain than library-specific code
  *   - Works on every device/browser with zero configuration
  */
-export function PdfExportDialog({ open, onOpenChange }: PdfExportDialogProps) {
+export function PdfExportDialog({ open, onOpenChange, onlyModified }: PdfExportDialogProps) {
   const [mode, setMode] = useState<'all' | 'select'>('all');
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
@@ -101,6 +104,9 @@ export function PdfExportDialog({ open, onOpenChange }: PdfExportDialogProps) {
     }
     if (mode === 'select' && selectedCount > 0) {
       params.set('columns', Array.from(selectedFields).join(','));
+    }
+    if (onlyModified) {
+      params.set('onlyModified', '1');
     }
 
     const url = `/print-report?${params.toString()}`;

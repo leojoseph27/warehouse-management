@@ -62,6 +62,21 @@ function getCellValue(product: Product, def: ColumnDef, allProducts: Product[]):
   let value: any;
   if (def.field === 'imageLinks') value = resolveImageLinks(product);
   else if (def.field === 'variants') value = resolveVariants(product, allProducts);
+  else if (def.field.startsWith('old') && def.field.length > 3) {
+    // Handle "Old {field}" columns — read from the oldValues JSON
+    const originalField = def.field.charAt(3).toLowerCase() + def.field.slice(4);
+    const oldValuesJson = (product as any).oldValues;
+    if (!oldValuesJson) {
+      value = '';
+    } else {
+      try {
+        const parsed = JSON.parse(oldValuesJson);
+        value = (parsed && parsed[originalField]) ?? '';
+      } catch {
+        value = '';
+      }
+    }
+  }
   else value = (product as any)[def.field];
   if (value == null) return '';
   const str = String(value);
@@ -73,6 +88,7 @@ interface PrintReportProps {
   srTo: number | null;
   selectedFields: string[] | null;
   orientation: 'portrait' | 'landscape';
+  onlyModified?: boolean;
 }
 
 interface FetchProgress {
@@ -80,7 +96,7 @@ interface FetchProgress {
   total: number;
 }
 
-export function PrintReport({ srFrom, srTo, selectedFields, orientation }: PrintReportProps) {
+export function PrintReport({ srFrom, srTo, selectedFields, orientation, onlyModified }: PrintReportProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +129,9 @@ export function PrintReport({ srFrom, srTo, selectedFields, orientation }: Print
         if (srFrom != null && srTo != null) {
           params.set('sourceRowMin', String(srFrom));
           params.set('sourceRowMax', String(srTo));
+        }
+        if (onlyModified) {
+          params.set('onlyModified', '1');
         }
 
         const firstRes = await fetch(`/api/products?${params.toString()}`);
