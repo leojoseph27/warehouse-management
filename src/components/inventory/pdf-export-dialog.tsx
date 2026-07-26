@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, FileImage, Printer, Columns } from 'lucide-react';
 import { COLUMN_DEFS, COLUMN_GROUPS, type ColumnDef } from '@/lib/lookups';
 import { toast } from 'sonner';
@@ -120,7 +119,7 @@ export function PdfExportDialog({ open, onOpenChange, onlyModified }: PdfExportD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Printer className="h-5 w-5 text-purple-600" />
@@ -257,7 +256,10 @@ export function PdfExportDialog({ open, onOpenChange, onlyModified }: PdfExportD
               </div>
             </div>
 
-            <ScrollArea className="max-h-[35vh] border rounded-md p-2 overflow-hidden">
+            {/* Column list — vertically scrollable with a fixed max height so it
+                never overflows the dialog, and every column stays visible/
+                selectable even with 60+ fields. Long names wrap cleanly. */}
+            <div className="max-h-[55vh] min-h-[180px] overflow-y-auto border rounded-md p-2 updated-list-scroll">
               <div className="space-y-3">
                 {COLUMN_GROUPS.map((group) => {
                   const fields = group.fields;
@@ -277,18 +279,18 @@ export function PdfExportDialog({ open, onOpenChange, onlyModified }: PdfExportD
                           {fields.filter((f) => selectedFields.has(f.field)).length}/{fields.length}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 gap-1 pl-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6 items-start">
                         {fields.map((field) => (
                           <label
                             key={field.field}
-                            className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-accent text-xs min-w-0"
+                            className="flex items-start gap-2 cursor-pointer p-1 rounded hover:bg-accent text-xs min-w-0"
                           >
                             <Checkbox
                               checked={selectedFields.has(field.field)}
                               onCheckedChange={() => toggleField(field.field)}
-                              className="shrink-0"
+                              className="shrink-0 mt-0.5"
                             />
-                            <span className="truncate overflow-hidden">{field.header}</span>
+                            <span className="break-words leading-tight">{field.header}</span>
                           </label>
                         ))}
                       </div>
@@ -296,7 +298,7 @@ export function PdfExportDialog({ open, onOpenChange, onlyModified }: PdfExportD
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         )}
 

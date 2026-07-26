@@ -10,7 +10,8 @@ export type SortBy =
   | 'productFamily'
   | 'defaultPrice'
   | 'recentlyUpdated'
-  | 'recentlyAdded';
+  | 'recentlyAdded'
+  | 'updatedListSerial';
 export type SortOrder = 'asc' | 'desc';
 
 export interface ProductOriginal {

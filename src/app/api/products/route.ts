@@ -200,8 +200,13 @@ export async function GET(request: NextRequest) {
       sortBy === 'recentlyUpdated' ? 'updatedAt' :
       sortBy === 'recentlyAdded' ? 'createdAt' :
       sortBy === 'defaultPrice' ? 'defaultPrice' :
+      sortBy === 'updatedListSerial' ? 'updatedListSerial' :
       'sourceRow';
     const orderDir = sortOrder === 'desc' ? 'desc' : 'asc';
+    // The Updated List sends updatedListSort=1 to request sequential Serial
+    // Number ordering. The Products page never sends it, so its existing
+    // "Recently Updated" behaviour (updatedAt DESC) is preserved.
+    const updatedListSort = searchParams.get('updatedListSort') === '1';
 
     // Build where clause — all filters are direct DB column filters now
     const where: any = {};
@@ -286,15 +291,33 @@ export async function GET(request: NextRequest) {
       where.createdAt = { ...where.createdAt, gte: cutoff };
     }
 
-    // Override sort: when onlyModified is on, ALWAYS sort by updatedAt DESC
-    // (most recent edit first) regardless of the user's sortBy/sortOrder, so
-    // the modification sequence is preserved: if A was edited, then B, then C,
-    // the list shows C, B, A.
+    // Override sort for the "Recently Updated" / Updated List views.
+    //
+    // Products page "Recently Updated" toggle (onlyModified=1, NO updatedListSort):
+    //   → sort by updatedAt DESC (most recent edit first). Behaviour unchanged.
+    //
+    // Updated List (onlyModified=1 + updatedListSort=1):
+    //   → default to updatedListSerial ASC so the user sees the persistent
+    //     sequence 1, 2, 3 … . If the user explicitly picked another sortable
+    //     column (nameEn, defaultPrice, …), respect that choice — the Serial
+    //     Number value attached to each product is stored in the DB and stays
+    //     consistent regardless of row order.
     let finalSortColumn = sortColumn;
     let finalOrderDir = orderDir;
     if (onlyModified) {
-      finalSortColumn = 'updatedAt';
-      finalOrderDir = 'desc';
+      if (updatedListSort) {
+        const userPickedAnotherSort =
+          sortBy !== 'sourceRow' &&
+          sortBy !== 'updatedListSerial' &&
+          sortBy !== 'recentlyUpdated';
+        if (!userPickedAnotherSort) {
+          finalSortColumn = 'updatedListSerial';
+          finalOrderDir = 'asc';
+        }
+      } else {
+        finalSortColumn = 'updatedAt';
+        finalOrderDir = 'desc';
+      }
     } else if (recentlyAddedDays > 0) {
       // Recently Added: sort by createdAt DESC (newest addition first)
       finalSortColumn = 'createdAt';
@@ -309,6 +332,20 @@ export async function GET(request: NextRequest) {
       where.defaultPrice = { ...where.defaultPrice, lte: parseFloat(priceMax) };
     }
 
+    // Build the orderBy clause. For updatedListSerial, push NULL serials to the
+    // end (e.g. legacy modified rows that haven't been re-saved since the
+    // feature shipped) and break ties by sourceRow so ordering is deterministic.
+    // `nulls` is supported by PostgreSQL (the production datasource).
+    let orderBy: any;
+    if (finalSortColumn === 'updatedListSerial') {
+      orderBy = [
+        { updatedListSerial: { sort: finalOrderDir as 'asc' | 'desc', nulls: 'last' } },
+        { sourceRow: finalOrderDir as 'asc' | 'desc' },
+      ];
+    } else {
+      orderBy = { [finalSortColumn]: finalOrderDir };
+    }
+
     const [total, products] = await Promise.all([
       db.product.count({ where }),
       db.product.findMany({
@@ -318,7 +355,7 @@ export async function GET(request: NextRequest) {
           original: true,
           variantMemberships: { include: { variantGroup: { select: { id: true, primaryProductId: true } } } },
         },
-        orderBy: { [finalSortColumn]: finalOrderDir },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),

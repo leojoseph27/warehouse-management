@@ -114,7 +114,23 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'pieces', label: 'Pcs', alwaysVisible: false },
 ];
 
-export function ProductTable() {
+/**
+ * Fixed "Serial Number" column shown ONLY in the Updated List.
+ *
+ * This is the persistent `updatedListSerial` value (1, 2, 3, …) assigned the
+ * first time a product is modified. It is rendered BEFORE the existing "Sr"
+ * (sourceRow) column and is NOT part of the toggleable DEFAULT_COLUMNS list,
+ * so it never replaces or modifies the Products-page "Sr" column. The value
+ * is read directly from `product.updatedListSerial`, so it stays consistent
+ * across viewing, filtering, searching, sorting and exporting.
+ */
+const UPDATED_LIST_SERIAL_COLUMN: ColumnConfig = {
+  key: 'updatedListSerial',
+  label: 'Serial Number',
+  alwaysVisible: true,
+};
+
+export function ProductTable({ showUpdatedListSerial = false }: { showUpdatedListSerial?: boolean } = {}) {
   const {
     products,
     totalProducts,
@@ -335,7 +351,7 @@ export function ProductTable() {
     } else if (!groupByNd) {
       loadProducts();
     }
-  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterSourceRow, filterNdNumber, filterNameEn, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, selectedNdNumber, groupByNd]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterSourceRow, filterNdNumber, filterNameEn, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, selectedNdNumber, groupByNd, showUpdatedListSerial]);
 
   // ── Load ND groups when grouping is enabled ──
   useEffect(() => {
@@ -380,6 +396,10 @@ export function ProductTable() {
       }
       // Recently Updated filter — only show products where updatedAt > createdAt
       if (filterOnlyModified) params.set('onlyModified', '1');
+      // Updated List: request sequential Serial-Number ordering (1, 2, 3 …)
+      // from the API. The Products page never sends this, so its behaviour is
+      // unchanged.
+      if (showUpdatedListSerial) params.set('updatedListSort', '1');
       // Recently Added filter — only show products added within last N days
       if (filterRecentlyAddedDays > 0) params.set('recentlyAddedDays', String(filterRecentlyAddedDays));
 
@@ -393,7 +413,7 @@ export function ProductTable() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterNdNumber, filterNameEn, filterSourceRow, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, parseSourceRowInput]);
+  }, [currentPage, searchQuery, filterDepartment, filterCategory, filterSubcategory, filterProductFamily, filterProductType, filterBrand, filterColor, filterMaterial, filterCountryOfOrigin, filterUnit, filterValidationStatus, filterShape, filterPriceMin, filterPriceMax, filterNdNumber, filterNameEn, filterSourceRow, filterOnlyModified, filterRecentlyAddedDays, sortBy, sortOrder, parseSourceRowInput, showUpdatedListSerial]);
 
   const loadProductsByNdNumber = useCallback(async (ndNumber: string) => {
     setLoading(true);
@@ -502,6 +522,12 @@ export function ProductTable() {
   // updatedAt/createdAt alone would show ALL products, not just the modified
   // ones — which is why they were moved out of this dropdown.
   const sortOptions: { value: SortBy; label: string }[] = [
+    // In the Updated List, "Serial Number" is the natural primary sort so the
+    // user sees the persistent sequence 1, 2, 3 … It is omitted on the Products
+    // page (where sourceRow is the primary sort).
+    ...(showUpdatedListSerial
+      ? [{ value: 'updatedListSerial' as SortBy, label: 'Serial Number' }]
+      : []),
     { value: 'sourceRow', label: 'Source Row' },
     { value: 'ndNumber', label: 'ND Number' },
     { value: 'nameEn', label: 'Name EN' },
@@ -1218,6 +1244,9 @@ export function ProductTable() {
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                    {showUpdatedListSerial && (
+                      <th key={UPDATED_LIST_SERIAL_COLUMN.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{UPDATED_LIST_SERIAL_COLUMN.label}</th>
+                    )}
                     {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
                       <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
                     ))}
@@ -1231,6 +1260,7 @@ export function ProductTable() {
                       product={product}
                       searchQuery={searchQuery}
                       visibleColumns={visibleColumns}
+                      showSerialNumber={showUpdatedListSerial}
                       onView={() => openProduct(product)}
                       onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
                     />
@@ -1248,6 +1278,7 @@ export function ProductTable() {
                   key={product.id}
                   product={product}
                   searchQuery={searchQuery}
+                  showSerialNumber={showUpdatedListSerial}
                   onClick={() => openProduct(product)}
                 />
               ))}
@@ -1299,6 +1330,9 @@ export function ProductTable() {
               <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                    {showUpdatedListSerial && (
+                      <th key={UPDATED_LIST_SERIAL_COLUMN.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{UPDATED_LIST_SERIAL_COLUMN.label}</th>
+                    )}
                     {DEFAULT_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(col => (
                       <th key={col.key} className="py-3 px-3 text-left font-medium whitespace-nowrap">{col.label}</th>
                     ))}
@@ -1312,6 +1346,7 @@ export function ProductTable() {
                       product={product}
                       searchQuery={searchQuery}
                       visibleColumns={visibleColumns}
+                      showSerialNumber={showUpdatedListSerial}
                       onView={() => openProduct(product)}
                       onEdit={() => { setCurrentProduct(product); setView('edit-product'); }}
                     />
@@ -1327,6 +1362,7 @@ export function ProductTable() {
                   key={product.id}
                   product={product}
                   searchQuery={searchQuery}
+                  showSerialNumber={showUpdatedListSerial}
                   onClick={() => openProduct(product)}
                 />
               ))}
@@ -1374,12 +1410,14 @@ function ProductRow({
   product,
   searchQuery,
   visibleColumns,
+  showSerialNumber,
   onView,
   onEdit,
 }: {
   product: Product;
   searchQuery: string;
   visibleColumns: string[];
+  showSerialNumber?: boolean;
   onView: () => void;
   onEdit: () => void;
 }) {
@@ -1387,6 +1425,15 @@ function ProductRow({
     const value = product[key as keyof Product];
     
     switch (key) {
+      case 'updatedListSerial':
+        // Persistent Updated-List serial number (1, 2, 3, …). Shown only in
+        // the Updated List. Reads the stored value so it stays consistent
+        // across sorting / filtering / pagination.
+        return (
+          <span className="text-xs font-mono font-semibold tabular-nums">
+            {product.updatedListSerial ?? '-'}
+          </span>
+        );
       case 'sourceRow':
         return (
           <span className="text-xs font-mono">
@@ -1511,6 +1558,14 @@ function ProductRow({
 
   return (
     <tr className="hover:bg-muted/30 transition-colors">
+      {/* Serial Number cell — rendered BEFORE the existing "Sr" cell, only in
+          the Updated List. Matches the <th> prepended in the table header so
+          headers and values stay aligned. */}
+      {showSerialNumber && (
+        <td className="py-3 px-3">
+          {renderCell('updatedListSerial')}
+        </td>
+      )}
       {/* IMPORTANT: iterate columns in DEFAULT_COLUMNS order (filtered by
           visibleColumns), NOT in visibleColumns array order. The <th> headers
           above use DEFAULT_COLUMNS.filter(...).map(...), so the cells MUST use
@@ -1552,10 +1607,12 @@ function ProductRow({
 function ProductCard({
   product,
   searchQuery,
+  showSerialNumber,
   onClick,
 }: {
   product: Product;
   searchQuery: string;
+  showSerialNumber?: boolean;
   onClick: () => void;
 }) {
   const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
@@ -1607,6 +1664,11 @@ function ProductCard({
             </div>
 
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {showSerialNumber && product.updatedListSerial != null && (
+                <Badge variant="default" className="text-[10px] h-5 px-1.5 font-mono tabular-nums">
+                  #{product.updatedListSerial}
+                </Badge>
+              )}
               {product.ndNumber && (
                 <Badge
                   variant="outline"

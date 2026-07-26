@@ -31,21 +31,27 @@ import { toast } from 'sonner';
  * leaving.
  */
 export function UpdatedList() {
-  const { setView, setFilter, filterOnlyModified } = useInventoryStore();
+  const { setView, setFilter, filterOnlyModified, setSortBy, setSortOrder } = useInventoryStore();
   const [showExcelDialog, setShowExcelDialog] = useState(false);
   const [showPdfDialog, setShowPdfDialog] = useState(false);
 
-  // Force onlyModified=true when entering the Updated List view
+  // Enter the Updated List: force onlyModified=true and default the sort to
+  // Serial Number (1, 2, 3 …) so the user sees the persistent sequence. This
+  // runs ONCE on mount (empty deps) to avoid feedback loops with the store.
   useEffect(() => {
     if (!filterOnlyModified) {
       setFilter('filterOnlyModified', true as any);
     }
-    // Cleanup: when leaving the Updated List, turn off the filter
+    setSortBy('updatedListSerial');
+    setSortOrder('asc');
+    // On leaving the Updated List, restore the default Products-page sort so
+    // the 'updatedListSerial' sort (which the Products page dropdown doesn't
+    // expose) doesn't leak into the Products view.
     return () => {
-      // Don't clear the filter here — it's cleared when navigating away
-      // via the store's setView. We only set it ON if it wasn't already on.
+      setSortBy('sourceRow');
+      setSortOrder('asc');
     };
-  }, [filterOnlyModified, setFilter]);
+  }, []);
 
   return (
     <div className="space-y-3 pb-6">
@@ -104,7 +110,7 @@ export function UpdatedList() {
       </div>
 
       {/* ── Product Table (reused — no duplication) ── */}
-      <ProductTable />
+      <ProductTable showUpdatedListSerial />
 
       {/* ── Export Dialogs ── */}
       <ExcelExportDialog
