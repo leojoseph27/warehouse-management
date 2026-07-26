@@ -68,8 +68,6 @@ export function Dashboard() {
 
   // ── PDF export dialog state ──
   const [showPdfDialog, setShowPdfDialog] = useState(false);
-  const [pdfSrFrom, setPdfSrFrom] = useState<number | null>(null);
-  const [pdfSrTo, setPdfSrTo] = useState<number | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -694,11 +692,7 @@ export function Dashboard() {
             <Button
               variant="outline"
               className="h-auto py-3 sm:py-4 flex-col gap-1.5 sm:gap-2 min-h-[44px]"
-              onClick={() => {
-                setPdfSrFrom(null);
-                setPdfSrTo(null);
-                setShowPdfDialog(true);
-              }}
+              onClick={() => setShowPdfDialog(true)}
               disabled={isExporting}
             >
               <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-rose-600" />
@@ -888,13 +882,10 @@ export function Dashboard() {
         onComplete={handleProgressDialogComplete}
       />
 
-      {/* PDF Export Dialog — column selection + SR range filter */}
+      {/* PDF Export Dialog — client-side PDF generation with column selection */}
       <PdfExportDialog
         open={showPdfDialog}
         onOpenChange={setShowPdfDialog}
-        baseUrl="/api/products/export-pdf"
-        srFrom={pdfSrFrom}
-        srTo={pdfSrTo}
       />
     </div>
   );
